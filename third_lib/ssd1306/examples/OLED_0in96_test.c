@@ -31,6 +31,8 @@
 #include "ssd1306_oled.h"
 #include "OLED_0in96.h"
 #include "common/blikvm_util/blikvm_util.h"
+#include "config/blikvm_config.h"
+
 #include <time.h>
 #include <string.h> 
 
@@ -78,6 +80,7 @@ blikvm_int32_t blikvm_oled_ssd1306_0in96_show(blikvm_int32_t diff)
     //DEV_Delay_ms(500);
     Paint_Clear(BLACK);
     int i=0;
+
     while(1)
     {
         if(i >= (diff/5)*2 )
@@ -97,30 +100,40 @@ blikvm_int32_t blikvm_oled_ssd1306_0in96_show(blikvm_int32_t diff)
             sprintf(ip_str,"IP:%s",ip);
             Paint_DrawString_EN(0, 12, ip_str, &Font12, WHITE, WHITE);
 
+            char* secondIPPtr = blikvm_get_config()->oled.secondIP;
+            if( secondIPPtr != NULL && strlen(secondIPPtr) > 0){
+                char secondIp[20]={0};
+                if(GetSpecificIP(secondIPPtr,secondIp) == 0){
+                    Paint_DrawString_EN(0, 24, secondIp, &Font12, WHITE, WHITE);
+                }
+            }
+
             // TEMP
             char temp[20]={0};
             sprintf(temp, "temp:%2dF/%2dC",(int)(GetCPUTemp()*1.8 + 32),GetCPUTemp());
-            Paint_DrawString_EN(0, 24, temp, &Font12, WHITE, WHITE);
+            Paint_DrawString_EN(0, 36, temp, &Font12, WHITE, WHITE);
 
-            // CPU LOAD
-            char cpu_loading[20]={0};
-            sprintf(cpu_loading, "CPU LOAD:%.2f",GetCPULoad());
-            Paint_DrawString_EN(0, 36, cpu_loading, &Font12, WHITE, WHITE);
+
         } 
         else
         {
+            // CPU LOAD
+            char cpu_loading[20]={0};
+            sprintf(cpu_loading, "CPU LOAD:%.2f",GetCPULoad());
+            Paint_DrawString_EN(0, 0, cpu_loading, &Font12, WHITE, WHITE);
+
             //Mem 
             char mem[20]={0};
             GetMemUsage(mem);
             char mem_str[28]={0};
             sprintf(mem_str,"Disk:%s",mem);
-            Paint_DrawString_EN(0, 12, mem_str, &Font12, WHITE, WHITE);
+            Paint_DrawString_EN(0, 24, mem_str, &Font12, WHITE, WHITE);
             //uptime
             char *uptime_str;
             uptime_str = GetUptime();
             char up_str[28]={0};
             sprintf(up_str,"up:%s",uptime_str);
-            Paint_DrawString_EN(0, 36, up_str, &Font12, WHITE, WHITE);
+            Paint_DrawString_EN(0, 48, up_str, &Font12, WHITE, WHITE);
             free(uptime_str);
         }
         i = i + 1;

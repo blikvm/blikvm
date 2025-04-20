@@ -110,21 +110,36 @@ blikvm_config_t* blikvm_read_config(blikvm_int8_t* file_path)
         const cJSON *oled = cJSON_GetObjectItemCaseSensitive(root, "display");
         if (cJSON_IsObject(oled))
         {
-            const cJSON *isActive = cJSON_GetObjectItemCaseSensitive(oled, "isActive");
             const cJSON *mode = cJSON_GetObjectItemCaseSensitive(oled, "mode");
             const cJSON *onBootTime = cJSON_GetObjectItemCaseSensitive(oled, "onBootTime");
             const cJSON *cycleInterval = cJSON_GetObjectItemCaseSensitive(oled, "cycleInterval");
             const cJSON *displayTime = cJSON_GetObjectItemCaseSensitive(oled, "displayTime");
-            const cJSON *secondIP = cJSON_GetObjectItemCaseSensitive(oled, "secondIP");
-
-            if (cJSON_IsBool(isActive)) {
-                g_config.oled.isActive = cJSON_IsTrue(isActive) ? 1 : 0;
-                BLILOG_I(TAG, "display isActive: %d\n", g_config.oled.isActive);
-            }
-            if (cJSON_IsNumber(mode))
+            const cJSON *secondIP = cJSON_GetObjectItemCaseSensitive(oled, "secondaryIP");
+            if (cJSON_IsString(mode))
             {
-                BLILOG_I(TAG, "display mode: %d\n", mode->valueint);
-                g_config.oled.mode = mode->valueint;
+                BLILOG_I(TAG, "display mode: %s\n", mode->valuestring);
+                if (strcmp(mode->valuestring, "off") == 0)
+                {
+                    g_config.oled.isActive = 0;
+                }else{
+                    g_config.oled.isActive = 1;
+                }
+                if (strcmp(mode->valuestring, "always") == 0)
+                {
+                    g_config.oled.mode = 0;
+                }
+                else if (strcmp(mode->valuestring, "boot") == 0)
+                {
+                    g_config.oled.mode = 1;
+                }
+                else if (strcmp(mode->valuestring, "interval") == 0)
+                {
+                    g_config.oled.mode = 2;
+                }
+                else
+                {
+                    g_config.oled.mode = 1;
+                }
             }
 
             if (cJSON_IsNumber(onBootTime))
