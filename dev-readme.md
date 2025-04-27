@@ -1,12 +1,42 @@
 # Raspberry Pi system specification under test
 
 - Raspberry Pi OS Lite
-- Release date: 2023-11-24
+- Release date: 2024-11-19
 - System: 64-bit
 - Kernel version: 6.10
-- Debian version: 11 (bullseye)
+- Debian version: 11 (bookworm)
 
-# Main
+
+## If you use our release image, you can just clone code, and run. Just `systemctl stop kvmd-web` before you run.
+
+init submodule
+```
+cd blikvm/
+git submodule update --init --recursive
+```
+Install NodeJS first:
+```bash
+curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.5/install.sh | bash
+source ~/.nvm/nvm.sh
+nvm install 18.19.0
+```
+How to run 
+```
+// client
+cd web_src/web_client
+git checkout master
+npm install
+npm run dev
+
+// server
+cd web_src/web_server
+git checkout master
+npm install
+npm run dev
+```
+
+# If you use a clean image from raspberry website, you need to install dependence by yourself.
+## Main
 
 ```
 # for msd script
@@ -40,7 +70,7 @@ make
 #make RPI=1 SSD1306=1
 ```
 
-# Janus
+## Janus
 
 Install dependencies:
 
@@ -84,7 +114,7 @@ make install
 make configs
 ```
 
-# µStreamer
+## µStreamer
 
 Additional required dependencies for µStreamer:
 
@@ -131,35 +161,8 @@ audio: {
 }
 ```
 
-## web-src
 
-init submodule
-```
-git submodule update --init --recursive
-```
-Install NodeJS first:
-```bash
-curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.5/install.sh | bash
-source ~/.nvm/nvm.sh
-nvm install 18.19.0
-```
-How to run 
-```
-// client
-cd web_src/web_client
-git checkout master
-npm install
-npm run dev
-
-// server
-cd web_src/web_server
-git checkout master
-npm install
-npm run dev
-```
-
-
-# Config overlays in Raspberry Pi
+## Config overlays in Raspberry Pi
 
 In the` /boot/config.txt` end, add the following content:
 
@@ -170,7 +173,7 @@ dtoverlay=dwc2
 ```
 
 
-# Reboot
+## Reboot
 
 ```bash
 sudo systemctl reboot
