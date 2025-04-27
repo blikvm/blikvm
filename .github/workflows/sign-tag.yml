@@ -1,4 +1,4 @@
-name: Create Signed Tag on Release
+name: Resign Tags on Release
 
 on:
   push:
@@ -6,28 +6,42 @@ on:
       - '*'
 
 jobs:
-  create_signed_tag:
+  resign_tags:
     runs-on: ubuntu-latest
 
     steps:
     - name: Checkout code
       uses: actions/checkout@v2
-
+    
     - name: Set up GPG
       uses: trustin/gpg-action@v1
       with:
         gpg_private_key: ${{ secrets.GPG_PRIVATE_KEY }}
         gpg_passphrase: ${{ secrets.GPG_PASSPHRASE }}
-
-    - name: Create new signed tag
+    
+    - name: Resign tags and push
       run: |
+        # Ensure GPG is set up for signing
         export GPG_TTY=$(tty)
-        CURRENT_TAG=$(git describe --tags --abbrev=0)
-        NEW_TAG="${CURRENT_TAG}-signed"
-        echo "Creating new signed tag: $NEW_TAG"
-        MESSAGE=$(git for-each-ref --format='%(contents)' refs/tags/$CURRENT_TAG)
-        git tag -s "$NEW_TAG" -m "$MESSAGE"
-        git push origin "$NEW_TAG"
-
+    
+        # Get all tags
+        TAGS=$(git tag)
+    
+        for TAG in $TAGS; do
+          echo "Resigning tag: $TAG"
+          
+          # Save the tag message (if any)
+          MESSAGE=$(git for-each-ref --format='%(contents)' refs/tags/$TAG)
+          
+          # Delete old tag locally
+          git tag -d "$TAG"
+          
+          # Recreate signed tag with the same message
+          git tag -s "$TAG" -m "$MESSAGE"
+        done
+    
+        # Force-push all tags
+        git push --force --tags
+    
     - name: Success
-      run: echo "New signed tag created and pushed!"
+      run: echo "All tags successfully resigned and pushed!"
