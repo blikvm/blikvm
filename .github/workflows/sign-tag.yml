@@ -1,0 +1,33 @@
+name: Create Signed Tag on Release
+
+on:
+  push:
+    tags:
+      - '*'
+
+jobs:
+  create_signed_tag:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v2
+
+    - name: Set up GPG
+      uses: trustin/gpg-action@v1
+      with:
+        gpg_private_key: ${{ secrets.GPG_PRIVATE_KEY }}
+        gpg_passphrase: ${{ secrets.GPG_PASSPHRASE }}
+
+    - name: Create new signed tag
+      run: |
+        export GPG_TTY=$(tty)
+        CURRENT_TAG=$(git describe --tags --abbrev=0)
+        NEW_TAG="${CURRENT_TAG}-signed"
+        echo "Creating new signed tag: $NEW_TAG"
+        MESSAGE=$(git for-each-ref --format='%(contents)' refs/tags/$CURRENT_TAG)
+        git tag -s "$NEW_TAG" -m "$MESSAGE"
+        git push origin "$NEW_TAG"
+
+    - name: Success
+      run: echo "New signed tag created and pushed!"
