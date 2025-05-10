@@ -100,7 +100,7 @@ blikvm_int32_t oled_240_240_show(blikvm_int32_t diff)
 		char ip[20]={0};
 		GetIP(ip);
 		if (strlen(ip) == 0) {
-			strcpy(ip, "Primary IP n/a");
+			strcpy(ip, "PrimaryIP: n/a");
 		}
 		Paint_DrawString_EN(60, 55, ip, &Font16, WHITE, BLACK);
 
@@ -111,7 +111,7 @@ blikvm_int32_t oled_240_240_show(blikvm_int32_t diff)
 			GetSpecificIP(secondIPPtr,secondIp);
 		}
 		if (strlen(secondIp) == 0) {
-			strcpy(secondIp, "Secondary IP n/a");
+			strcpy(secondIp, "SecondaryIP: n/a");
 		}
 		Paint_DrawString_EN(60, 90, secondIp, &Font16, WHITE, BLACK);
 
