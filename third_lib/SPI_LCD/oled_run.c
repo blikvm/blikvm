@@ -99,16 +99,21 @@ blikvm_int32_t oled_240_240_show(blikvm_int32_t diff)
 		// IP addresss
 		char ip[20]={0};
 		GetIP(ip);
+		if (strlen(ip) == 0) {
+			strcpy(ip, "Primary IP n/a");
+		}
 		Paint_DrawString_EN(60, 55, ip, &Font16, WHITE, BLACK);
 
 		// Seccond IP address
 		char* secondIPPtr = blikvm_get_config()->oled.secondIP;
+		char secondIp[20]={0};
 		if( secondIPPtr != NULL && strlen(secondIPPtr) > 0){
-			char secondIp[20]={0};
-			if(GetSpecificIP(secondIPPtr,secondIp) == 0){
-				Paint_DrawString_EN(60, 90, secondIp, &Font16, WHITE, BLACK);
-			}
+			GetSpecificIP(secondIPPtr,secondIp);
 		}
+		if (strlen(secondIp) == 0) {
+			strcpy(secondIp, "Secondary IP n/a");
+		}
+		Paint_DrawString_EN(60, 90, secondIp, &Font16, WHITE, BLACK);
 
 		// TEMP
         char temp[20]={0};
