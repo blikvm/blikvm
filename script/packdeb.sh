@@ -53,7 +53,7 @@ Package: blikvm
 Version: $VERSION
 Architecture: arm64
 Maintainer: info@blicube.com
-Depends: libconfig-dev,jq
+Depends: libconfig-dev,jq,libxkbcommon0
 Description: Installs blikvm-$VERSION-alpha on the BliKVM
 EOF
 
@@ -62,6 +62,9 @@ cat << 'EOF' > DEBIAN/preinst
 #!/bin/bash
 # Stop kvmd-web service before installation
 systemctl stop kvmd-web || true
+if [ ! -f /lib/aarch64-linux-gnu/libxkbcommon.so ]; then
+  ln -s /lib/aarch64-linux-gnu/libxkbcommon.so.0 /lib/aarch64-linux-gnu/libxkbcommon.so
+fi
 EOF
 
 ### Create postinst script
