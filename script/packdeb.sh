@@ -99,7 +99,7 @@ get_board_type() {
 board_type=$(get_board_type)
 echo "Board type: $board_type"
 if [[ "$board_type" == "$cm4b_board" ]]; then
-  CONFIG_FILE="/opt/janus/etc/janus/janus.plugin.ustreamer.jcfg"
+  CONFIG_FILE="/mnt/exec/release/lib/pi/janus_configs/janus.plugin.ustreamer.jcfg"
   if [ -f "$CONFIG_FILE" ]; then
     sed -i 's/device = "hw:1,0"/device = "hw:0,0"/g' "$CONFIG_FILE"
   fi
@@ -120,10 +120,6 @@ chmod 755 DEBIAN/preinst DEBIAN/postinst
 tar --exclude='/mnt/exec/release/config/*' -cf - /mnt/exec/ | tar xf -
 tar cf - /usr/bin/blikvm | tar xf -
 tar cf - /lib/systemd/system/kvmd* | tar xf -
-
-if [ "$prefix" == "v1-v2-v3" ]; then
-  tar -cf - /opt/janus/ | tar -xf -
-fi
 
 ### create deb package using the contents of blikvm-$VERSION directory
 cd ..
