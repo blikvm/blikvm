@@ -33,14 +33,18 @@
 //#define USE_NANOPIDUO
 //#define USE_NANOPINEO
 //define USE_NANOPIM1
-//#define USE_RPI
+#ifdef  RPI
+#define USE_RPI
+#endif // RPI
 //#define USE_ORANGEPIZERO
 //#define USE_ORANGEPIONE
 //#define USE_BANANAPIM2ZERO
 //#define USE_BANANAPIM2MAGIC
 //#define USE_NANOPINEOCORE
 //#define USE_ORANGEPIZEROPLUS2
+#ifdef H616
 #define USE_MANGOPI
+#endif
 
 #include <unistd.h>
 #include <stdio.h>
@@ -669,6 +673,7 @@ int i, iCount;
 	char szName[32];
 	int rc, iSPIMode = SPI_MODE_0; // | SPI_NO_CS;
 	int i = iSPIFreq;
+	printf("iDCPin:%d iResetPin:%d iLEDPin:%d\n",iDCPin,iResetPin,iLEDPin);
 	sprintf(szName,"/dev/spidev%d.0", iChannel);
 	file_spi = open(szName, O_RDWR);
 	rc = ioctl(file_spi, SPI_IOC_WR_MODE, &iSPIMode);

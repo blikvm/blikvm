@@ -10,25 +10,16 @@
 #include <stdlib.h>
 #include "blikvm_atx.h" 
 #include "common/blikvm_socket/blikvm_socket.h"
-
+#include "common/blikvm_util/blikvm_util.h"
 #include "GPIO/armbianio.h"     //添加库文件
 #include "GPIO/softPwm.h"     //添加库文件
 
 #define TAG "ATX"
 
-#ifdef  RPI
-#define PIN_POWER 16  //BCM23 
-#define PIN_RESET 13  //BCM27
-#define PIN_LED_PWR 18  //BCM24 
-#define PIN_LED_HDD 15  //BCM22
-#endif
-
-#ifdef  H616
-#define PIN_POWER 18   //GPIO 228
-#define PIN_RESET 37   //GPIO 272
-#define PIN_LED_PWR 36 //GPIO 234   
-#define PIN_LED_HDD 41  //GPIO 233
-#endif
+static int PIN_POWER;
+static int PIN_RESET;
+static int PIN_LED_PWR;
+static int PIN_LED_HDD;
 
 #define ATX_CYCLE 500 //unit:ms
 
@@ -61,6 +52,34 @@ blikvm_int8_t blikvm_atx_init()
     blikvm_int8_t ret = -1;
     do
     {
+        blikvm_board_type_e type = blikvm_get_board_type();
+        if (type == PI4B_BOARD || type == CM4_BOARD)
+        {
+            PIN_POWER = 16; //BCM23
+            PIN_RESET = 13; //BCM27
+            PIN_LED_PWR = 18; //BCM24
+            PIN_LED_HDD = 15; //BCM22
+        }
+        else if (type == H616_BOARD)
+        {
+            PIN_POWER = 18;  //GPIO 228
+            PIN_RESET = 37; //GPIO 272
+            PIN_LED_PWR = 36; //GPIO 234
+            PIN_LED_HDD = 41; //GPIO 233
+        }
+        else if( type == CM4_V5_BOARD)
+        {
+            PIN_POWER = 40;  //GPIO 21
+            PIN_RESET = 31; //GPIO 6
+            PIN_LED_PWR = 37; //GPIO 26
+            PIN_LED_HDD = 33; //GPIO 13
+        }
+        else
+        {
+            BLILOG_E(TAG,"Unsupported board\n");
+            break;
+            return ret;
+        }
         AIOAddGPIO(PIN_POWER, GPIO_OUT);
         AIOAddGPIO(PIN_RESET, GPIO_OUT);
         AIOAddGPIO(PIN_LED_PWR, GPIO_IN);

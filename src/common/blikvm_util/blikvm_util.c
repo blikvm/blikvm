@@ -73,6 +73,34 @@ blikvm_uint64_t blikvm_get_utc_ms(void)
     return t;
 }
 
+static blikvm_int8_t i2cdetect_check(blikvm_int8_t* command)
+{
+    blikvm_int8_t result = -1;
+    FILE *fp;
+    blikvm_int8_t line[100];
+
+    // 执行命令并读取输出
+    fp = popen(command, "r");
+    if (fp == NULL) {
+        perror("Failed to execute command");
+        return -1;
+    }
+
+    // 逐行读取输出，并查找是否存在指定的返回值
+    while (fgets(line, sizeof(line), fp) != NULL) {
+        // 检查行中是否包含指定的返回值
+        if (strstr(line, "50") != NULL) {
+            result = 0; // 找到指定的返回值，设置结果为0
+            break;
+        }
+    }
+
+    // 关闭文件指针
+    pclose(fp);
+
+    return result;
+}
+
 blikvm_board_type_e blikvm_get_board_type()
 {
     blikvm_board_type_e type = UNKONW_BOARD;
@@ -89,6 +117,11 @@ blikvm_board_type_e blikvm_get_board_type()
         else if( strstr(result1,cm4b_board) != NULL)
         {
             type = CM4_BOARD;
+            blikvm_int8_t result = i2cdetect_check("i2cdetect -y 8");
+            if(result == 0)
+            {
+                type = CM4_V5_BOARD;
+            }
         }
         else if( strstr(result1,h616_board) != NULL)
         {

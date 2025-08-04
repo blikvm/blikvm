@@ -23,7 +23,7 @@
 #define MAX_SIZE 32
 
 #ifdef  RPI
-#define FAN_PIN 32  // BCM
+#define FAN_PIN 32  // BCM12
 #endif
 
 #ifdef  H616

@@ -42,7 +42,6 @@ blikvm_int8_t blikvm_oled_init(blikvm_oled_config_t *config)
             BLILOG_E(TAG, "Unsupported board\n");
             break;
         }
-
         switch (type)
         {
         case PI4B_BOARD:
@@ -52,6 +51,9 @@ blikvm_int8_t blikvm_oled_init(blikvm_oled_config_t *config)
             g_oled_type = OLED_SSD1306_128_64;
             break;
         case H616_BOARD:
+            g_oled_type = OLED_ST7789_240_240;
+            break;
+        case CM4_V5_BOARD:
             g_oled_type = OLED_ST7789_240_240;
             break;
         default:
