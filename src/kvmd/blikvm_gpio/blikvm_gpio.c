@@ -13,15 +13,11 @@
 #include <pthread.h>
 #include <stdio.h>
 #include <unistd.h>
-
-#define TAG "GPIO"
-
 #ifdef  VER4
 #include "st7789_oled.h"
-#define SW1 12   //GPIO 257
-#define SW2 35   //GPIO 258
-#define SW2_LED 32   //GPIO 261 ==> act
 #endif
+
+#define TAG "GPIO"
 
 static blikvm_int8_t SW1;
 static blikvm_int8_t SW2;
@@ -67,12 +63,6 @@ blikvm_int8_t blikvm_gpio_init()
             SW1 = 12;   //GPIO 3
             SW2 = 35;   //GPIO 2
             SW2_LED = 32;   //GPIO 261 ==> act
-        }
-        else
-        {
-            BLILOG_E(TAG, "Unsupported board\n");
-            break;
-            return ret;
         }
 
         const blikvm_int8_t *szBoardName;

@@ -73,7 +73,7 @@ CC = gcc
 
 OFLAGS += -g -Wall 
 
-LIBS    +=  -lpthread -lm
+LIBS    +=  -lpthread -lm -lgpiod
 
 # LIBPATH += $(foreach path,$(DEPS_LIB_PATH),-L$(path))
 # LIBPATH += -L${SDK_ROOT_PATH}
