@@ -68,12 +68,6 @@ blikvm_int8_t blikvm_gpio_init()
             SW2 = 35;   //GPIO 2
             SW2_LED = 32;   //GPIO 261 ==> act
         }
-        else
-        {
-            BLILOG_E(TAG, "Unsupported board\n");
-            break;
-            return ret;
-        }
 
         const blikvm_int8_t *szBoardName;
         blikvm_int8_t rc = AIOInit();
