@@ -62,7 +62,7 @@ blikvm_int32_t blikvm_oled_ssd1306_0in96_init()
             return -1;
         }
 
-        Paint_NewImage(BlackImage, OLED_0in96_WIDTH, OLED_0in96_HEIGHT, 90, BLACK);  
+        Paint_NewImage_SSD1306(BlackImage, OLED_0in96_WIDTH, OLED_0in96_HEIGHT, 90, BLACK);  
 		ret = 0;
 	} while (0>1);
 	return ret;
@@ -76,9 +76,9 @@ blikvm_int32_t blikvm_oled_ssd1306_0in96_show(blikvm_int32_t diff)
 		BLILOG_E(TAG,"BlackImage is NULL\n");
 		return -1;
 	}    
-    Paint_SelectImage(BlackImage);
+    Paint_SelectImage_SSD1306(BlackImage);
     //DEV_Delay_ms(500);
-    Paint_Clear(BLACK);
+    Paint_Clear_SSD1306(BLACK);
     int i=0;
 
     while(1)
@@ -91,27 +91,27 @@ blikvm_int32_t blikvm_oled_ssd1306_0in96_show(blikvm_int32_t diff)
         if( i%2 == 0 )
 		{
             char hardware[20] = "BliKVM";
-            Paint_DrawString_EN(36, 0, hardware, &Font12, WHITE, WHITE);
+            Paint_DrawString_EN_SSD1306(36, 0, hardware, &Font12_SSD1306, WHITE, WHITE);
 
             // IP address
             char ip[20]={0};
             GetIP(ip);
             char ip_str[128]={0};
             sprintf(ip_str,"IP:%s",ip);
-            Paint_DrawString_EN(0, 12, ip_str, &Font12, WHITE, WHITE);
+            Paint_DrawString_EN_SSD1306(0, 12, ip_str, &Font12_SSD1306, WHITE, WHITE);
 
             char* secondIPPtr = blikvm_get_config()->oled.secondIP;
             if( secondIPPtr != NULL && strlen(secondIPPtr) > 0){
                 char secondIp[20]={0};
                 if(GetSpecificIP(secondIPPtr,secondIp) == 0){
-                    Paint_DrawString_EN(0, 24, secondIp, &Font12, WHITE, WHITE);
+                    Paint_DrawString_EN_SSD1306(0, 24, secondIp, &Font12_SSD1306, WHITE, WHITE);
                 }
             }
 
             // TEMP
             char temp[20]={0};
             sprintf(temp, "temp:%2dF/%2dC",(int)(GetCPUTemp()*1.8 + 32),GetCPUTemp());
-            Paint_DrawString_EN(0, 36, temp, &Font12, WHITE, WHITE);
+            Paint_DrawString_EN_SSD1306(0, 36, temp, &Font12_SSD1306, WHITE, WHITE);
 
 
         } 
@@ -120,26 +120,26 @@ blikvm_int32_t blikvm_oled_ssd1306_0in96_show(blikvm_int32_t diff)
             // CPU LOAD
             char cpu_loading[20]={0};
             sprintf(cpu_loading, "CPU LOAD:%.2f",GetCPULoad());
-            Paint_DrawString_EN(0, 0, cpu_loading, &Font12, WHITE, WHITE);
+            Paint_DrawString_EN_SSD1306(0, 0, cpu_loading, &Font12_SSD1306, WHITE, WHITE);
 
             //Mem 
             char mem[20]={0};
             GetMemUsage(mem);
             char mem_str[28]={0};
             sprintf(mem_str,"Disk:%s",mem);
-            Paint_DrawString_EN(0, 24, mem_str, &Font12, WHITE, WHITE);
+            Paint_DrawString_EN_SSD1306(0, 24, mem_str, &Font12_SSD1306, WHITE, WHITE);
             //uptime
             char *uptime_str;
             uptime_str = GetUptime();
             char up_str[28]={0};
             sprintf(up_str,"up:%s",uptime_str);
-            Paint_DrawString_EN(0, 48, up_str, &Font12, WHITE, WHITE);
+            Paint_DrawString_EN_SSD1306(0, 48, up_str, &Font12_SSD1306, WHITE, WHITE);
             free(uptime_str);
         }
         i = i + 1;
         OLED_0in96_display(BlackImage);
         DEV_Delay_ms(2500); 
-        Paint_Clear(BLACK);   
+        Paint_Clear_SSD1306(BLACK);   
     }
     return 0;
 }

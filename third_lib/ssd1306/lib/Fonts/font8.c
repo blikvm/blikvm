@@ -1,10 +1,10 @@
 /**
   ******************************************************************************
-  * @file    Font8.c
+  * @file    Font8_SSD1306.c
   * @author  MCD Application Team
   * @version V1.0.0
   * @date    18-February-2014
-  * @brief   This file provides text Font8 for STM32xx-EVAL's LCD driver. 
+  * @brief   This file provides text Font8_SSD1306 for STM32xx-EVAL's LCD driver. 
   ******************************************************************************
   * @attention
   *
@@ -42,7 +42,7 @@
 //  Font data for Courier New 12pt
 // 
 
-const uint8_t Font8_Table[] = 
+const uint8_t Font8_Table_SSD1306[] = 
 {
 	// @0 ' ' (5 pixels wide)
 	0x00, //      
@@ -995,8 +995,8 @@ const uint8_t Font8_Table[] =
 	0x00, //      
 };
 
-sFONT Font8 = {
-  Font8_Table,
+sFONT Font8_SSD1306 = {
+  Font8_Table_SSD1306,
   5, /* Width */
   8, /* Height */
 };

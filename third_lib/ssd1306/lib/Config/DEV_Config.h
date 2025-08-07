@@ -36,14 +36,14 @@
 #define OLED_DC         25	
 
 
-#define OLED_CS_0      DEV_Digital_Write(OLED_CS,0)
-#define OLED_CS_1      DEV_Digital_Write(OLED_CS,1)
+#define OLED_CS_0      DEV_Digital_Write_SSD1306(OLED_CS,0)
+#define OLED_CS_1      DEV_Digital_Write_SSD1306(OLED_CS,1)
 
-#define OLED_RST_0      DEV_Digital_Write(OLED_RST,0)
-#define OLED_RST_1      DEV_Digital_Write(OLED_RST,1)
+#define OLED_RST_0      DEV_Digital_Write_SSD1306(OLED_RST,0)
+#define OLED_RST_1      DEV_Digital_Write_SSD1306(OLED_RST,1)
 
-#define OLED_DC_0       DEV_Digital_Write(OLED_DC,0)
-#define OLED_DC_1       DEV_Digital_Write(OLED_DC,1)
+#define OLED_DC_0       DEV_Digital_Write_SSD1306(OLED_DC,0)
+#define OLED_DC_1       DEV_Digital_Write_SSD1306(OLED_DC,1)
 
 /*------------------------------------------------------------------------------------------------------*/
 
@@ -51,7 +51,7 @@ UBYTE DEV_ModuleInit(void);
 void  DEV_ModuleExit(void);
 
 void DEV_GPIO_Mode(UWORD Pin, UWORD Mode);
-void DEV_Digital_Write(UWORD Pin, UBYTE Value);
+void DEV_Digital_Write_SSD1306(UWORD Pin, UBYTE Value);
 UBYTE DEV_Digital_Read(UWORD Pin);
 void DEV_Delay_ms(UDOUBLE xms);
 

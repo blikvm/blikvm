@@ -16,7 +16,7 @@ uint32_t fd;
 /*****************************************
                 GPIO
 *****************************************/
-void DEV_Digital_Write(UWORD Pin, UBYTE Value)
+void DEV_Digital_Write_SSD1306(UWORD Pin, UBYTE Value)
 {
     SYSFS_GPIO_Write(Pin, Value);
 }

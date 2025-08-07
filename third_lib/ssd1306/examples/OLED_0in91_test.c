@@ -61,7 +61,7 @@ blikvm_int32_t blikvm_oled_ssd1306_0in91_init()
 			return -1;
 		}
 
-		Paint_NewImage(BlackImage, OLED_0in91_HEIGHT, OLED_0in91_WIDTH, 90, BLACK);	
+		Paint_NewImage_SSD1306(BlackImage, OLED_0in91_HEIGHT, OLED_0in91_WIDTH, 90, BLACK);	
 
 		ret = 0;
 	} while (0>1);
@@ -76,9 +76,9 @@ blikvm_int32_t blikvm_oled_ssd1306_0in91_show(blikvm_int32_t diff)
 		BLILOG_E(TAG,"BlackImage is NULL\n");
 		return -1;
 	}
-	Paint_SelectImage(BlackImage);
+	Paint_SelectImage_SSD1306(BlackImage);
 	// DEV_Delay_ms(500);
-	Paint_Clear(BLACK);
+	Paint_Clear_SSD1306(BLACK);
 	int i=0;
 	while(1) 
 	{
@@ -95,13 +95,13 @@ blikvm_int32_t blikvm_oled_ssd1306_0in91_show(blikvm_int32_t diff)
 			GetIP(ip);
 			char ip_str[128]={0};
 			sprintf(ip_str,"IP:%s",ip);
-			Paint_DrawString_EN(0, 0, ip_str, &Font12, WHITE, WHITE);
+			Paint_DrawString_EN_SSD1306(0, 0, ip_str, &Font12_SSD1306, WHITE, WHITE);
 
 			char* secondIPPtr = blikvm_get_config()->oled.secondIP;
 			if( secondIPPtr != NULL && strlen(secondIPPtr) > 0){
 				char secondIp[20]={0};
 				if(GetSpecificIP(secondIPPtr,secondIp) == 0){
-					Paint_DrawString_EN(20, 16, secondIp, &Font12, WHITE, WHITE);
+					Paint_DrawString_EN_SSD1306(20, 16, secondIp, &Font12_SSD1306, WHITE, WHITE);
 				}
 			}
 		}
@@ -110,7 +110,7 @@ blikvm_int32_t blikvm_oled_ssd1306_0in91_show(blikvm_int32_t diff)
 			// CPU LOAD
 			char cpu_loading[20]={0};
 			sprintf(cpu_loading, "CPU LOAD:%.2f",GetCPULoad());
-			Paint_DrawString_EN(10, 0, cpu_loading, &Font12, WHITE, WHITE);
+			Paint_DrawString_EN_SSD1306(10, 0, cpu_loading, &Font12_SSD1306, WHITE, WHITE);
 
 			//Mem 
 			char mem_str[128]={0};
@@ -120,12 +120,12 @@ blikvm_int32_t blikvm_oled_ssd1306_0in91_show(blikvm_int32_t diff)
 			char mem_temp_str[256] = {0};
             sprintf(mem_temp_str, "%s %s", mem_str, temp);
 
-			Paint_DrawString_EN(10, 16, mem_temp_str, &Font12, WHITE, WHITE);
+			Paint_DrawString_EN_SSD1306(10, 16, mem_temp_str, &Font12_SSD1306, WHITE, WHITE);
 		}
 		i = i + 1;
         OLED_0in91_Display(BlackImage);
         DEV_Delay_ms(2500); 
-        Paint_Clear(BLACK); 		
+        Paint_Clear_SSD1306(BLACK); 		
 	}
 	return 0;
 }

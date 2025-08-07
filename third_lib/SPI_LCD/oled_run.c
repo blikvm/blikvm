@@ -25,7 +25,8 @@
 
 #define TAG "OLED"
 #define LCD LCD_ST7789
-#define ST7789_V4_DC_PIN 260
+#define ST7789_V4_BL_PIN 260
+#define ST7789_V5_PI_DC_PIN 24
 #define SHOW_INTERVAL 5U   //uint:s
 static UWORD *BlackImage = NULL;
 
@@ -40,10 +41,10 @@ blikvm_int32_t oled_240_240_init()
 		// Mango Pi Mcore SPI1 channel: LCD, 0, 1, 40000000, 40,22 , 38
 		// v5 22 13 12
 #ifdef RPI
-		rc = spilcdInit(LCD, 0, 0, 40000000, 22, 13 , 12);
+		rc = spilcdInit(LCD, 0, 0, 40000000, 22, 13 , 18);
 #endif
 #ifdef VER4
-		rc = spilcdInit(LCD, 0, 1, 40000000, 40,22 , 38); // LCD type, flip 180, SPI Channel, D/C, RST, LED
+		rc = spilcdInit(LCD, 0, 1, 40000000, 40,22 , 38); // LCD type, flip 180, SPI Channel, D/C 259, RST, LED 260
 #endif
 
 		if(rc != 0)
@@ -69,7 +70,12 @@ blikvm_int32_t blikvm_backlight_close()
 	blikvm_int32_t ret = -1;
 	do
 	{
-		myPinWrite(ST7789_V4_DC_PIN, 0);
+#ifdef VER4
+		myPinWrite(ST7789_V4_BL_PIN, 0);
+#endif
+#ifdef RPI
+		myPinWrite(ST7789_V5_PI_DC_PIN, 0);
+#endif
 		ret = 0;
 	}while(0>1);
 	return ret;
@@ -80,7 +86,12 @@ blikvm_int32_t blikvm_backlight_open()
 	blikvm_int32_t ret = -1;
 	do
 	{
-		myPinWrite(ST7789_V4_DC_PIN, 1);
+#ifdef VER4
+		myPinWrite(ST7789_V4_BL_PIN, 1);
+#endif
+#ifdef RPI
+		myPinWrite(ST7789_V5_PI_DC_PIN, 1);
+#endif
 		ret = 0;
 	}while(0>1);
 	return ret;

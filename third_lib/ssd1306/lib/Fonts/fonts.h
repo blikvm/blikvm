@@ -82,8 +82,8 @@ typedef struct
 extern sFONT Font24;
 extern sFONT Font20;
 extern sFONT Font16;
-extern sFONT Font12;
-extern sFONT Font8;
+extern sFONT Font12_SSD1306;
+extern sFONT Font8_SSD1306;
 
 extern cFONT Font12CN;
 extern cFONT Font24CN;

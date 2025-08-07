@@ -240,6 +240,7 @@ blikvm_void_t blikvm_oled_open_one_cycle()
 #endif
 #ifdef ST7789
     case OLED_ST7789_240_240:
+        BLILOG_I(TAG, "OLED ST7789 240x240 is being displayed\n");
         oled_240_240_show(oled_config->displayTime);
         break;
 #endif
