@@ -15,44 +15,44 @@
 * V3.2(2020-08-17):
 * 1.Change: Paint_SetScale(UBYTE scale)
 *        Add scale 65K
-* 2.Change: Paint_SetPixel(UWORD Xpoint, UWORD Ypoint, UWORD Color)
+* 2.Change: Paint_SetPixel_SSD1306(UWORD Xpoint, UWORD Ypoint, UWORD Color)
 *        Add the branch for scale 65K
-* 3.Change: Paint_Clear(UWORD Color)
+* 3.Change: Paint_Clear_SSD1306(UWORD Color)
 *        Add the branch for scale 65K
 * -----------------------------------------------------------------------------
 * V3.1(2020-08-14):
 * 1.Change: Paint_SetScale(UBYTE scale)
 *        Add scale 16
-* 2.Change: Paint_SetPixel(UWORD Xpoint, UWORD Ypoint, UWORD Color)
+* 2.Change: Paint_SetPixel_SSD1306(UWORD Xpoint, UWORD Ypoint, UWORD Color)
 *        Add the branch for scale 16
-* 3.Change: Paint_Clear(UWORD Color)
+* 3.Change: Paint_Clear_SSD1306(UWORD Color)
 *        Add the branch for scale 16
 * -----------------------------------------------------------------------------
 * V3.0(2019-04-18):
 * 1.Change: 
-*    Paint_DrawPoint(..., DOT_STYLE DOT_STYLE)
-* => Paint_DrawPoint(..., DOT_STYLE Dot_Style)
-*    Paint_DrawLine(..., LINE_STYLE Line_Style, DOT_PIXEL Dot_Pixel)
-* => Paint_DrawLine(..., DOT_PIXEL Line_width, LINE_STYLE Line_Style)
-*    Paint_DrawRectangle(..., DRAW_FILL Filled, DOT_PIXEL Dot_Pixel)
-* => Paint_DrawRectangle(..., DOT_PIXEL Line_width, DRAW_FILL Draw_Fill)
-*    Paint_DrawCircle(..., DRAW_FILL Draw_Fill, DOT_PIXEL Dot_Pixel)
-* => Paint_DrawCircle(..., DOT_PIXEL Line_width, DRAW_FILL Draw_Filll)
+*    Paint_DrawPoint_SSD1306(..., DOT_STYLE DOT_STYLE)
+* => Paint_DrawPoint_SSD1306(..., DOT_STYLE Dot_Style)
+*    Paint_DrawLine_SSD1306(..., LINE_STYLE Line_Style, DOT_PIXEL Dot_Pixel)
+* => Paint_DrawLine_SSD1306(..., DOT_PIXEL Line_width, LINE_STYLE Line_Style)
+*    Paint_DrawRectangle_SSD1306(..., DRAW_FILL Filled, DOT_PIXEL Dot_Pixel)
+* => Paint_DrawRectangle_SSD1306(..., DOT_PIXEL Line_width, DRAW_FILL Draw_Fill)
+*    Paint_DrawCircle_SSD1306(..., DRAW_FILL Draw_Fill, DOT_PIXEL Dot_Pixel)
+* => Paint_DrawCircle_SSD1306(..., DOT_PIXEL Line_width, DRAW_FILL Draw_Filll)
 *
 * -----------------------------------------------------------------------------
 * V2.0(2018-11-15):
-* 1.add: Paint_NewImage()
+* 1.add: Paint_NewImage_SSD1306()
 *    Create an image's properties
-* 2.add: Paint_SelectImage()
+* 2.add: Paint_SelectImage_SSD1306()
 *    Select the picture to be drawn
-* 3.add: Paint_SetRotate()
+* 3.add: Paint_SetRotate_SSD1306()
 *    Set the direction of the cache    
 * 4.add: Paint_RotateImage() 
 *    Can flip the picture, Support 0-360 degrees, 
 *    but only 90.180.270 rotation is better
-* 4.add: Paint_SetMirroring() 
+* 4.add: Paint_SetMirroring_SSD1306() 
 *    Can Mirroring the picture, horizontal, vertical, origin
-* 5.add: Paint_DrawString_CN() 
+* 5.add: Paint_DrawString_CN_SSD1306() 
 *    Can display Chinese(GB1312)   
 *
 * ----------------------------------------------------------------------------- 
@@ -86,7 +86,7 @@
 #include <string.h> //memset()
 #include <math.h>
 
-PAINT Paint;
+PAINT Paint_SSD1306;
 
 /******************************************************************************
 function: Create Image
@@ -96,30 +96,30 @@ parameter:
     Height  :   The height of the picture
     Color   :   Whether the picture is inverted
 ******************************************************************************/
-void Paint_NewImage(UBYTE *image, UWORD Width, UWORD Height, UWORD Rotate, UWORD Color)
+void Paint_NewImage_SSD1306(UBYTE *image, UWORD Width, UWORD Height, UWORD Rotate, UWORD Color)
 {
-    Paint.Image = NULL;
-    Paint.Image = image;
+    Paint_SSD1306.Image = NULL;
+    Paint_SSD1306.Image = image;
 
-    Paint.WidthMemory = Width;
-    Paint.HeightMemory = Height;
-    Paint.Color = Color;    
-	Paint.Scale = 2;
+    Paint_SSD1306.WidthMemory = Width;
+    Paint_SSD1306.HeightMemory = Height;
+    Paint_SSD1306.Color = Color;    
+	Paint_SSD1306.Scale = 2;
 		
-    Paint.WidthByte = (Width % 8 == 0)? (Width / 8 ): (Width / 8 + 1);
-    Paint.HeightByte = Height;    
-//    printf("WidthByte = %d, HeightByte = %d\r\n", Paint.WidthByte, Paint.HeightByte);
+    Paint_SSD1306.WidthByte = (Width % 8 == 0)? (Width / 8 ): (Width / 8 + 1);
+    Paint_SSD1306.HeightByte = Height;    
+//    printf("WidthByte = %d, HeightByte = %d\r\n", Paint_SSD1306.WidthByte, Paint_SSD1306.HeightByte);
 //    printf(" EPD_WIDTH / 8 = %d\r\n",  122 / 8);
    
-    Paint.Rotate = Rotate;
-    Paint.Mirror = MIRROR_NONE;
+    Paint_SSD1306.Rotate = Rotate;
+    Paint_SSD1306.Mirror = MIRROR_NONE;
     
     if(Rotate == ROTATE_0 || Rotate == ROTATE_180) {
-        Paint.Width = Width;
-        Paint.Height = Height;
+        Paint_SSD1306.Width = Width;
+        Paint_SSD1306.Height = Height;
     } else {
-        Paint.Width = Height;
-        Paint.Height = Width;
+        Paint_SSD1306.Width = Height;
+        Paint_SSD1306.Height = Width;
     }
 }
 
@@ -128,9 +128,9 @@ function: Select Image
 parameter:
     image : Pointer to the image cache
 ******************************************************************************/
-void Paint_SelectImage(UBYTE *image)
+void Paint_SelectImage_SSD1306(UBYTE *image)
 {
-    Paint.Image = image;
+    Paint_SSD1306.Image = image;
 }
 
 /******************************************************************************
@@ -138,11 +138,11 @@ function: Select Image Rotate
 parameter:
     Rotate : 0,90,180,270
 ******************************************************************************/
-void Paint_SetRotate(UWORD Rotate)
+void Paint_SetRotate_SSD1306(UWORD Rotate)
 {
     if(Rotate == ROTATE_0 || Rotate == ROTATE_90 || Rotate == ROTATE_180 || Rotate == ROTATE_270) {
         Debug("Set image Rotate %d\r\n", Rotate);
-        Paint.Rotate = Rotate;
+        Paint_SSD1306.Rotate = Rotate;
     } else {
         Debug("rotate = 0, 90, 180, 270\r\n");
     }
@@ -151,17 +151,17 @@ void Paint_SetRotate(UWORD Rotate)
 void Paint_SetScale(UBYTE scale)
 {
     if(scale == 2){
-        Paint.Scale = scale;
-        Paint.WidthByte = (Paint.WidthMemory % 8 == 0)? (Paint.WidthMemory / 8 ): (Paint.WidthMemory / 8 + 1);
+        Paint_SSD1306.Scale = scale;
+        Paint_SSD1306.WidthByte = (Paint_SSD1306.WidthMemory % 8 == 0)? (Paint_SSD1306.WidthMemory / 8 ): (Paint_SSD1306.WidthMemory / 8 + 1);
     }else if(scale == 4){
-        Paint.Scale = scale;
-        Paint.WidthByte = (Paint.WidthMemory % 4 == 0)? (Paint.WidthMemory / 4 ): (Paint.WidthMemory / 4 + 1);
+        Paint_SSD1306.Scale = scale;
+        Paint_SSD1306.WidthByte = (Paint_SSD1306.WidthMemory % 4 == 0)? (Paint_SSD1306.WidthMemory / 4 ): (Paint_SSD1306.WidthMemory / 4 + 1);
     }else if(scale ==16) {
-        Paint.Scale = scale;
-        Paint.WidthByte = (Paint.WidthMemory%2==0) ? (Paint.WidthMemory/2) : (Paint.WidthMemory/2+1); 
+        Paint_SSD1306.Scale = scale;
+        Paint_SSD1306.WidthByte = (Paint_SSD1306.WidthMemory%2==0) ? (Paint_SSD1306.WidthMemory/2) : (Paint_SSD1306.WidthMemory/2+1); 
     }else if(scale ==65) {
-        Paint.Scale = scale;
-        Paint.WidthByte = Paint.WidthMemory*2; 
+        Paint_SSD1306.Scale = scale;
+        Paint_SSD1306.WidthByte = Paint_SSD1306.WidthMemory*2; 
     }else{
         Debug("Set Scale Input parameter error\r\n");
         Debug("Scale Only support: 2 4 16 65\r\n");
@@ -172,12 +172,12 @@ function:	Select Image mirror
 parameter:
     mirror   :Not mirror,Horizontal mirror,Vertical mirror,Origin mirror
 ******************************************************************************/
-void Paint_SetMirroring(UBYTE mirror)
+void Paint_SetMirroring_SSD1306(UBYTE mirror)
 {
     if(mirror == MIRROR_NONE || mirror == MIRROR_HORIZONTAL || 
         mirror == MIRROR_VERTICAL || mirror == MIRROR_ORIGIN) {
         Debug("mirror image x:%s, y:%s\r\n",(mirror & 0x01)? "mirror":"none", ((mirror >> 1) & 0x01)? "mirror":"none");
-        Paint.Mirror = mirror;
+        Paint_SSD1306.Mirror = mirror;
     } else {
         Debug("mirror should be MIRROR_NONE, MIRROR_HORIZONTAL, \
         MIRROR_VERTICAL or MIRROR_ORIGIN\r\n");
@@ -191,81 +191,81 @@ parameter:
     Ypoint : At point Y
     Color  : Painted colors
 ******************************************************************************/
-void Paint_SetPixel(UWORD Xpoint, UWORD Ypoint, UWORD Color)
+void Paint_SetPixel_SSD1306(UWORD Xpoint, UWORD Ypoint, UWORD Color)
 {
-    if(Xpoint > Paint.Width || Ypoint > Paint.Height){
+    if(Xpoint > Paint_SSD1306.Width || Ypoint > Paint_SSD1306.Height){
         Debug("Exceeding display boundaries\r\n");
         return;
     }      
     UWORD X, Y;
 
-    switch(Paint.Rotate) {
+    switch(Paint_SSD1306.Rotate) {
     case 0:
         X = Xpoint;
         Y = Ypoint;  
         break;
     case 90:
-        X = Paint.WidthMemory - Ypoint - 1;
+        X = Paint_SSD1306.WidthMemory - Ypoint - 1;
         Y = Xpoint;
         break;
     case 180:
-        X = Paint.WidthMemory - Xpoint - 1;
-        Y = Paint.HeightMemory - Ypoint - 1;
+        X = Paint_SSD1306.WidthMemory - Xpoint - 1;
+        Y = Paint_SSD1306.HeightMemory - Ypoint - 1;
         break;
     case 270:
         X = Ypoint;
-        Y = Paint.HeightMemory - Xpoint - 1;
+        Y = Paint_SSD1306.HeightMemory - Xpoint - 1;
         break;
     default:
         return;
     }
     
-    switch(Paint.Mirror) {
+    switch(Paint_SSD1306.Mirror) {
     case MIRROR_NONE:
         break;
     case MIRROR_HORIZONTAL:
-        X = Paint.WidthMemory - X - 1;
+        X = Paint_SSD1306.WidthMemory - X - 1;
         break;
     case MIRROR_VERTICAL:
-        Y = Paint.HeightMemory - Y - 1;
+        Y = Paint_SSD1306.HeightMemory - Y - 1;
         break;
     case MIRROR_ORIGIN:
-        X = Paint.WidthMemory - X - 1;
-        Y = Paint.HeightMemory - Y - 1;
+        X = Paint_SSD1306.WidthMemory - X - 1;
+        Y = Paint_SSD1306.HeightMemory - Y - 1;
         break;
     default:
         return;
     }
 
-    if(X > Paint.WidthMemory || Y > Paint.HeightMemory){
+    if(X > Paint_SSD1306.WidthMemory || Y > Paint_SSD1306.HeightMemory){
         Debug("Exceeding display boundaries\r\n");
         return;
     }
     
-    if(Paint.Scale == 2){
-        UDOUBLE Addr = X / 8 + Y * Paint.WidthByte;
-        UBYTE Rdata = Paint.Image[Addr];
+    if(Paint_SSD1306.Scale == 2){
+        UDOUBLE Addr = X / 8 + Y * Paint_SSD1306.WidthByte;
+        UBYTE Rdata = Paint_SSD1306.Image[Addr];
         if(Color == BLACK)
-            Paint.Image[Addr] = Rdata & ~(0x80 >> (X % 8));
+            Paint_SSD1306.Image[Addr] = Rdata & ~(0x80 >> (X % 8));
         else
-            Paint.Image[Addr] = Rdata | (0x80 >> (X % 8));
-    }else if(Paint.Scale == 4){
-        UDOUBLE Addr = X / 4 + Y * Paint.WidthByte;
+            Paint_SSD1306.Image[Addr] = Rdata | (0x80 >> (X % 8));
+    }else if(Paint_SSD1306.Scale == 4){
+        UDOUBLE Addr = X / 4 + Y * Paint_SSD1306.WidthByte;
         Color = Color % 4;//Guaranteed color scale is 4  --- 0~3
-        UBYTE Rdata = Paint.Image[Addr];
+        UBYTE Rdata = Paint_SSD1306.Image[Addr];
         
         Rdata = Rdata & (~(0xC0 >> ((X % 4)*2)));
-        Paint.Image[Addr] = Rdata | ((Color << 6) >> ((X % 4)*2));
-    }else if(Paint.Scale == 16) {
-        UDOUBLE Addr = X / 2 + Y * Paint.WidthByte;
-        UBYTE Rdata = Paint.Image[Addr];
+        Paint_SSD1306.Image[Addr] = Rdata | ((Color << 6) >> ((X % 4)*2));
+    }else if(Paint_SSD1306.Scale == 16) {
+        UDOUBLE Addr = X / 2 + Y * Paint_SSD1306.WidthByte;
+        UBYTE Rdata = Paint_SSD1306.Image[Addr];
         Color = Color % 16;
         Rdata = Rdata & (~(0xf0 >> ((X % 2)*4)));
-        Paint.Image[Addr] = Rdata | ((Color << 4) >> ((X % 2)*4));
-    }else if(Paint.Scale == 65) {
-        UDOUBLE Addr = X*2 + Y*Paint.WidthByte;
-        Paint.Image[Addr] = 0xff & (Color>>8);
-        Paint.Image[Addr+1] = 0xff & Color;
+        Paint_SSD1306.Image[Addr] = Rdata | ((Color << 4) >> ((X % 2)*4));
+    }else if(Paint_SSD1306.Scale == 65) {
+        UDOUBLE Addr = X*2 + Y*Paint_SSD1306.WidthByte;
+        Paint_SSD1306.Image[Addr] = 0xff & (Color>>8);
+        Paint_SSD1306.Image[Addr+1] = 0xff & Color;
     }
 
 }
@@ -275,29 +275,29 @@ function: Clear the color of the picture
 parameter:
     Color : Painted colors
 ******************************************************************************/
-void Paint_Clear(UWORD Color)
+void Paint_Clear_SSD1306(UWORD Color)
 {
-    if(Paint.Scale == 2 || Paint.Scale == 4) {
-        for (UWORD Y = 0; Y < Paint.HeightByte; Y++) {
-            for (UWORD X = 0; X < Paint.WidthByte; X++ ) {//8 pixel =  1 byte
-                UDOUBLE Addr = X + Y*Paint.WidthByte;
-                Paint.Image[Addr] = Color;
+    if(Paint_SSD1306.Scale == 2 || Paint_SSD1306.Scale == 4) {
+        for (UWORD Y = 0; Y < Paint_SSD1306.HeightByte; Y++) {
+            for (UWORD X = 0; X < Paint_SSD1306.WidthByte; X++ ) {//8 pixel =  1 byte
+                UDOUBLE Addr = X + Y*Paint_SSD1306.WidthByte;
+                Paint_SSD1306.Image[Addr] = Color;
             }
         }
-    }else if(Paint.Scale == 16) {
-        for (UWORD Y = 0; Y < Paint.HeightByte; Y++) {
-            for (UWORD X = 0; X < Paint.WidthByte; X++ ) {//8 pixel =  1 byte
-                UDOUBLE Addr = X + Y*Paint.WidthByte;
+    }else if(Paint_SSD1306.Scale == 16) {
+        for (UWORD Y = 0; Y < Paint_SSD1306.HeightByte; Y++) {
+            for (UWORD X = 0; X < Paint_SSD1306.WidthByte; X++ ) {//8 pixel =  1 byte
+                UDOUBLE Addr = X + Y*Paint_SSD1306.WidthByte;
                 Color = Color & 0x0f;
-                Paint.Image[Addr] = (Color<<4) | Color;
+                Paint_SSD1306.Image[Addr] = (Color<<4) | Color;
             }
         }
-    }else if(Paint.Scale == 65) {
-        for (UWORD Y = 0; Y < Paint.HeightByte; Y++) {
-            for (UWORD X = 0; X < Paint.WidthByte; X++ ) {//8 pixel =  1 byte
-                UDOUBLE Addr = X*2 + Y*Paint.WidthByte;
-                Paint.Image[Addr] = 0x0f & (Color>>8);
-                Paint.Image[Addr+1] = 0x0f & Color;
+    }else if(Paint_SSD1306.Scale == 65) {
+        for (UWORD Y = 0; Y < Paint_SSD1306.HeightByte; Y++) {
+            for (UWORD X = 0; X < Paint_SSD1306.WidthByte; X++ ) {//8 pixel =  1 byte
+                UDOUBLE Addr = X*2 + Y*Paint_SSD1306.WidthByte;
+                Paint_SSD1306.Image[Addr] = 0x0f & (Color>>8);
+                Paint_SSD1306.Image[Addr+1] = 0x0f & Color;
             }
         }
     }
@@ -317,7 +317,7 @@ void Paint_ClearWindows(UWORD Xstart, UWORD Ystart, UWORD Xend, UWORD Yend, UWOR
     UWORD X, Y;
     for (Y = Ystart; Y < Yend; Y++) {
         for (X = Xstart; X < Xend; X++) {//8 pixel =  1 byte
-            Paint_SetPixel(X, Y, Color);
+            Paint_SetPixel_SSD1306(X, Y, Color);
         }
     }
 }
@@ -331,13 +331,13 @@ parameter:
     Dot_Pixel	: point size
     Dot_Style	: point Style
 ******************************************************************************/
-void Paint_DrawPoint(UWORD Xpoint, UWORD Ypoint, UWORD Color,
+void Paint_DrawPoint_SSD1306(UWORD Xpoint, UWORD Ypoint, UWORD Color,
                      DOT_PIXEL Dot_Pixel, DOT_STYLE Dot_Style)
 {
-    if (Xpoint > Paint.Width || Ypoint > Paint.Height) {
-        Debug("Paint_DrawPoint Input exceeds the normal display range\r\n");
-				printf("Xpoint = %d , Paint.Width = %d  \r\n ",Xpoint,Paint.Width);
-				printf("Ypoint = %d , Paint.Height = %d  \r\n ",Ypoint,Paint.Height);
+    if (Xpoint > Paint_SSD1306.Width || Ypoint > Paint_SSD1306.Height) {
+        Debug("Paint_DrawPoint_SSD1306 Input exceeds the normal display range\r\n");
+				printf("Xpoint = %d , Paint_SSD1306.Width = %d  \r\n ",Xpoint,Paint_SSD1306.Width);
+				printf("Ypoint = %d , Paint_SSD1306.Height = %d  \r\n ",Ypoint,Paint_SSD1306.Height);
         return;
     }
 
@@ -348,13 +348,13 @@ void Paint_DrawPoint(UWORD Xpoint, UWORD Ypoint, UWORD Color,
                 if(Xpoint + XDir_Num - Dot_Pixel < 0 || Ypoint + YDir_Num - Dot_Pixel < 0)
                     break;
                 // printf("x = %d, y = %d\r\n", Xpoint + XDir_Num - Dot_Pixel, Ypoint + YDir_Num - Dot_Pixel);
-                Paint_SetPixel(Xpoint + XDir_Num - Dot_Pixel, Ypoint + YDir_Num - Dot_Pixel, Color);
+                Paint_SetPixel_SSD1306(Xpoint + XDir_Num - Dot_Pixel, Ypoint + YDir_Num - Dot_Pixel, Color);
             }
         }
     } else {
         for (XDir_Num = 0; XDir_Num <  Dot_Pixel; XDir_Num++) {
             for (YDir_Num = 0; YDir_Num <  Dot_Pixel; YDir_Num++) {
-                Paint_SetPixel(Xpoint + XDir_Num - 1, Ypoint + YDir_Num - 1, Color);
+                Paint_SetPixel_SSD1306(Xpoint + XDir_Num - 1, Ypoint + YDir_Num - 1, Color);
             }
         }
     }
@@ -371,12 +371,12 @@ parameter:
     Line_width : Line width
     Line_Style: Solid and dotted lines
 ******************************************************************************/
-void Paint_DrawLine(UWORD Xstart, UWORD Ystart, UWORD Xend, UWORD Yend,
+void Paint_DrawLine_SSD1306(UWORD Xstart, UWORD Ystart, UWORD Xend, UWORD Yend,
                     UWORD Color, DOT_PIXEL Line_width, LINE_STYLE Line_Style)
 {
-    if (Xstart > Paint.Width || Ystart > Paint.Height ||
-        Xend > Paint.Width || Yend > Paint.Height) {
-        Debug("Paint_DrawLine Input exceeds the normal display range\r\n");
+    if (Xstart > Paint_SSD1306.Width || Ystart > Paint_SSD1306.Height ||
+        Xend > Paint_SSD1306.Width || Yend > Paint_SSD1306.Height) {
+        Debug("Paint_DrawLine_SSD1306 Input exceeds the normal display range\r\n");
         return;
     }
 
@@ -399,12 +399,12 @@ void Paint_DrawLine(UWORD Xstart, UWORD Ystart, UWORD Xend, UWORD Yend,
         if (Line_Style == LINE_STYLE_DOTTED && Dotted_Len % 3 == 0) {
             //Debug("LINE_DOTTED\r\n");
 						if(Color)
-							Paint_DrawPoint(Xpoint, Ypoint, BLACK, Line_width, DOT_STYLE_DFT);
+							Paint_DrawPoint_SSD1306(Xpoint, Ypoint, BLACK, Line_width, DOT_STYLE_DFT);
             else
-							Paint_DrawPoint(Xpoint, Ypoint, WHITE, Line_width, DOT_STYLE_DFT);
+							Paint_DrawPoint_SSD1306(Xpoint, Ypoint, WHITE, Line_width, DOT_STYLE_DFT);
             Dotted_Len = 0;
         } else {
-            Paint_DrawPoint(Xpoint, Ypoint, Color, Line_width, DOT_STYLE_DFT);
+            Paint_DrawPoint_SSD1306(Xpoint, Ypoint, Color, Line_width, DOT_STYLE_DFT);
         }
         if (2 * Esp >= dy) {
             if (Xpoint == Xend)
@@ -432,11 +432,11 @@ parameter:
     Line_width: Line width
     Draw_Fill : Whether to fill the inside of the rectangle
 ******************************************************************************/
-void Paint_DrawRectangle(UWORD Xstart, UWORD Ystart, UWORD Xend, UWORD Yend,
+void Paint_DrawRectangle_SSD1306(UWORD Xstart, UWORD Ystart, UWORD Xend, UWORD Yend,
                          UWORD Color, DOT_PIXEL Line_width, DRAW_FILL Draw_Fill)
 {
-    if (Xstart > Paint.Width || Ystart > Paint.Height ||
-        Xend > Paint.Width || Yend > Paint.Height) {
+    if (Xstart > Paint_SSD1306.Width || Ystart > Paint_SSD1306.Height ||
+        Xend > Paint_SSD1306.Width || Yend > Paint_SSD1306.Height) {
         Debug("Input exceeds the normal display range\r\n");
         return;
     }
@@ -444,13 +444,13 @@ void Paint_DrawRectangle(UWORD Xstart, UWORD Ystart, UWORD Xend, UWORD Yend,
     if (Draw_Fill) {
         UWORD Ypoint;
         for(Ypoint = Ystart; Ypoint < Yend; Ypoint++) {
-            Paint_DrawLine(Xstart, Ypoint, Xend, Ypoint, Color , Line_width, LINE_STYLE_SOLID);
+            Paint_DrawLine_SSD1306(Xstart, Ypoint, Xend, Ypoint, Color , Line_width, LINE_STYLE_SOLID);
         }
     } else {
-        Paint_DrawLine(Xstart, Ystart, Xend, Ystart, Color, Line_width, LINE_STYLE_SOLID);
-        Paint_DrawLine(Xstart, Ystart, Xstart, Yend, Color, Line_width, LINE_STYLE_SOLID);
-        Paint_DrawLine(Xend, Yend, Xend, Ystart, Color, Line_width, LINE_STYLE_SOLID);
-        Paint_DrawLine(Xend, Yend, Xstart, Yend, Color, Line_width, LINE_STYLE_SOLID);
+        Paint_DrawLine_SSD1306(Xstart, Ystart, Xend, Ystart, Color, Line_width, LINE_STYLE_SOLID);
+        Paint_DrawLine_SSD1306(Xstart, Ystart, Xstart, Yend, Color, Line_width, LINE_STYLE_SOLID);
+        Paint_DrawLine_SSD1306(Xend, Yend, Xend, Ystart, Color, Line_width, LINE_STYLE_SOLID);
+        Paint_DrawLine_SSD1306(Xend, Yend, Xstart, Yend, Color, Line_width, LINE_STYLE_SOLID);
     }
 }
 
@@ -465,11 +465,11 @@ parameter:
     Line_width: Line width
     Draw_Fill : Whether to fill the inside of the Circle
 ******************************************************************************/
-void Paint_DrawCircle(UWORD X_Center, UWORD Y_Center, UWORD Radius,
+void Paint_DrawCircle_SSD1306(UWORD X_Center, UWORD Y_Center, UWORD Radius,
                       UWORD Color, DOT_PIXEL Line_width, DRAW_FILL Draw_Fill)
 {
-    if (X_Center > Paint.Width || Y_Center >= Paint.Height) {
-        Debug("Paint_DrawCircle Input exceeds the normal display range\r\n");
+    if (X_Center > Paint_SSD1306.Width || Y_Center >= Paint_SSD1306.Height) {
+        Debug("Paint_DrawCircle_SSD1306 Input exceeds the normal display range\r\n");
         return;
     }
 
@@ -485,14 +485,14 @@ void Paint_DrawCircle(UWORD X_Center, UWORD Y_Center, UWORD Radius,
     if (Draw_Fill == DRAW_FILL_FULL) {
         while (XCurrent <= YCurrent ) { //Realistic circles
             for (sCountY = XCurrent; sCountY <= YCurrent; sCountY ++ ) {
-                Paint_DrawPoint(X_Center + XCurrent, Y_Center + sCountY, Color, DOT_PIXEL_DFT, DOT_STYLE_DFT);//1
-                Paint_DrawPoint(X_Center - XCurrent, Y_Center + sCountY, Color, DOT_PIXEL_DFT, DOT_STYLE_DFT);//2
-                Paint_DrawPoint(X_Center - sCountY, Y_Center + XCurrent, Color, DOT_PIXEL_DFT, DOT_STYLE_DFT);//3
-                Paint_DrawPoint(X_Center - sCountY, Y_Center - XCurrent, Color, DOT_PIXEL_DFT, DOT_STYLE_DFT);//4
-                Paint_DrawPoint(X_Center - XCurrent, Y_Center - sCountY, Color, DOT_PIXEL_DFT, DOT_STYLE_DFT);//5
-                Paint_DrawPoint(X_Center + XCurrent, Y_Center - sCountY, Color, DOT_PIXEL_DFT, DOT_STYLE_DFT);//6
-                Paint_DrawPoint(X_Center + sCountY, Y_Center - XCurrent, Color, DOT_PIXEL_DFT, DOT_STYLE_DFT);//7
-                Paint_DrawPoint(X_Center + sCountY, Y_Center + XCurrent, Color, DOT_PIXEL_DFT, DOT_STYLE_DFT);
+                Paint_DrawPoint_SSD1306(X_Center + XCurrent, Y_Center + sCountY, Color, DOT_PIXEL_DFT, DOT_STYLE_DFT);//1
+                Paint_DrawPoint_SSD1306(X_Center - XCurrent, Y_Center + sCountY, Color, DOT_PIXEL_DFT, DOT_STYLE_DFT);//2
+                Paint_DrawPoint_SSD1306(X_Center - sCountY, Y_Center + XCurrent, Color, DOT_PIXEL_DFT, DOT_STYLE_DFT);//3
+                Paint_DrawPoint_SSD1306(X_Center - sCountY, Y_Center - XCurrent, Color, DOT_PIXEL_DFT, DOT_STYLE_DFT);//4
+                Paint_DrawPoint_SSD1306(X_Center - XCurrent, Y_Center - sCountY, Color, DOT_PIXEL_DFT, DOT_STYLE_DFT);//5
+                Paint_DrawPoint_SSD1306(X_Center + XCurrent, Y_Center - sCountY, Color, DOT_PIXEL_DFT, DOT_STYLE_DFT);//6
+                Paint_DrawPoint_SSD1306(X_Center + sCountY, Y_Center - XCurrent, Color, DOT_PIXEL_DFT, DOT_STYLE_DFT);//7
+                Paint_DrawPoint_SSD1306(X_Center + sCountY, Y_Center + XCurrent, Color, DOT_PIXEL_DFT, DOT_STYLE_DFT);
             }
             if (Esp < 0 )
                 Esp += 4 * XCurrent + 6;
@@ -504,14 +504,14 @@ void Paint_DrawCircle(UWORD X_Center, UWORD Y_Center, UWORD Radius,
         }
     } else { //Draw a hollow circle
         while (XCurrent <= YCurrent ) {
-            Paint_DrawPoint(X_Center + XCurrent, Y_Center + YCurrent, Color, Line_width, DOT_STYLE_DFT);//1
-            Paint_DrawPoint(X_Center - XCurrent, Y_Center + YCurrent, Color, Line_width, DOT_STYLE_DFT);//2
-            Paint_DrawPoint(X_Center - YCurrent, Y_Center + XCurrent, Color, Line_width, DOT_STYLE_DFT);//3
-            Paint_DrawPoint(X_Center - YCurrent, Y_Center - XCurrent, Color, Line_width, DOT_STYLE_DFT);//4
-            Paint_DrawPoint(X_Center - XCurrent, Y_Center - YCurrent, Color, Line_width, DOT_STYLE_DFT);//5
-            Paint_DrawPoint(X_Center + XCurrent, Y_Center - YCurrent, Color, Line_width, DOT_STYLE_DFT);//6
-            Paint_DrawPoint(X_Center + YCurrent, Y_Center - XCurrent, Color, Line_width, DOT_STYLE_DFT);//7
-            Paint_DrawPoint(X_Center + YCurrent, Y_Center + XCurrent, Color, Line_width, DOT_STYLE_DFT);//0
+            Paint_DrawPoint_SSD1306(X_Center + XCurrent, Y_Center + YCurrent, Color, Line_width, DOT_STYLE_DFT);//1
+            Paint_DrawPoint_SSD1306(X_Center - XCurrent, Y_Center + YCurrent, Color, Line_width, DOT_STYLE_DFT);//2
+            Paint_DrawPoint_SSD1306(X_Center - YCurrent, Y_Center + XCurrent, Color, Line_width, DOT_STYLE_DFT);//3
+            Paint_DrawPoint_SSD1306(X_Center - YCurrent, Y_Center - XCurrent, Color, Line_width, DOT_STYLE_DFT);//4
+            Paint_DrawPoint_SSD1306(X_Center - XCurrent, Y_Center - YCurrent, Color, Line_width, DOT_STYLE_DFT);//5
+            Paint_DrawPoint_SSD1306(X_Center + XCurrent, Y_Center - YCurrent, Color, Line_width, DOT_STYLE_DFT);//6
+            Paint_DrawPoint_SSD1306(X_Center + YCurrent, Y_Center - XCurrent, Color, Line_width, DOT_STYLE_DFT);//7
+            Paint_DrawPoint_SSD1306(X_Center + YCurrent, Y_Center + XCurrent, Color, Line_width, DOT_STYLE_DFT);//0
 
             if (Esp < 0 )
                 Esp += 4 * XCurrent + 6;
@@ -534,13 +534,13 @@ parameter:
     Color_Foreground : Select the foreground color
     Color_Background : Select the background color
 ******************************************************************************/
-void Paint_DrawChar(UWORD Xpoint, UWORD Ypoint, const char Acsii_Char,
+void Paint_DrawChar_SSD1306(UWORD Xpoint, UWORD Ypoint, const char Acsii_Char,
                     sFONT* Font, UWORD Color_Foreground, UWORD Color_Background)
 {
     UWORD Page, Column;
 
-    if (Xpoint > Paint.Width || Ypoint > Paint.Height) {
-        Debug("Paint_DrawChar Input exceeds the normal display range\r\n");
+    if (Xpoint > Paint_SSD1306.Width || Ypoint > Paint_SSD1306.Height) {
+        Debug("Paint_DrawChar_SSD1306 Input exceeds the normal display range\r\n");
         return;
     }
 
@@ -553,15 +553,15 @@ void Paint_DrawChar(UWORD Xpoint, UWORD Ypoint, const char Acsii_Char,
             //To determine whether the font background color and screen background color is consistent
             if (FONT_BACKGROUND == Color_Background) { //this process is to speed up the scan
                 if (*ptr & (0x80 >> (Column % 8)))
-                    Paint_SetPixel(Xpoint + Column, Ypoint + Page, Color_Foreground);
-                    // Paint_DrawPoint(Xpoint + Column, Ypoint + Page, Color_Foreground, DOT_PIXEL_DFT, DOT_STYLE_DFT);
+                    Paint_SetPixel_SSD1306(Xpoint + Column, Ypoint + Page, Color_Foreground);
+                    // Paint_DrawPoint_SSD1306(Xpoint + Column, Ypoint + Page, Color_Foreground, DOT_PIXEL_DFT, DOT_STYLE_DFT);
             } else {
                 if (*ptr & (0x80 >> (Column % 8))) {
-                    Paint_SetPixel(Xpoint + Column, Ypoint + Page, Color_Foreground);
-                    // Paint_DrawPoint(Xpoint + Column, Ypoint + Page, Color_Foreground, DOT_PIXEL_DFT, DOT_STYLE_DFT);
+                    Paint_SetPixel_SSD1306(Xpoint + Column, Ypoint + Page, Color_Foreground);
+                    // Paint_DrawPoint_SSD1306(Xpoint + Column, Ypoint + Page, Color_Foreground, DOT_PIXEL_DFT, DOT_STYLE_DFT);
                 } else {
-                    Paint_SetPixel(Xpoint + Column, Ypoint + Page, Color_Background);
-                    // Paint_DrawPoint(Xpoint + Column, Ypoint + Page, Color_Background, DOT_PIXEL_DFT, DOT_STYLE_DFT);
+                    Paint_SetPixel_SSD1306(Xpoint + Column, Ypoint + Page, Color_Background);
+                    // Paint_DrawPoint_SSD1306(Xpoint + Column, Ypoint + Page, Color_Background, DOT_PIXEL_DFT, DOT_STYLE_DFT);
                 }
             }
             //One pixel is 8 bits
@@ -583,30 +583,30 @@ parameter:
     Color_Foreground : Select the foreground color
     Color_Background : Select the background color
 ******************************************************************************/
-void Paint_DrawString_EN(UWORD Xstart, UWORD Ystart, const char * pString,
+void Paint_DrawString_EN_SSD1306(UWORD Xstart, UWORD Ystart, const char * pString,
                          sFONT* Font, UWORD Color_Foreground, UWORD Color_Background)
 {
     UWORD Xpoint = Xstart;
     UWORD Ypoint = Ystart;
 
-    if (Xstart > Paint.Width || Ystart > Paint.Height) {
-        Debug("Paint_DrawString_EN Input exceeds the normal display range\r\n");
+    if (Xstart > Paint_SSD1306.Width || Ystart > Paint_SSD1306.Height) {
+        Debug("Paint_DrawString_EN_SSD1306 Input exceeds the normal display range\r\n");
         return;
     }
 
     while (* pString != '\0') {
         //if X direction filled , reposition to(Xstart,Ypoint),Ypoint is Y direction plus the Height of the character
-        if ((Xpoint + Font->Width ) > Paint.Width ) {
+        if ((Xpoint + Font->Width ) > Paint_SSD1306.Width ) {
             Xpoint = Xstart;
             Ypoint += Font->Height;
         }
 
         // If the Y direction is full, reposition to(Xstart, Ystart)
-        if ((Ypoint  + Font->Height ) > Paint.Height ) {
+        if ((Ypoint  + Font->Height ) > Paint_SSD1306.Height ) {
             Xpoint = Xstart;
             Ypoint = Ystart;
         }
-        Paint_DrawChar(Xpoint, Ypoint, * pString, Font, Color_Background, Color_Foreground);
+        Paint_DrawChar_SSD1306(Xpoint, Ypoint, * pString, Font, Color_Background, Color_Foreground);
 
         //The next character of the address
         pString ++;
@@ -628,7 +628,7 @@ parameter:
     Color_Foreground : Select the foreground color
     Color_Background : Select the background color
 ******************************************************************************/
-void Paint_DrawString_CN(UWORD Xstart, UWORD Ystart, const char * pString, cFONT* font,
+void Paint_DrawString_CN_SSD1306(UWORD Xstart, UWORD Ystart, const char * pString, cFONT* font,
                         UWORD Color_Foreground, UWORD Color_Background)
 {
     const char* p_text = pString;
@@ -646,16 +646,16 @@ void Paint_DrawString_CN(UWORD Xstart, UWORD Ystart, const char * pString, cFONT
                         for (i = 0; i < font->Width; i++) {
                             if (FONT_BACKGROUND == Color_Background) { //this process is to speed up the scan
                                 if (*ptr & (0x80 >> (i % 8))) {
-                                    Paint_SetPixel(x + i, y + j, Color_Foreground);
-                                    // Paint_DrawPoint(x + i, y + j, Color_Foreground, DOT_PIXEL_DFT, DOT_STYLE_DFT);
+                                    Paint_SetPixel_SSD1306(x + i, y + j, Color_Foreground);
+                                    // Paint_DrawPoint_SSD1306(x + i, y + j, Color_Foreground, DOT_PIXEL_DFT, DOT_STYLE_DFT);
                                 }
                             } else {
                                 if (*ptr & (0x80 >> (i % 8))) {
-                                    Paint_SetPixel(x + i, y + j, Color_Foreground);
-                                    // Paint_DrawPoint(x + i, y + j, Color_Foreground, DOT_PIXEL_DFT, DOT_STYLE_DFT);
+                                    Paint_SetPixel_SSD1306(x + i, y + j, Color_Foreground);
+                                    // Paint_DrawPoint_SSD1306(x + i, y + j, Color_Foreground, DOT_PIXEL_DFT, DOT_STYLE_DFT);
                                 } else {
-                                    Paint_SetPixel(x + i, y + j, Color_Background);
-                                    // Paint_DrawPoint(x + i, y + j, Color_Background, DOT_PIXEL_DFT, DOT_STYLE_DFT);
+                                    Paint_SetPixel_SSD1306(x + i, y + j, Color_Background);
+                                    // Paint_DrawPoint_SSD1306(x + i, y + j, Color_Background, DOT_PIXEL_DFT, DOT_STYLE_DFT);
                                 }
                             }
                             if (i % 8 == 7) {
@@ -682,16 +682,16 @@ void Paint_DrawString_CN(UWORD Xstart, UWORD Ystart, const char * pString, cFONT
                         for (i = 0; i < font->Width; i++) {
                             if (FONT_BACKGROUND == Color_Background) { //this process is to speed up the scan
                                 if (*ptr & (0x80 >> (i % 8))) {
-                                    Paint_SetPixel(x + i, y + j, Color_Foreground);
-                                    // Paint_DrawPoint(x + i, y + j, Color_Foreground, DOT_PIXEL_DFT, DOT_STYLE_DFT);
+                                    Paint_SetPixel_SSD1306(x + i, y + j, Color_Foreground);
+                                    // Paint_DrawPoint_SSD1306(x + i, y + j, Color_Foreground, DOT_PIXEL_DFT, DOT_STYLE_DFT);
                                 }
                             } else {
                                 if (*ptr & (0x80 >> (i % 8))) {
-                                    Paint_SetPixel(x + i, y + j, Color_Foreground);
-                                    // Paint_DrawPoint(x + i, y + j, Color_Foreground, DOT_PIXEL_DFT, DOT_STYLE_DFT);
+                                    Paint_SetPixel_SSD1306(x + i, y + j, Color_Foreground);
+                                    // Paint_DrawPoint_SSD1306(x + i, y + j, Color_Foreground, DOT_PIXEL_DFT, DOT_STYLE_DFT);
                                 } else {
-                                    Paint_SetPixel(x + i, y + j, Color_Background);
-                                    // Paint_DrawPoint(x + i, y + j, Color_Background, DOT_PIXEL_DFT, DOT_STYLE_DFT);
+                                    Paint_SetPixel_SSD1306(x + i, y + j, Color_Background);
+                                    // Paint_DrawPoint_SSD1306(x + i, y + j, Color_Background, DOT_PIXEL_DFT, DOT_STYLE_DFT);
                                 }
                             }
                             if (i % 8 == 7) {
@@ -725,7 +725,7 @@ parameter:
     Color_Background : Select the background color
 ******************************************************************************/
 #define  ARRAY_LEN 255
-void Paint_DrawNum(UWORD Xpoint, UWORD Ypoint, double Nummber,
+void Paint_DrawNum_SSD1306(UWORD Xpoint, UWORD Ypoint, double Nummber,
                    sFONT* Font, UWORD Digit,UWORD Color_Foreground, UWORD Color_Background)
 {
     int16_t Num_Bit = 0, Str_Bit = 0;
@@ -734,7 +734,7 @@ void Paint_DrawNum(UWORD Xpoint, UWORD Ypoint, double Nummber,
 	int temp = Nummber;
 	float decimals;
 	uint8_t i;
-    if (Xpoint > Paint.Width || Ypoint > Paint.Height) {
+    if (Xpoint > Paint_SSD1306.Width || Ypoint > Paint_SSD1306.Height) {
         Debug("Paint_DisNum Input exceeds the normal display range\r\n");
         return;
     }
@@ -771,7 +771,7 @@ void Paint_DrawNum(UWORD Xpoint, UWORD Ypoint, double Nummber,
     }
 
     //show
-    Paint_DrawString_EN(Xpoint, Ypoint, (const char*)pStr, Font, Color_Background, Color_Foreground);
+    Paint_DrawString_EN_SSD1306(Xpoint, Ypoint, (const char*)pStr, Font, Color_Background, Color_Foreground);
 }
 
 /******************************************************************************
@@ -784,7 +784,7 @@ parameter:
     Color_Foreground : Select the foreground color
     Color_Background : Select the background color
 ******************************************************************************/
-void Paint_DrawTime(UWORD Xstart, UWORD Ystart, PAINT_TIME *pTime, sFONT* Font,
+void Paint_DrawTime_SSD1306(UWORD Xstart, UWORD Ystart, PAINT_TIME *pTime, sFONT* Font,
                     UWORD Color_Foreground, UWORD Color_Background)
 {
     uint8_t value[10] = {'0', '1', '2', '3', '4', '5', '6', '7', '8', '9'};
@@ -792,14 +792,14 @@ void Paint_DrawTime(UWORD Xstart, UWORD Ystart, PAINT_TIME *pTime, sFONT* Font,
     UWORD Dx = Font->Width;
 
     //Write data into the cache
-    Paint_DrawChar(Xstart                           , Ystart, value[pTime->Hour / 10], Font, Color_Background, Color_Foreground);
-    Paint_DrawChar(Xstart + Dx                      , Ystart, value[pTime->Hour % 10], Font, Color_Background, Color_Foreground);
-    Paint_DrawChar(Xstart + Dx  + Dx / 4 + Dx / 2   , Ystart, ':'                    , Font, Color_Background, Color_Foreground);
-    Paint_DrawChar(Xstart + Dx * 2 + Dx / 2         , Ystart, value[pTime->Min / 10] , Font, Color_Background, Color_Foreground);
-    Paint_DrawChar(Xstart + Dx * 3 + Dx / 2         , Ystart, value[pTime->Min % 10] , Font, Color_Background, Color_Foreground);
-    Paint_DrawChar(Xstart + Dx * 4 + Dx / 2 - Dx / 4, Ystart, ':'                    , Font, Color_Background, Color_Foreground);
-    Paint_DrawChar(Xstart + Dx * 5                  , Ystart, value[pTime->Sec / 10] , Font, Color_Background, Color_Foreground);
-    Paint_DrawChar(Xstart + Dx * 6                  , Ystart, value[pTime->Sec % 10] , Font, Color_Background, Color_Foreground);
+    Paint_DrawChar_SSD1306(Xstart                           , Ystart, value[pTime->Hour / 10], Font, Color_Background, Color_Foreground);
+    Paint_DrawChar_SSD1306(Xstart + Dx                      , Ystart, value[pTime->Hour % 10], Font, Color_Background, Color_Foreground);
+    Paint_DrawChar_SSD1306(Xstart + Dx  + Dx / 4 + Dx / 2   , Ystart, ':'                    , Font, Color_Background, Color_Foreground);
+    Paint_DrawChar_SSD1306(Xstart + Dx * 2 + Dx / 2         , Ystart, value[pTime->Min / 10] , Font, Color_Background, Color_Foreground);
+    Paint_DrawChar_SSD1306(Xstart + Dx * 3 + Dx / 2         , Ystart, value[pTime->Min % 10] , Font, Color_Background, Color_Foreground);
+    Paint_DrawChar_SSD1306(Xstart + Dx * 4 + Dx / 2 - Dx / 4, Ystart, ':'                    , Font, Color_Background, Color_Foreground);
+    Paint_DrawChar_SSD1306(Xstart + Dx * 5                  , Ystart, value[pTime->Sec / 10] , Font, Color_Background, Color_Foreground);
+    Paint_DrawChar_SSD1306(Xstart + Dx * 6                  , Ystart, value[pTime->Sec % 10] , Font, Color_Background, Color_Foreground);
 }
 
 /******************************************************************************
@@ -810,15 +810,15 @@ info:
     Use a computer to convert the image into a corresponding array,
     and then embed the array directly into Imagedata.cpp as a .c file.
 ******************************************************************************/
-void Paint_DrawBitMap(const unsigned char* image_buffer)
+void Paint_DrawBitMap_SSD1306(const unsigned char* image_buffer)
 {
     UWORD x, y;
     UDOUBLE Addr = 0;
 
-    for (y = 0; y < Paint.HeightByte; y++) {
-        for (x = 0; x < Paint.WidthByte; x++) {//8 pixel =  1 byte
-            Addr = x + y * Paint.WidthByte;
-            Paint.Image[Addr] = (unsigned char)image_buffer[Addr];
+    for (y = 0; y < Paint_SSD1306.HeightByte; y++) {
+        for (x = 0; x < Paint_SSD1306.WidthByte; x++) {//8 pixel =  1 byte
+            Addr = x + y * Paint_SSD1306.WidthByte;
+            Paint_SSD1306.Image[Addr] = (unsigned char)image_buffer[Addr];
         }
     }
 }
@@ -827,11 +827,11 @@ void Paint_DrawBitMap_Block(const unsigned char* image_buffer, UBYTE Region)
 {
     UWORD x, y;
     UDOUBLE Addr = 0;
-		for (y = 0; y < Paint.HeightByte; y++) {
-				for (x = 0; x < Paint.WidthByte; x++) {//8 pixel =  1 byte
-						Addr = x + y * Paint.WidthByte ;
-						Paint.Image[Addr] = \
-						(unsigned char)image_buffer[Addr+ (Paint.HeightByte)*Paint.WidthByte*(Region - 1)];
+		for (y = 0; y < Paint_SSD1306.HeightByte; y++) {
+				for (x = 0; x < Paint_SSD1306.WidthByte; x++) {//8 pixel =  1 byte
+						Addr = x + y * Paint_SSD1306.WidthByte ;
+						Paint_SSD1306.Image[Addr] = \
+						(unsigned char)image_buffer[Addr+ (Paint_SSD1306.HeightByte)*Paint_SSD1306.WidthByte*(Region - 1)];
 				}
 		}
 }

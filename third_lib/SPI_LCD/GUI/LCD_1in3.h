@@ -36,7 +36,12 @@
 #define LCD_1IN3_SetBacklight(Value) DEV_SetBacklight(Value) 
 
 #define LCD_RST  31      //268
+#ifdef VER4
 #define LCD_DC   259     //mangopi 29
+#endif
+#ifdef RPI
+#define LCD_DC   25      //v5 cm4 25
+#endif
 #define LCD_BL   33     //271
 
 #define LCD_RST_0		DEV_Digital_Write(LCD_RST,0)

@@ -57,6 +57,8 @@ Depends: libconfig-dev,jq,libxkbcommon0,libgpiod-dev
 Description: Installs blikvm-$VERSION-alpha on the BliKVM
 EOF
 
+### libevent-2.1-7,libevent-pthreads-2.1-7,libnice10,libsrtp2-1,libopus0
+
 ### Create preinst script
 cat << 'EOF' > DEBIAN/preinst
 #!/bin/bash

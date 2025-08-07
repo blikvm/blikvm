@@ -24,7 +24,7 @@
 * -----------------------------------------------------------------------------
 * V2.0(2018-11-12):
 * 1.Change file name: GUI_BMP.h -> GUI_BMPfile.h
-* 2.fix: GUI_ReadBmp()
+* 2.fix: GUI_ReadBmp_SSD1306()
 *   Now Xstart and Xstart can control the position of the picture normally,
 *   and support the display of images of any size. If it is larger than
 *   the actual display range, it will not be displayed.
@@ -62,7 +62,7 @@
 #include <math.h> //memset()
 #include <stdio.h>
 
-UBYTE GUI_ReadBmp(const char *path, UWORD Xstart, UWORD Ystart)
+UBYTE GUI_ReadBmp_SSD1306(const char *path, UWORD Xstart, UWORD Ystart)
 {
     FILE *fp;                     //Define a file pointer
     BMPFILEHEADER bmpFileHeader;  //Define a bmp file header structure
@@ -134,12 +134,12 @@ UBYTE GUI_ReadBmp(const char *path, UWORD Xstart, UWORD Ystart)
     UBYTE color, temp;
     for(y = 0; y < bmpInfoHeader.biHeight; y++) {
         for(x = 0; x < bmpInfoHeader.biWidth; x++) {
-            if(x > Paint.Width || y > Paint.Height) {
+            if(x > Paint_SSD1306.Width || y > Paint_SSD1306.Height) {
                 break;
             }
             temp = Image[(x / 8) + (y * Image_Width_Byte)];
             color = (((temp << (x%8)) & 0x80) == 0x80) ?Bcolor:Wcolor;
-            Paint_SetPixel(Xstart + x, Ystart + y, color);
+            Paint_SetPixel_SSD1306(Xstart + x, Ystart + y, color);
         }
     }
     return 0;
@@ -201,12 +201,12 @@ UBYTE GUI_ReadBmp_4Gray(const char *path, UWORD Xstart, UWORD Ystart)
     printf("bmpInfoHeader.biHeight = %d\r\n",bmpInfoHeader.biHeight);
     for(y = 0; y < bmpInfoHeader.biHeight; y++) {
         for(x = 0; x < bmpInfoHeader.biWidth; x++) {
-            if(x > Paint.Width || y > Paint.Height) {
+            if(x > Paint_SSD1306.Width || y > Paint_SSD1306.Height) {
                 break;
             }
             temp = Image[x/2 + y * bmpInfoHeader.biWidth/2] >> ((x%2)? 0:4);//0xf 0x8 0x7 0x0 
             color = temp>>2;                           //11  10  01  00  
-            Paint_SetPixel(Xstart + x, Ystart + y, color);
+            Paint_SetPixel_SSD1306(Xstart + x, Ystart + y, color);
         }
     }
     return 0;
@@ -264,12 +264,12 @@ UBYTE GUI_ReadBmp_16Gray(const char *path, UWORD Xstart, UWORD Ystart)
     printf("bmpInfoHeader.biHeight = %d\r\n",bmpInfoHeader.biHeight);
     for(y = 0; y < bmpInfoHeader.biHeight; y++) {
         for(x = 0; x < bmpInfoHeader.biWidth; x++) {
-            if(x > Paint.Width || y > Paint.Height) {
+            if(x > Paint_SSD1306.Width || y > Paint_SSD1306.Height) {
                 break;
             }
             color = Image[x/2 + y * bmpInfoHeader.biWidth/2] >> ((x%2)? 0:4);
             color &= 0x0f;
-            Paint_SetPixel(Xstart + x, Ystart + y, color);
+            Paint_SetPixel_SSD1306(Xstart + x, Ystart + y, color);
         }
     }
     return 0;
@@ -327,13 +327,13 @@ UBYTE GUI_ReadBmp_65K(const char *path, UWORD Xstart, UWORD Ystart)
     printf("bmpInfoHeader.biHeight = %d\r\n",bmpInfoHeader.biHeight);
     for(y = 0; y < bmpInfoHeader.biHeight; y++) {
         for(x = 0; x < bmpInfoHeader.biWidth; x++) {
-            if(x > Paint.Width || y > Paint.Height) {
+            if(x > Paint_SSD1306.Width || y > Paint_SSD1306.Height) {
                 break;
             }
 			color = 0;
             color |= Image[x*2 + y*bmpInfoHeader.biWidth*2];
 			color |= Image[x*2 + y*bmpInfoHeader.biWidth*2 + 1] << 8;
-            Paint_SetPixel(Xstart + x, Ystart + y, color);
+            Paint_SetPixel_SSD1306(Xstart + x, Ystart + y, color);
         }
     }
     return 0;
@@ -409,10 +409,10 @@ UBYTE GUI_ReadBmp_RGB_7Color(const char *path, UWORD Xstart, UWORD Ystart)
     // Refresh the image to the display buffer based on the displayed orientation
     for(y = 0; y < bmpInfoHeader.biHeight; y++) {
         for(x = 0; x < bmpInfoHeader.biWidth; x++) {
-            if(x > Paint.Width || y > Paint.Height) {
+            if(x > Paint_SSD1306.Width || y > Paint_SSD1306.Height) {
                 break;
             }
-            Paint_SetPixel(Xstart + x, Ystart + y, Image[bmpInfoHeader.biHeight *  bmpInfoHeader.biWidth - 1 -(bmpInfoHeader.biWidth-x-1+(y* bmpInfoHeader.biWidth))]);
+            Paint_SetPixel_SSD1306(Xstart + x, Ystart + y, Image[bmpInfoHeader.biHeight *  bmpInfoHeader.biWidth - 1 -(bmpInfoHeader.biWidth-x-1+(y* bmpInfoHeader.biWidth))]);
 		}
     }
     return 0;

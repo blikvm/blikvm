@@ -2,7 +2,7 @@
 
 ## On Arm board like RaspBerry Pi use SSD1306 OLED Module, for BliKVM v1, v2, v3 hardware.
 ```
-make RPI=1 SSD1306=1 
+make RPI=1 SSD1306=1 ST7789=1 
 make RPI=1 ST7789=1 
 ```
 

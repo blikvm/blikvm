@@ -13,7 +13,7 @@
 #include <pthread.h>
 #include <stdio.h>
 #include <unistd.h>
-#ifdef  VER4
+#ifdef  ST7789
 #include "st7789_oled.h"
 #endif
 
@@ -60,7 +60,7 @@ blikvm_int8_t blikvm_gpio_init()
         }
         else if( type == CM4_V5_BOARD)
         {
-            SW1 = 12;   //GPIO 3
+            SW1 = 5;   //GPIO 3
             SW2 = 35;   //GPIO 2
             SW2_LED = 32;   //GPIO 261 ==> act
         }
@@ -128,8 +128,24 @@ static blikvm_void_t *blikvm_gpio_loop(void *_)
 
     while (1)
     {
-        if( type == H616_BOARD || type == CM4_V5_BOARD){
+        if( type == H616_BOARD ){
             if(AIOReadGPIO(SW1) == 1)
+            {
+                sw1.count = (sw1.count + 1) % 6;
+            }
+            else
+            {
+                sw1.count = 0;
+            }
+            if( sw1.count >= 5)
+            {
+                blikvm_oled_open_one_cycle();
+                sw1.count = 0;
+            }
+        }else if( type == CM4_V5_BOARD)
+        {
+            int temp = AIOReadGPIO(SW1);
+            if(AIOReadGPIO(SW1) == 0)
             {
                 sw1.count = (sw1.count + 1) % 6;
             }

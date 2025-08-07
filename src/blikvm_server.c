@@ -97,16 +97,14 @@ blikvm_int8_t blikvm_start(blikvm_config_t *config)
 
     do
     {
-#ifdef  VER4
         if(blikvm_gpio_start() < 0)
         {
-            BLILOG_E(TAG,"gpio start error\n");
+            BLILOG_E(TAG,"gpio don't start\n");
         }
         else
         {
             BLILOG_D(TAG,"gpio start ok\n");
         }
-#endif
         if(blikvm_fan_start() < 0 )
         {
             BLILOG_E(TAG,"fan start error\n");

@@ -1,10 +1,10 @@
 /**
   ******************************************************************************
-  * @file    Font12.c
+  * @file    Font12_SSD1306.c
   * @author  MCD Application Team
   * @version V1.0.0
   * @date    18-February-2014
-  * @brief   This file provides text Font12 for STM32xx-EVAL's LCD driver. 
+  * @brief   This file provides text Font12_SSD1306 for STM32xx-EVAL's LCD driver. 
   ******************************************************************************
   * @attention
   *
@@ -42,7 +42,7 @@
 //  Font data for Courier New 12pt
 // 
 
-const uint8_t Font12_Table[] = 
+const uint8_t Font12_Table_SSD1306[] = 
 {
 	// @0 ' ' (7 pixels wide)
 	0x00, //        
@@ -1375,8 +1375,8 @@ const uint8_t Font12_Table[] =
 	0x00, //        
 };
 
-sFONT Font12 = {
-  Font12_Table,
+sFONT Font12_SSD1306 = {
+  Font12_Table_SSD1306,
   7, /* Width */
   12, /* Height */
 };

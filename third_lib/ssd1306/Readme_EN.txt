@@ -107,8 +107,8 @@ GUI\: This directory is some basic image processing functions, in GUI_Paint.c(.h
     
 	Fonts\: for some commonly used fonts:
     Ascii:
-        Font8: 5*8
-        Font12: 7*12
+        Font8_SSD1306: 5*8
+        Font12_SSD1306: 7*12
         Font16: 11*16
         Font20: 14*20
         Font24: 17*24

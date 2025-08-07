@@ -15,44 +15,44 @@
 * V3.2(2020-08-17):
 * 1.Change: Paint_SetScale(UBYTE scale)
 *        Add scale 65K
-* 2.Change: Paint_SetPixel(UWORD Xpoint, UWORD Ypoint, UWORD Color)
+* 2.Change: Paint_SetPixel_SSD1306(UWORD Xpoint, UWORD Ypoint, UWORD Color)
 *        Add the branch for scale 65K
-* 3.Change: Paint_Clear(UWORD Color)
+* 3.Change: Paint_Clear_SSD1306(UWORD Color)
 *        Add the branch for scale 65K
 * -----------------------------------------------------------------------------
 * V3.1(2020-08-14):
 * 1.Change: Paint_SetScale(UBYTE scale)
 *        Add scale 16
-* 2.Change: Paint_SetPixel(UWORD Xpoint, UWORD Ypoint, UWORD Color)
+* 2.Change: Paint_SetPixel_SSD1306(UWORD Xpoint, UWORD Ypoint, UWORD Color)
 *        Add the branch for scale 16
-* 3.Change: Paint_Clear(UWORD Color)
+* 3.Change: Paint_Clear_SSD1306(UWORD Color)
 *        Add the branch for scale 16
 * -----------------------------------------------------------------------------
 * V3.0(2019-04-18):
 * 1.Change: 
-*    Paint_DrawPoint(..., DOT_STYLE DOT_STYLE)
-* => Paint_DrawPoint(..., DOT_STYLE Dot_Style)
-*    Paint_DrawLine(..., LINE_STYLE Line_Style, DOT_PIXEL Dot_Pixel)
-* => Paint_DrawLine(..., DOT_PIXEL Line_width, LINE_STYLE Line_Style)
-*    Paint_DrawRectangle(..., DRAW_FILL Filled, DOT_PIXEL Dot_Pixel)
-* => Paint_DrawRectangle(..., DOT_PIXEL Line_width, DRAW_FILL Draw_Fill)
-*    Paint_DrawCircle(..., DRAW_FILL Draw_Fill, DOT_PIXEL Dot_Pixel)
-* => Paint_DrawCircle(..., DOT_PIXEL Line_width, DRAW_FILL Draw_Filll)
+*    Paint_DrawPoint_SSD1306(..., DOT_STYLE DOT_STYLE)
+* => Paint_DrawPoint_SSD1306(..., DOT_STYLE Dot_Style)
+*    Paint_DrawLine_SSD1306(..., LINE_STYLE Line_Style, DOT_PIXEL Dot_Pixel)
+* => Paint_DrawLine_SSD1306(..., DOT_PIXEL Line_width, LINE_STYLE Line_Style)
+*    Paint_DrawRectangle_SSD1306(..., DRAW_FILL Filled, DOT_PIXEL Dot_Pixel)
+* => Paint_DrawRectangle_SSD1306(..., DOT_PIXEL Line_width, DRAW_FILL Draw_Fill)
+*    Paint_DrawCircle_SSD1306(..., DRAW_FILL Draw_Fill, DOT_PIXEL Dot_Pixel)
+* => Paint_DrawCircle_SSD1306(..., DOT_PIXEL Line_width, DRAW_FILL Draw_Filll)
 *
 * -----------------------------------------------------------------------------
 * V2.0(2018-11-15):
-* 1.add: Paint_NewImage()
+* 1.add: Paint_NewImage_SSD1306()
 *    Create an image's properties
-* 2.add: Paint_SelectImage()
+* 2.add: Paint_SelectImage_SSD1306()
 *    Select the picture to be drawn
-* 3.add: Paint_SetRotate()
+* 3.add: Paint_SetRotate_SSD1306()
 *    Set the direction of the cache    
 * 4.add: Paint_RotateImage() 
 *    Can flip the picture, Support 0-360 degrees, 
 *    but only 90.180.270 rotation is better
-* 4.add: Paint_SetMirroring() 
+* 4.add: Paint_SetMirroring_SSD1306() 
 *    Can Mirroring the picture, horizontal, vertical, origin
-* 5.add: Paint_DrawString_CN() 
+* 5.add: Paint_DrawString_CN_SSD1306() 
 *    Can display Chinese(GB1312)   
 *
 * ----------------------------------------------------------------------------- 
@@ -100,7 +100,7 @@ typedef struct {
     UWORD HeightByte;
     UWORD Scale;
 } PAINT;
-extern PAINT Paint;
+extern PAINT Paint_SSD1306;
 
 /**
  * Display rotate
@@ -197,31 +197,31 @@ typedef struct {
 extern PAINT_TIME sPaint_time;
 
 //init and Clear
-void Paint_NewImage(UBYTE *image, UWORD Width, UWORD Height, UWORD Rotate, UWORD Color);
-void Paint_SelectImage(UBYTE *image);
-void Paint_SetRotate(UWORD Rotate);
-void Paint_SetMirroring(UBYTE mirror);
-void Paint_SetPixel(UWORD Xpoint, UWORD Ypoint, UWORD Color);
+void Paint_NewImage_SSD1306(UBYTE *image, UWORD Width, UWORD Height, UWORD Rotate, UWORD Color);
+void Paint_SelectImage_SSD1306(UBYTE *image);
+void Paint_SetRotate_SSD1306(UWORD Rotate);
+void Paint_SetMirroring_SSD1306(UBYTE mirror);
+void Paint_SetPixel_SSD1306(UWORD Xpoint, UWORD Ypoint, UWORD Color);
 void Paint_SetScale(UBYTE scale);
 
-void Paint_Clear(UWORD Color);
+void Paint_Clear_SSD1306(UWORD Color);
 void Paint_ClearWindows(UWORD Xstart, UWORD Ystart, UWORD Xend, UWORD Yend, UWORD Color);
 
 //Drawing
-void Paint_DrawPoint(UWORD Xpoint, UWORD Ypoint, UWORD Color, DOT_PIXEL Dot_Pixel, DOT_STYLE Dot_FillWay);
-void Paint_DrawLine(UWORD Xstart, UWORD Ystart, UWORD Xend, UWORD Yend, UWORD Color, DOT_PIXEL Line_width, LINE_STYLE Line_Style);
-void Paint_DrawRectangle(UWORD Xstart, UWORD Ystart, UWORD Xend, UWORD Yend, UWORD Color, DOT_PIXEL Line_width, DRAW_FILL Draw_Fill);
-void Paint_DrawCircle(UWORD X_Center, UWORD Y_Center, UWORD Radius, UWORD Color, DOT_PIXEL Line_width, DRAW_FILL Draw_Fill);
+void Paint_DrawPoint_SSD1306(UWORD Xpoint, UWORD Ypoint, UWORD Color, DOT_PIXEL Dot_Pixel, DOT_STYLE Dot_FillWay);
+void Paint_DrawLine_SSD1306(UWORD Xstart, UWORD Ystart, UWORD Xend, UWORD Yend, UWORD Color, DOT_PIXEL Line_width, LINE_STYLE Line_Style);
+void Paint_DrawRectangle_SSD1306(UWORD Xstart, UWORD Ystart, UWORD Xend, UWORD Yend, UWORD Color, DOT_PIXEL Line_width, DRAW_FILL Draw_Fill);
+void Paint_DrawCircle_SSD1306(UWORD X_Center, UWORD Y_Center, UWORD Radius, UWORD Color, DOT_PIXEL Line_width, DRAW_FILL Draw_Fill);
 
 //Display string
-void Paint_DrawChar(UWORD Xstart, UWORD Ystart, const char Acsii_Char, sFONT* Font, UWORD Color_Foreground, UWORD Color_Background);
-void Paint_DrawString_EN(UWORD Xstart, UWORD Ystart, const char * pString, sFONT* Font, UWORD Color_Foreground, UWORD Color_Background);
-void Paint_DrawString_CN(UWORD Xstart, UWORD Ystart, const char * pString, cFONT* font, UWORD Color_Foreground, UWORD Color_Background);
-void Paint_DrawNum(UWORD Xpoint, UWORD Ypoint, double Nummber, sFONT* Font, UWORD Digit,UWORD Color_Foreground, UWORD Color_Background);
-void Paint_DrawTime(UWORD Xstart, UWORD Ystart, PAINT_TIME *pTime, sFONT* Font, UWORD Color_Foreground, UWORD Color_Background);
+void Paint_DrawChar_SSD1306(UWORD Xstart, UWORD Ystart, const char Acsii_Char, sFONT* Font, UWORD Color_Foreground, UWORD Color_Background);
+void Paint_DrawString_EN_SSD1306(UWORD Xstart, UWORD Ystart, const char * pString, sFONT* Font, UWORD Color_Foreground, UWORD Color_Background);
+void Paint_DrawString_CN_SSD1306(UWORD Xstart, UWORD Ystart, const char * pString, cFONT* font, UWORD Color_Foreground, UWORD Color_Background);
+void Paint_DrawNum_SSD1306(UWORD Xpoint, UWORD Ypoint, double Nummber, sFONT* Font, UWORD Digit,UWORD Color_Foreground, UWORD Color_Background);
+void Paint_DrawTime_SSD1306(UWORD Xstart, UWORD Ystart, PAINT_TIME *pTime, sFONT* Font, UWORD Color_Foreground, UWORD Color_Background);
 
 //pic
-void Paint_DrawBitMap(const unsigned char* image_buffer);
+void Paint_DrawBitMap_SSD1306(const unsigned char* image_buffer);
 void Paint_DrawBitMap_Block(const unsigned char* image_buffer, UBYTE Region);
 #endif
 
