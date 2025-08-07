@@ -144,7 +144,6 @@ static blikvm_void_t *blikvm_gpio_loop(void *_)
             }
         }else if( type == CM4_V5_BOARD)
         {
-            int temp = AIOReadGPIO(SW1);
             if(AIOReadGPIO(SW1) == 0)
             {
                 sw1.count = (sw1.count + 1) % 6;
