@@ -22,12 +22,34 @@ code_owner = "blikvm"
 code_repo = "blikvm"
 file_name = ""
 
+DEPS = ["libconfig-dev", "jq", "libxkbcommon0", "libgpiod-dev"]
+
+
 class BoardType(Enum):
     UNKNOWN = 0
     V1_CM4 = 1
     V3_HAT = 2
     V2_PCIE = 3
     V4_H616 = 4
+
+def install_dependencies():
+    print("Installing dependencies:", " ".join(DEPS), flush=True)
+    if os.geteuid() != 0:
+        print("Please run as root to install dependencies. Example: sudo python3 update.py")
+        return False
+    try:
+        subprocess.check_call("apt-get update", shell=True)
+    except subprocess.CalledProcessError:
+        print("apt-get update failed (ignored, will continue)", flush=True)
+    try:
+        cmd = "apt-get install -y " + " ".join(DEPS)
+        print(cmd, flush=True)
+        subprocess.check_call(cmd, shell=True)
+        print("Dependencies installed successfully", flush=True)
+        return True
+    except subprocess.CalledProcessError:
+        print("Failed to install dependencies. Please run manually: apt-get install " + " ".join(DEPS), flush=True)
+        return False
     
 # Execute command and get output
 def execmd(cmd):
@@ -122,6 +144,7 @@ def version_to_tuple(version):
 
 def main():
     print("Welcome to use the upgrade script. Please confirm that you have used git related commands before upgrading the script to ensure that update.by is in the latest state.")
+    install_dependencies()
     board_type = get_board_type()
     print("Board type:",board_type)
     global update_result
@@ -197,6 +220,7 @@ def main():
             print("Download release package success, start to install, please wait 60s...",  flush=True)
             release_tar = download_path + file_name
             if os.path.exists(release_tar):   
+
                 cmd = "dpkg -i " + file_name
                 output = subprocess.check_output(cmd, shell = True, cwd=download_path)
                 print(output)       
