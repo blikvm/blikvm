@@ -38,7 +38,9 @@ fi
 echo "prefix: $prefix"
 
 check_and_remove_dir "blikvm-$prefix"
-
+cd web_src
+bash pack.sh "$HARDWARE_TYPE"
+cd ../
 cp script/package.json /usr/bin/blikvm
 cp /mnt/blikvm/package/kvmd-web/start.sh /usr/bin/blikvm
 rm -rf /mnt/exec/*
