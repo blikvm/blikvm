@@ -50,7 +50,7 @@ mkdir -p blikvm-$prefix
 cd blikvm-$prefix
 mkdir -p DEBIAN
 
-## When updating dependencies, it is necessary to synchronize the updates in the updte.py script
+## When updating dependencies, it is necessary to synchronize the updates in the update.py script
 cat << EOF > DEBIAN/control
 Package: blikvm
 Version: $VERSION
