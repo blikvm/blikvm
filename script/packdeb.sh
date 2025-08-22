@@ -1,13 +1,14 @@
 #!/bin/bash
 ### Create package dir (when dpkg -b blikvm-xxx will create blikvm-xxx.deb package)
 
-if [ -z "$1" ] || [ -z "$2" ]; then
-  echo "Usage: $0 <version> <hardware_type>"
+# Now only require hardware type; version is read from /usr/bin/blikvm/package.json after it is copied
+if [ -z "${1:-}" ]; then
+  echo "Usage: $0 <hardware_type: pi|allwinner>"
   exit 1
 fi
 
-VERSION=$1
-HARDWARE_TYPE=$2
+HARDWARE_TYPE=$1
+VERSION=""  # will be populated from /usr/bin/blikvm/package.json later
 
 
 # 定义函数检查并删除目录
@@ -50,14 +51,45 @@ mkdir -p blikvm-$prefix
 cd blikvm-$prefix
 mkdir -p DEBIAN
 
-## When updating dependencies, it is necessary to synchronize the updates in the update.py script
+
+# Read version from the copied /usr/bin/blikvm/package.json
+PKG_JSON="/usr/bin/blikvm/package.json"
+if [ ! -f "$PKG_JSON" ]; then
+  echo "ERROR: $PKG_JSON not found; ensure previous copy step succeeded"
+  exit 1
+fi
+
+if command -v jq >/dev/null 2>&1; then
+  VERSION=$(jq -r '.version' "$PKG_JSON")
+else
+  # Fallback parser without jq
+  VERSION=$(sed -n 's/.*"version"[[:space:]]*:[[:space:]]*"\(.*\)".*/\1/p' "$PKG_JSON" | head -n1)
+fi
+
+if [ -z "$VERSION" ] || [ "$VERSION" = "null" ]; then
+  echo "ERROR: Failed to parse version from $PKG_JSON"
+  exit 1
+fi
+echo "Using version(raw): $VERSION"
+
+# Debian control requires version to start with a digit; strip leading non-digits (e.g., leading 'v')
+VERSION_DEB=$(printf '%s' "$VERSION" | sed -E 's/^[^0-9]*([0-9].*)$/\1/')
+if ! echo "$VERSION_DEB" | grep -Eq '^[0-9]'; then
+  echo "ERROR: Sanitized version still invalid: $VERSION_DEB"
+  exit 1
+fi
+echo "Using version(deb): $VERSION_DEB"
+
+
+
+## When updating dependencies, it is necessary to synchronize the updates in the updte.py script
 cat << EOF > DEBIAN/control
 Package: blikvm
-Version: $VERSION
+Version: $VERSION_DEB
 Architecture: arm64
 Maintainer: info@blicube.com
 Depends: libconfig-dev,jq,libxkbcommon0,libgpiod-dev
-Description: Installs blikvm-$VERSION-alpha on the BliKVM
+Description: Installs blikvm-$VERSION_DEB-alpha on the BliKVM
 EOF
 
 ### libevent-2.1-7,libevent-pthreads-2.1-7,libnice10,libsrtp2-1,libopus0
