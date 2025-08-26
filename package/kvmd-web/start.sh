@@ -18,6 +18,25 @@ check_firstboot() {
     rm -f /home/blikvm/.bash_history
     rm -f /root/.bash_history
 
+    # if the hardware is v5, need to comment the i2c-8 on config.txt
+    DETECT_OUT="$(i2cdetect -y 8 0x50 0x50 2>/dev/null || true)"
+    if ! echo "$DETECT_OUT" | awk 'NR>1{ for(i=2;i<=NF;i++) if($i=="50"||$i=="UU"){found=1} } END{ exit found?0:1 }'; then
+      echo "I2C device 0x50 not detected on bus 8, commenting out overlay in /boot/firmware/config.txt ..."
+      CFG="/boot/firmware/config.txt"
+      if [ -f "$CFG" ]; then
+        mount -o remount,rw /boot/firmware
+        sed -i 's|^dtoverlay=i2c-gpio,bus=8,i2c_gpio_sda=22,i2c_gpio_scl=23|# dtoverlay=i2c-gpio,bus=8,i2c_gpio_sda=22,i2c_gpio_scl=23|' "$CFG"
+      else
+        echo "Config file not found: $CFG"
+      fi
+      sync
+      mount -o remount,ro /
+      mount -o remount,ro /boot/firmware
+      rm -f "/mnt/tmp/firstboot"
+      echo "Rebooting to apply changes..."
+      reboot
+      exit 0
+    fi
     mount -o remount,ro /
     # delete /mnt/tmp/firstboot 
     rm -f "/mnt/tmp/firstboot"
