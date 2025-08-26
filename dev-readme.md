@@ -178,3 +178,12 @@ dtoverlay=dwc2
 ```bash
 sudo systemctl reboot
 ```
+
+## If you find you kvm can't work, use the following command to view the specific error message
+```
+systemctl stop kvmd-web
+cd /mnt/exec/release/
+./server_app
+```
+
+
