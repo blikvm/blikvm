@@ -57,11 +57,12 @@
 - [Purchase - BliKVM Allwinner v4 Version](https://www.aliexpress.com/item/3256805673100994.html)
 
 ## Other Purchase Links
-- [Purchase - PiKVM ATX Power Adaptor](https://www.aliexpress.com/item/1005003761450893.html)
-- [Purchase - PiKVM USB Splitter](https://www.aliexpress.com/item/1005003793429781.html)
-- [Purchase - PiKVM HDMI to CSI Board](https://www.aliexpress.com/item/1005002861310912.html)
+- [Purchase - BliKVM ATX Power Adaptor](https://www.aliexpress.com/item/1005003761450893.html)
+- [Purchase - BliKVM USB Splitter](https://www.aliexpress.com/item/1005003793429781.html)
+- [Purchase - BliKVM HDMI to CSI Board](https://www.aliexpress.com/item/1005002861310912.html)
 - [Purchase - BliKVM KVM switch(4 port) v1.0](https://www.aliexpress.com/item/1005005149590635.html)
 - [Purchase - BliKVM KVM+ATX switch(8 port) v2.0](https://www.aliexpress.com/item/3256807838289113.html?gatewayAdapt=4itemAdapt)
+- [Purchase - BliKVM HDMI to CSI & Video passthrough Board C792](https://aliexpress.com/item/1005009325895459.html)
 
 ## Videos
 - [Watch - Blicube BliKVM V4: Is This the Best Linux IP KVM Yet?](https://www.youtube.com/watch?v=sbH9-fmWBS8)
