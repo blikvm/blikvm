@@ -45,7 +45,7 @@
 ## 支持
 
 - 查看 [文档](https://wiki.blicube.com/blikvm/)！
-- 加入 [Discord 社区聊天](https://discord.gg/9Y374gUF6C) 获取新闻、提问和支持！
+- 加入 [Discord 社区聊天](https://discord.gg/9Y374gUF6C) 获取新闻、提问和支持！如果是中国用户，可以加入[飞书](https://applink.feishu.cn/client/chat/chatter/add_by_link?link_token=ebfgce4a-deb3-4275-a337-cce905ebe2fb)。
 - 下载 [BLIKVM OS](https://wiki.blicube.com/blikvm/en/flashing_os/)。
 
 ## 购买

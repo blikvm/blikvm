@@ -47,7 +47,7 @@
 ## Support
 
 - Check out [the documentation](https://wiki.blicube.com/blikvm/)!
-- Join the [Discord Community Chat](https://discord.gg/9Y374gUF6C) for news, questions and support!
+- Join the [Discord Community Chat](https://discord.gg/9Y374gUF6C) for news, questions and support! If you are chinese，you can use[飞书](https://applink.feishu.cn/client/chat/chatter/add_by_link?link_token=ebfgce4a-deb3-4275-a337-cce905ebe2fb)。
 - Download [BLIKVM OS](https://wiki.blicube.com/blikvm/en/flashing_os/).
 
 ## Purchase
