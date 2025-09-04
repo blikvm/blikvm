@@ -2,7 +2,7 @@ name: Sync Release to Gitee
 
 on:
   release:
-    types: [published]  # 只有发布 Release 时才触发
+    types: [published]  # 只有发布 Release 时触发
 
 jobs:
   sync:
@@ -17,19 +17,23 @@ jobs:
           RELEASE_TAG: ${{ github.event.release.tag_name }}
           RELEASE_NAME: ${{ github.event.release.name }}
           RELEASE_BODY: ${{ github.event.release.body }}
-          COMMITISH: ${{ github.sha }}
         run: |
           echo "Creating release $RELEASE_TAG on Gitee..."
 
-          curl -s -X POST "https://gitee.com/api/v5/repos/blikvm/blikvm/releases" \
+          # 使用 master 作为 target_commitish
+          response=$(curl -s -X POST "https://gitee.com/api/v5/repos/blikvm/blikvm/releases" \
             -H "Content-Type: application/json" \
             -d "{
               \"access_token\": \"${GITEE_TOKEN}\",
               \"tag_name\": \"${RELEASE_TAG}\",
               \"name\": \"${RELEASE_NAME}\",
               \"body\": \"${RELEASE_BODY}\",
-              \"target_commitish\": \"${COMMITISH}\"
-            }" | tee gitee_release.json
+              \"target_commitish\": \"master\"
+            }")
+
+          echo "Gitee release response:"
+          echo "$response"
+          echo "$response" > gitee_release.json
 
       - name: Upload release assets to Gitee
         env:
@@ -42,6 +46,7 @@ jobs:
           assets_url="${{ github.event.release.assets_url }}"
           echo "Fetching assets from $assets_url"
 
+          # 生成附件下载列表
           curl -s -H "Authorization: token ${{ github.token }}" $assets_url | jq -r '.[].browser_download_url' > urls.txt
 
           while read url; do
@@ -49,10 +54,10 @@ jobs:
               continue
             fi
             file=$(basename "$url")
+            echo "Downloading $file from GitHub..."
             curl -L -o "$file" "$url"
 
             echo "Uploading $file to Gitee..."
-
             curl -s -X POST "https://gitee.com/api/v5/repos/blikvm/blikvm/releases/assets?access_token=${GITEE_TOKEN}" \
               -F "file=@${file}" \
               -F "tag_name=${RELEASE_TAG}"
