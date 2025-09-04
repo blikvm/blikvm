@@ -11,23 +11,25 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v3
 
-      - name: Upload release to Gitee
+      - name: Create release on Gitee
         env:
           GITEE_TOKEN: ${{ secrets.GITEE_TOKEN }}
           RELEASE_TAG: ${{ github.event.release.tag_name }}
           RELEASE_NAME: ${{ github.event.release.name }}
           RELEASE_BODY: ${{ github.event.release.body }}
+          COMMITISH: ${{ github.sha }}
         run: |
           echo "Creating release $RELEASE_TAG on Gitee..."
 
-          curl -X POST "https://gitee.com/api/v5/repos/blikvm/blikvm/releases" \
+          curl -s -X POST "https://gitee.com/api/v5/repos/blikvm/blikvm/releases" \
             -H "Content-Type: application/json" \
             -d "{
               \"access_token\": \"${GITEE_TOKEN}\",
               \"tag_name\": \"${RELEASE_TAG}\",
               \"name\": \"${RELEASE_NAME}\",
-              \"body\": \"${RELEASE_BODY}\"
-            }"
+              \"body\": \"${RELEASE_BODY}\",
+              \"target_commitish\": \"${COMMITISH}\"
+            }" | tee gitee_release.json
 
       - name: Upload release assets to Gitee
         env:
@@ -43,12 +45,15 @@ jobs:
           curl -s -H "Authorization: token ${{ github.token }}" $assets_url | jq -r '.[].browser_download_url' > urls.txt
 
           while read url; do
+            if [ -z "$url" ]; then
+              continue
+            fi
             file=$(basename "$url")
             curl -L -o "$file" "$url"
 
             echo "Uploading $file to Gitee..."
 
-            curl -X POST "https://gitee.com/api/v5/repos/blikvm/blikvm/releases/assets?access_token=${GITEE_TOKEN}" \
+            curl -s -X POST "https://gitee.com/api/v5/repos/blikvm/blikvm/releases/assets?access_token=${GITEE_TOKEN}" \
               -F "file=@${file}" \
               -F "tag_name=${RELEASE_TAG}"
           done < urls.txt
