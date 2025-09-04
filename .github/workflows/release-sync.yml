@@ -21,14 +21,13 @@ jobs:
         run: |
           echo "Creating release $RELEASE_TAG on Gitee..."
 
-          # 使用 jq 构建 JSON，安全处理换行和特殊字符
-          payload=$(jq -n \
+          # 使用 jq -Rs 安全处理多行 body
+          payload=$(echo "$RELEASE_BODY" | jq -Rs \
             --arg token "$GITEE_TOKEN" \
             --arg tag "$RELEASE_TAG" \
             --arg name "$RELEASE_NAME" \
-            --arg body "$RELEASE_BODY" \
             --arg commit "master" \
-            '{access_token: $token, tag_name: $tag, name: $name, body: $body, target_commitish: $commit}'
+            '{access_token: $token, tag_name: $tag, name: $name, body: ., target_commitish: $commit}'
           )
 
           echo "Payload:"
