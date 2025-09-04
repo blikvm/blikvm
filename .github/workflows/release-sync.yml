@@ -2,11 +2,12 @@ name: Sync Release to Gitee
 
 on:
   release:
-    types: [published]  # 只有发布 Release 时触发
+    types: [published]
 
 jobs:
   sync:
     runs-on: ubuntu-latest
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
@@ -20,20 +21,27 @@ jobs:
         run: |
           echo "Creating release $RELEASE_TAG on Gitee..."
 
-          # 使用 master 作为 target_commitish
-          response=$(curl -s -X POST "https://gitee.com/api/v5/repos/blikvm/blikvm/releases" \
-            -H "Content-Type: application/json" \
-            -d "{
-              \"access_token\": \"${GITEE_TOKEN}\",
-              \"tag_name\": \"${RELEASE_TAG}\",
-              \"name\": \"${RELEASE_NAME}\",
-              \"body\": \"${RELEASE_BODY}\",
-              \"target_commitish\": \"master\"
-            }")
+          # 使用 jq 构建 JSON，安全处理多行 body
+          payload=$(jq -n \
+            --arg tag "$RELEASE_TAG" \
+            --arg name "$RELEASE_NAME" \
+            --arg body "$RELEASE_BODY" \
+            --arg commit "master" \
+            '{
+              access_token: env.GITEE_TOKEN,
+              tag_name: $tag,
+              name: $name,
+              body: $body,
+              target_commitish: $commit
+            }'
+          )
 
-          echo "Gitee release response:"
-          echo "$response"
-          echo "$response" > gitee_release.json
+          echo "Payload:"
+          echo "$payload"
+
+          curl -s -X POST "https://gitee.com/api/v5/repos/blikvm/blikvm/releases" \
+            -H "Content-Type: application/json" \
+            -d "$payload" | tee gitee_release.json
 
       - name: Upload release assets to Gitee
         env:
@@ -42,11 +50,11 @@ jobs:
         run: |
           echo "Uploading assets to Gitee..."
 
-          # 获取 GitHub release 的附件 URL
+          # 获取 GitHub release 附件 URL
           assets_url="${{ github.event.release.assets_url }}"
           echo "Fetching assets from $assets_url"
 
-          # 生成附件下载列表
+          # 获取附件列表
           curl -s -H "Authorization: token ${{ github.token }}" $assets_url | jq -r '.[].browser_download_url' > urls.txt
 
           while read url; do
