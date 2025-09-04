@@ -1,0 +1,54 @@
+name: Sync Release to Gitee
+
+on:
+  release:
+    types: [published]  # 只有发布 Release 时才触发
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Upload release to Gitee
+        env:
+          GITEE_TOKEN: ${{ secrets.GITEE_TOKEN }}
+          RELEASE_TAG: ${{ github.event.release.tag_name }}
+          RELEASE_NAME: ${{ github.event.release.name }}
+          RELEASE_BODY: ${{ github.event.release.body }}
+        run: |
+          echo "Creating release $RELEASE_TAG on Gitee..."
+
+          curl -X POST "https://gitee.com/api/v5/repos/blikvm/blikvm/releases" \
+            -H "Content-Type: application/json" \
+            -d "{
+              \"access_token\": \"${GITEE_TOKEN}\",
+              \"tag_name\": \"${RELEASE_TAG}\",
+              \"name\": \"${RELEASE_NAME}\",
+              \"body\": \"${RELEASE_BODY}\"
+            }"
+
+      - name: Upload release assets to Gitee
+        env:
+          GITEE_TOKEN: ${{ secrets.GITEE_TOKEN }}
+          RELEASE_TAG: ${{ github.event.release.tag_name }}
+        run: |
+          echo "Uploading assets to Gitee..."
+
+          # 获取 GitHub release 的附件 URL
+          assets_url="${{ github.event.release.assets_url }}"
+          echo "Fetching assets from $assets_url"
+
+          curl -s -H "Authorization: token ${{ github.token }}" $assets_url | jq -r '.[].browser_download_url' > urls.txt
+
+          while read url; do
+            file=$(basename "$url")
+            curl -L -o "$file" "$url"
+
+            echo "Uploading $file to Gitee..."
+
+            curl -X POST "https://gitee.com/api/v5/repos/blikvm/blikvm/releases/assets?access_token=${GITEE_TOKEN}" \
+              -F "file=@${file}" \
+              -F "tag_name=${RELEASE_TAG}"
+          done < urls.txt
