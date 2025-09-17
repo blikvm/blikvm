@@ -34,6 +34,67 @@ class BoardType(Enum):
     V2_PCIE = 3
     V4_H616 = 4
 
+# ---- Added: RO/RW helpers for root filesystem ----
+def is_root_readonly() -> bool:
+    """Return True if '/' is mounted read-only."""
+    # Prefer findmnt; fallback to /proc/mounts
+    try:
+        cp = subprocess.run(
+            ["findmnt", "-no", "OPTIONS", "/"],
+            capture_output=True,
+            text=True,
+            timeout=3,
+        )
+        if cp.returncode == 0:
+            opts = (cp.stdout or "").strip()
+            # options are comma-separated; 'ro' or 'rw' present
+            return "ro" in [o.strip() for o in opts.split(",")]
+    except Exception:
+        pass
+    # Fallback: parse /proc/mounts
+    try:
+        with open("/proc/mounts", "r") as f:
+            for line in f:
+                parts = line.split()
+                if len(parts) >= 4 and parts[1] == "/":
+                    opts = parts[3]
+                    return "ro" in [o.strip() for o in opts.split(",")]
+    except Exception:
+        pass
+    # Unknown -> assume not read-only
+    return False
+
+def remount_root_rw() -> bool:
+    """Remount '/' as read-write. Returns True on success."""
+    try:
+        subprocess.check_call(["mount", "-o", "remount,rw", "/"])
+        return True
+    except Exception:
+        # Try systemd-mount remount if available
+        try:
+            subprocess.check_call(["systemd-mount", "-o", "remount,rw", "/"])
+            return True
+        except Exception:
+            return False
+
+
+def remount_root_ro() -> bool:
+    """Remount '/' as read-only. Returns True on success."""
+    try:
+        subprocess.check_call(["sync"])
+    except Exception:
+        pass
+    try:
+        subprocess.check_call(["mount", "-o", "remount,ro", "/"])
+        return True
+    except Exception:
+        try:
+            subprocess.check_call(["systemd-mount", "-o", "remount,ro", "/"])
+            return True
+        except Exception:
+            return False
+# ---- End RO/RW helpers ----
+
 def install_dependencies():
     print("Installing dependencies:", " ".join(DEPS), flush=True)
     if os.geteuid() != 0:
@@ -300,7 +361,7 @@ def main():
     parser.add_argument("--ping-count", type=int, default=3, help="Ping count for source selection (default: 3)")
     args = parser.parse_args()
 
-    install_dependencies()
+    changed_to_rw = False  # track if we remounted / to rw in this run
     board_type = get_board_type()
     print("Board type:", board_type)
     global update_result
@@ -375,6 +436,21 @@ def main():
         # compare version
         if latest_version != run_version:
             print("Upgrading ", run_version , " ==> ", latest_version)
+            # ---- Added: ensure / is read-write before apt/dpkg operations ----
+            try:
+                if is_root_readonly():
+                    if os.geteuid() != 0:
+                        print("Root filesystem is read-only but script is not running as root; remount is required. Please run as root (sudo).", flush=True)
+                    else:
+                        print("Root filesystem is read-only, remounting as read-write...", flush=True)
+                        if remount_root_rw():
+                            changed_to_rw = True
+                            print("Remounted '/' as read-write.", flush=True)
+                        else:
+                            print("Failed to remount '/' as read-write. Update may fail.", flush=True)    
+            except Exception as e:
+                print(f"RO/RW check failed: {e}", flush=True)        
+            install_dependencies()
             # download tar pack
             cmd = ""
             if board_type == BoardType.V1_CM4 or board_type == BoardType.V3_HAT or board_type == BoardType.V2_PCIE:
@@ -428,6 +504,14 @@ def main():
                 print("If any abnormalities are found when upgrading from the old version to the latest version, the system can be restored by flashing it again.")
                 print("If you cannot log in with your original password, it may be due to a version upgrade and reset configuration to default. If you have changed the web or SSH password, you will need to update the configuration again. Config path is /mnt/exec/release/config/app.json",  flush=True)
                 print("Upgrade successful!",  flush=True)
+                # ---- Added: restore RO if we changed to RW earlier ----
+                if changed_to_rw:
+                    print("Restoring root filesystem to read-only...", flush=True)
+                    if remount_root_ro():
+                        print("Root filesystem remounted as read-only.", flush=True)
+                    else:
+                        print("Failed to remount '/' as read-only. Please run manually: mount -o remount,ro /", flush=True)
+                # ---- End added ----
         else:
             print("There is no latest stable version available.")
         a = 0
