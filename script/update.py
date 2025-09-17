@@ -302,7 +302,18 @@ def get_latest_tag_from_source(source: str, owner: str, repo: str, timeout_sec: 
         return None
 
 
-def download_asset_direct(source: str, owner: str, repo: str, tag_name: str, file_name: str, download_path: str) -> bool:
+# ...existing code...
+
+def download_asset_direct(
+    source: str,
+    owner: str,
+    repo: str,
+    tag_name: str,
+    file_name: str,
+    download_path: str,
+    progress_mode: str = "bar",   # 'bar' 终端进度条；'pct' 百分比节流输出
+    pct_step: int = 10            # 'pct' 模式下的步长（百分比）
+) -> bool:
     """Download release asset from source via direct URL pattern with progress bar."""
     if source == "github":
         file_url = f"https://github.com/{owner}/{repo}/releases/download/{tag_name}/{file_name}"
@@ -327,7 +338,19 @@ def download_asset_direct(source: str, owner: str, repo: str, tag_name: str, fil
     total_size = int(response.headers.get('content-length', 0))
     downloaded_size = 0
     block_size = 1024
-    previous_progress = 0
+
+    # 规范化步长
+    try:
+        pct_step = int(pct_step)
+    except Exception:
+        pct_step = 10
+    if pct_step <= 0 or pct_step > 100:
+        pct_step = 10
+
+    # bar 模式按整数百分比变更才重绘；pct 模式按阈值输出一次
+    previous_progress = -1       # 整数百分比（bar）
+    next_report = pct_step       # 下一个输出阈值（pct）
+
     with open(file_path, 'wb') as f:
         for data in response.iter_content(block_size):
             if not data:
@@ -337,20 +360,35 @@ def download_asset_direct(source: str, owner: str, repo: str, tag_name: str, fil
             if total_size:
                 progress_percentage = (downloaded_size / total_size) * 100
                 now_progress = int(progress_percentage)
-                pre_progress = int(previous_progress)
-                if now_progress != pre_progress:
-                    bar_length = 40
-                    filled_length = int(bar_length * now_progress // 100)
-                    bar = '█' * filled_length + '-' * (bar_length - filled_length)
-                    print(f'\rDownload progress: |{bar}| {progress_percentage:.2f}%', end='\r', flush=True)
-                    previous_progress = progress_percentage
+
+                if progress_mode == "bar":
+                    if now_progress != previous_progress:
+                        bar_length = 40
+                        filled_length = int(bar_length * now_progress // 100)
+                        bar = '█' * filled_length + '-' * (bar_length - filled_length)
+                        # 进度条覆盖同一行（适合真实 TTY）
+                        print(f'\rDownload progress: |{bar}| {progress_percentage:.2f}%', end='\r', flush=True)
+                        previous_progress = now_progress
+                else:  # "pct" 模式：按步长打印一次（适合日志/SSE）
+                    if progress_percentage >= next_report:
+                        print(f'Download progress: {int(progress_percentage)}%', flush=True)
+                        # 可能跳过多个步长，修正 next_report 到下一个 >= 当前值的阈值
+                        jumps = max(1, int((progress_percentage - next_report) // pct_step) + 1)
+                        next_report = min(100, next_report + jumps * pct_step)
 
     if total_size != 0 and downloaded_size != total_size:
         print(f'Error downloading file: downloaded {downloaded_size} out of {total_size} bytes')
         return False
+
+    # 收尾：bar 模式补一个换行；pct 模式确保 100% 打印
+    if total_size:
+        if progress_mode == "bar":
+            print('', flush=True)  # 输出一个换行，结束覆盖行
+        else:
+            print('Download progress: 100%', flush=True)
+
     print(f'{file_name} downloaded to {file_path} successfully.', flush=True)
     return True
-
 
 def main():
     print("Welcome to use the upgrade script. Please confirm that you have used git related commands before upgrading the script to ensure that update.by is in the latest state.")
@@ -359,6 +397,10 @@ def main():
     parser.add_argument("version", nargs="?", help="Specify version tag, e.g. v1.4.2")
     parser.add_argument("--source", choices=["github", "gitee"], help="Force update source (default: auto by ping)")
     parser.add_argument("--ping-count", type=int, default=3, help="Ping count for source selection (default: 3)")
+    parser.add_argument("--progress-mode", choices=["bar", "pct"], default="bar",
+                        help="Progress display mode: 'bar' (tty progress bar) or 'pct' (throttled percentage lines)")
+    parser.add_argument("--progress-step", type=int, default=10,
+                        help="Percentage step for 'pct' mode (1-100, default 10)")
     args = parser.parse_args()
 
     changed_to_rw = False  # track if we remounted / to rw in this run
@@ -370,7 +412,8 @@ def main():
     specified_version = args.version
     forced_source = args.source
     ping_count = args.ping_count
-
+    progress_mode = args.progress_mode
+    progress_step = args.progress_step
     # Remove/clear download directory
     cmd = "rm -rf /tmp/kvm_update"
     output = subprocess.check_output(cmd, shell = True, cwd=sh_path )
@@ -463,12 +506,18 @@ def main():
                 print("get unknow board")
             try:
                 print("Download package: ", file_name, f"from {chosen_source}, please wait...")
-                ok = download_asset_direct(chosen_source, code_owner, code_repo, latest_version, file_name, download_path)
+                ok = download_asset_direct(
+                    chosen_source, code_owner, code_repo, latest_version, file_name, download_path,
+                    progress_mode=progress_mode, pct_step=progress_step
+                )
                 if not ok:
                     if not forced_source:
                         # Fallback to the other source for download
                         print(f"Download from {chosen_source} failed, trying {other_source}...")
-                        ok = download_asset_direct(other_source, code_owner, code_repo, latest_version, file_name, download_path)
+                        ok = download_asset_direct(
+                            other_source, code_owner, code_repo, latest_version, file_name, download_path,
+                            progress_mode=progress_mode, pct_step=progress_step
+                        )
                         if ok:
                             chosen_source = other_source
                         else:
@@ -481,7 +530,10 @@ def main():
                 if not forced_source:
                     print(f"Exception downloading from {chosen_source}: {e}. Trying {other_source}...")
                     try:
-                        ok = download_asset_direct(other_source, code_owner, code_repo, latest_version, file_name, download_path)
+                        ok = download_asset_direct(
+                            other_source, code_owner, code_repo, latest_version, file_name, download_path,
+                            progress_mode=progress_mode, pct_step=progress_step
+                        )
                         if ok:
                             chosen_source = other_source
                         else:
