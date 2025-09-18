@@ -391,7 +391,6 @@ def download_asset_direct(
     return True
 
 def main():
-    print("Welcome to use the upgrade script. Please confirm that you have used git related commands before upgrading the script to ensure that update.by is in the latest state.")
     # Argument parsing: optional version and optional source
     parser = argparse.ArgumentParser(description="blikvm updater")
     parser.add_argument("version", nargs="?", help="Specify version tag, e.g. v1.4.2")
@@ -474,7 +473,7 @@ def main():
             with open(run_json,'r',encoding='utf8')as fp_r:
                 json_data = json.load(fp_r)
                 run_version = json_data['version']
-                print("The local version is ",run_version)
+                print("Your local version is ",run_version)
        
         # compare version
         if latest_version != run_version:
@@ -565,7 +564,7 @@ def main():
                         print("Failed to remount '/' as read-only. Please run manually: mount -o remount,ro /", flush=True)
                 # ---- End added ----
         else:
-            print("There is no latest stable version available.")
+            print("You are already latest version " , run_version, ", no update necessary.")
         a = 0
     result_cnt = ""
     if update_result == True:
