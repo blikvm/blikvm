@@ -564,7 +564,7 @@ def main():
                         print("Failed to remount '/' as read-only. Please run manually: mount -o remount,ro /", flush=True)
                 # ---- End added ----
         else:
-            print("You are already latest version " , run_version, ", no update necessary.")
+            print("You are already using the latest version " , run_version, ", no update necessary.")
         a = 0
     result_cnt = ""
     if update_result == True:
