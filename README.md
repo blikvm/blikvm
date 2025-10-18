@@ -13,8 +13,8 @@
   <a href="https://discord.gg/9Y374gUF6C">
     <img alt="Discord Server" src="https://img.shields.io/discord/943534043515977768?color=0&label=discord%20server&logo=discord">
   </a>
-  <a href="https://www.reddit.com/r/blikvm">
-    <img alt="Reddit" src="https://img.shields.io/badge/reddit-join-orange?logo=reddit">
+  <a href="https://qm.qq.com/q/V0qWcbNoIi">
+    <img alt="QQ Group" src="https://img.shields.io/badge/QQ%E7%BE%A4-join-12B7F5?logo=tencentqq">
   </a>
 </p>
 

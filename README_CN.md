@@ -14,6 +14,9 @@
   <a href="https://discord.gg/9Y374gUF6C">
     <img alt="Discord Server" src="https://img.shields.io/discord/943534043515977768?color=0&label=discord%20server&logo=discord">
   </a>
+  <a href="https://qm.qq.com/q/V0qWcbNoIi">
+    <img alt="QQ Group" src="https://img.shields.io/badge/QQ%E7%BE%A4-join-12B7F5?logo=tencentqq">
+  </a>
 </p>
 
 ![](/images/hardware-connect.png)
@@ -63,8 +66,12 @@
 
 ## 视频
 
-- [观看 - CM4 版本评测（由 `Geerling Engineering` 提供）](https://www.youtube.com/watch?v=3OPd7svT3bE) 
-- [观看 - PCIe 版本评测（由 `Geerling Engineering` 提供）](https://www.youtube.com/watch?v=cVWF3u-y-Zg)
+- [CM4 版本评测（由 `Geerling Engineering` 提供）](https://www.youtube.com/watch?v=3OPd7svT3bE) 
+- [PCIe 版本评测（由 `Geerling Engineering` 提供）](https://www.youtube.com/watch?v=cVWF3u-y-Zg)
+- [CM4 版本评测（由 `Geerling Engineering` 提供）](https://www.youtube.com/watch?v=3OPd7svT3bE) 
+- [PCIe 版本评测（由 `Geerling Engineering` 提供）](https://www.youtube.com/watch?v=cVWF3u-y-Zg) 
+- [CM4 版本功能概览](https://www.youtube.com/watch?v=aehOawHklGE)
+- [CM4 版本开箱](https://www.youtube.com/watch?v=d7I9l5yG5M8)
 
 ## 硬件版本
 
