@@ -3,7 +3,7 @@
 <a href="README_CN.md">中文说明</a>
 </p>
 <p align="center">
-  <a href="https://www.blicube.com">BliKVM</a> is an open-source KVM, it has four versions: v1 CM4,  v2 PCIe, v3 HAT, v4 Allwinner. This device helps to manage servers or workstations remotely, regardless of the health of the operating system or whether one is installed. You can fix any problem, configure the BIOS, and even reinstall the OS using the virtual CD-ROM or Flash Drive. Unlike software-based remote management, you don't need to install any software on the controlled computer for non-intrusive control.
+  <a href="https://www.blicube.com">BliKVM</a> is an open-source KVM over IP(Keyboard, Video, Mouse), it has four versions: v1 CM4,  v2 PCIe, v3 HAT, v4 Allwinner. This device helps to manage servers or workstations remotely, regardless of the health of the operating system or whether one is installed. You can fix any problem, configure the BIOS, and even reinstall the OS using the virtual CD-ROM or Flash Drive. Unlike software-based remote management, you don't need to install any software on the controlled computer for non-intrusive control.
 </p>
 
 <p align="center">
@@ -81,8 +81,11 @@ Front and backend separation software architecture:
 ![](/images/docs_image/arch.drawio.png)
 See more in the [dev-readme](dev-readme.md) file.
 
+## Contributing
+We welcome contributions from the community! Whether it's improving the firmware, adding new features, or enhancing documentation, your input is valuable.
+
 ## Add a new language
-  If you want to add your country's language on the web interface, you can submit the corresponding PR to this path based on the English version of the [path](https://github.com/ThomasVon2021/blikvm-web-client/tree/master/src/utils/locales). After your PR is merged, we will add your language in subsequent versions of the release.If you want to conduct testing before submitting the PR, you can refer to this [document](https://github.com/ThomasVon2021/blikvm-web-client/blob/master/readme.md) and test it on your computer.
+  If you want to add your country's language on the web interface, you can submit the corresponding PR to this path based on the English version of the [path](https://github.com/blikvm/blikvm-web-client/tree/master/src/utils/locales). After your PR is merged, we will add your language in subsequent versions of the release.If you want to conduct testing before submitting the PR, you can refer to this [document](https://github.com/blikvm/blikvm-web-client/blob/master/readme.md) and test it on your computer.
 
 ## Reporting a Bug & Requesting a New Feature
   If you encounter an issue while using the project or discover a bug, or you have a new feature request or improvement suggestion, please raise an issue. We welcome your suggestions as they help us continuously improve the project and cater to more user needs.
