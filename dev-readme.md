@@ -1,10 +1,10 @@
 # Raspberry Pi system specification under test
 
 - Raspberry Pi OS Lite
-- Release date: 2024-11-19
+- Release date: 2025-06-26
 - System: 64-bit
-- Kernel version: 6.10
-- Debian version: 11 (bookworm)
+- Kernel version: 6.12.34
+- Debian version: 12 (bookworm)
 
 
 ## If you use our release image, you can just clone code, and run. Just `systemctl stop kvmd-web` before you run.
