@@ -18,7 +18,7 @@ case "$HW_ARG" in
 esac
 
 # build client
-cd dev_blikvm
+cd web_client
 npm install
 npm run build
 cp -r dist ../web_server
