@@ -1,0 +1,34 @@
+# alan:
+#   name: Alan Wang
+#   title: BliKVM Developer
+#   url: https://github.com/Charming-W
+#   image_url: https://avatars.githubusercontent.com/u/22132288
+#   page: true
+#   socials:
+#     github: Charming-W
+
+blikvm:
+  name: BliKVM
+  title: BliKVM Developer
+  url: https://github.com/blikvm
+  image_url: https://avatars.githubusercontent.com/u/45224459?v=4
+  page: true
+  socials:
+    github: Thomas
+
+# 示例作者配置（保留作为参考）
+# yangshun:
+#   name: Yangshun Tay
+#   title: Front End Engineer
+#   url: https://github.com/yangshun
+#   image_url: https://github.com/yangshun.png
+#   socials:
+#     github: yangshun
+# 
+# slorber:
+#   name: Sébastien Lorber
+#   title: Docusaurus maintainer
+#   url: https://sebastienlorber.com
+#   image_url: https://github.com/slorber.png
+#   socials:
+#     github: slorber

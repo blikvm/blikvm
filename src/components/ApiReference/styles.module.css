@@ -1,0 +1,26 @@
+.entry { display: flex; gap: 1.25rem; padding: 1.75rem; border: 1px solid var(--ifm-color-emphasis-300); border-radius: 14px; background: var(--ifm-background-surface-color); margin: 1.5rem 0; }
+.entryIcon { flex: 0 0 auto; display: grid; place-items: center; width: 48px; height: 48px; border-radius: 12px; background: var(--ifm-color-emphasis-100); color: var(--ifm-color-primary); font: 700 20px ui-monospace, monospace; }
+.entryText { min-width: 0; }
+.entryText h3 { margin: 0 0 .5rem; }
+.entryText p { color: var(--ifm-color-emphasis-700); margin: 0; line-height: 1.8; }
+.actions { display: flex; flex-wrap: wrap; align-items: center; gap: 1rem; margin-top: 1.25rem; }
+.page { width: 100%; min-width: 0; background: var(--ifm-background-color); }
+.header { padding: 1.75rem 2rem; border-bottom: 1px solid var(--ifm-color-emphasis-300); }
+.back { display: inline-block; font-size: .9rem; margin-bottom: 1.25rem; }
+.titleRow { display: flex; justify-content: space-between; align-items: center; gap: 1.5rem; }
+.titleRow h1 { font-size: 2rem; margin: .3rem 0 .5rem; }
+.titleRow p { margin: 0; color: var(--ifm-color-emphasis-700); line-height: 1.7; }
+.titleRow > a { flex-shrink: 0; }
+.eyebrow { color: var(--ifm-color-primary); font-weight: 600; font-size: .8rem; letter-spacing: .06em; }
+.meta { display: flex; flex-wrap: wrap; gap: 1rem; margin-top: 1rem; color: var(--ifm-color-emphasis-700); font-size: .8rem; }
+.meta span { border: 1px solid var(--ifm-color-emphasis-300); border-radius: 6px; padding: .2rem .6rem; }
+.viewer { width: 100%; min-width: 0; }
+.viewer :global(.redoc-wrap) { background: var(--ifm-background-color); }
+.viewer :global(.api-content) { min-width: 0; }
+.viewer :global(pre) { max-width: 100%; overflow-x: auto; }
+.loading, .error { padding: 3rem 2rem; text-align: center; color: var(--ifm-color-emphasis-700); }
+@media (max-width: 800px) {
+  .header { padding: 1.25rem 1rem; }
+  .titleRow { flex-direction: column; align-items: flex-start; gap: 1rem; }
+  .entry { flex-direction: column; padding: 1.25rem; }
+}

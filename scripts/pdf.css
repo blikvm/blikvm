@@ -1,0 +1,55 @@
+@page {
+  size: A4;
+  margin: 16mm 14mm;
+}
+
+html, body {
+  font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, "Noto Sans", "Noto Sans CJK SC", "Microsoft YaHei", sans-serif;
+  font-size: 11pt;
+  line-height: 1.55;
+  color: #111;
+}
+
+h1, h2, h3 {
+  page-break-after: avoid;
+}
+
+pre, code {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+  font-size: 9.5pt;
+}
+
+pre {
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+img {
+  max-width: 100%;
+  height: auto;
+}
+
+a {
+  color: inherit;
+  text-decoration: underline;
+}
+
+blockquote {
+  border-left: 3px solid #ddd;
+  padding-left: 10px;
+  margin-left: 0;
+}
+
+table {
+  border-collapse: collapse;
+  width: 100%;
+}
+
+table, th, td {
+  border: 1px solid #ddd;
+}
+
+th, td {
+  padding: 6px 8px;
+  vertical-align: top;
+}

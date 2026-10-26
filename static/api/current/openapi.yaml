@@ -1,0 +1,5794 @@
+openapi: 3.0.3
+info:
+  title: BlikVM Go API
+  version: 1.0.0
+  description: |
+    OpenAPI contract for the native Go KVM backend.
+    With authentication enabled, all protected routes enforce current account permissions.
+    Unknown routes require device.configure. Authorized users operate immediately,
+    without acquiring or renewing a control lease. Multiple authorized clients may
+    operate concurrently. RBAC is inactive
+    when authentication is disabled. Legacy readonly accounts migrate to viewer;
+    legacy sessions and API tokens must be reissued after upgrade.
+servers:
+  - url: /
+tags:
+  - name: auth
+  - name: stream
+  - name: device
+  - name: network
+  - name: remote-access
+  - name: vpn
+  - name: wol
+  - name: msd
+  - name: hid
+  - name: prometheus
+  - name: account
+  - name: display
+  - name: system
+  - name: application
+paths:
+  /api/v1/session/control:
+    get:
+      deprecated: true
+      tags: [auth]
+      summary: Compatibility status for legacy clients; no acquisition required
+      operationId: getControlLease
+      security: [{ bearerAuth: [] }]
+      responses:
+        '200':
+          description: Shared input mode, required=false; mine indicates action permission only
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ControlResponse' }
+    post:
+      deprecated: true
+      tags: [auth]
+      summary: Compatibility no-op for legacy acquisition calls
+      operationId: postControlLease
+      security: [{ bearerAuth: [] }]
+      responses:
+        '200':
+          description: No owner or lease is created
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ControlResponse' }
+        '401': { description: Invalid credentials }
+        '403': { description: Missing action permission }
+  /api/v1/auth/password:
+    post:
+      tags: [account]
+      summary: Change own password and revoke own credentials
+      description: Browser session required. Success requires login again.
+      operationId: postOwnPassword
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [currentPassword, newPassword]
+              properties:
+                currentPassword: { type: string, format: password }
+                newPassword: { type: string, format: password }
+      responses:
+        '200': { description: Password changed; data.loginRequired is true }
+        '400': { description: Invalid request }
+        '401': { description: Invalid current password or session }
+        '403': { description: Browser session required }
+  /api/v1/auth/user/reset-2fa:
+    post:
+      tags: [account]
+      summary: Reset a specific account's TOTP and revoke its credentials
+      description: Requires administrator browser session, administrator password and administrator TOTP if enabled.
+      operationId: postResetUser2FA
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [username, password]
+              properties:
+                username: { type: string }
+                password: { type: string, format: password }
+                code: { type: string, description: Administrator's own TOTP when enabled }
+      responses:
+        '200': { description: Reset succeeded }
+        '400': { description: Invalid request or unknown account }
+        '401': { description: Reauthentication failed }
+        '403': { description: Administrator browser session required }
+  /api/v1/audit:
+    get:
+      tags: [account]
+      summary: Read the most recent 500 security audit events
+      operationId: getSecurityAudit
+      security: [{ bearerAuth: [] }]
+      responses:
+        '200':
+          description: Persistent bounded event log; contains no passwords, tokens or input contents
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok: { type: boolean }
+                  data:
+                    type: object
+                    properties:
+                      events:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            time: { type: string, format: date-time }
+                            user: { type: string }
+                            action: { type: string }
+                            target: { type: string }
+        '403': { description: audit.read required }
+  /healthz:
+    get:
+      summary: Health check
+      operationId: getHealthz
+      responses:
+        '200':
+          description: Service health
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HealthResponse'
+  /api/v1/auth/login:
+    post:
+      tags: [auth]
+      summary: Login and create a server-side browser session
+      operationId: postAuthLogin
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+      responses:
+        '200':
+          description: Login success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LoginResponse'
+        '400':
+          description: Invalid request body
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Invalid credentials
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /api/v1/auth/state:
+    get:
+      tags: [auth]
+      summary: Get global auth state (whether login is required)
+      operationId: getAuthState
+      responses:
+        '200':
+          description: Auth state
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [ok, data]
+                properties:
+                  ok:
+                    type: boolean
+                    enum: [true]
+                  data:
+                    type: object
+                    required: [enabled]
+                    properties:
+                      enabled:
+                        type: boolean
+  /api/v1/auth/logout-all:
+    post:
+      tags: [auth]
+      summary: Revoke all sessions and API tokens for the current user
+      operationId: postAuthLogoutAll
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: All credentials revoked
+        '401':
+          description: Missing or invalid token
+  /api/v1/auth/api-tokens:
+    get:
+      tags: [auth]
+      summary: List the current user's API tokens
+      operationId: getAuthApiTokens
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: API token metadata (never token secrets)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiTokenListResponse'
+        '401':
+          description: Missing or invalid token
+    post:
+      tags: [auth]
+      summary: Create an API token
+      operationId: postAuthApiToken
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ApiTokenCreateRequest'
+      responses:
+        '201':
+          description: Token secret, returned only once
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiTokenCreateResponse'
+        '400':
+          description: Invalid request
+        '401':
+          description: Missing or invalid token
+  /api/v1/auth/api-tokens/{id}:
+    delete:
+      tags: [auth]
+      summary: Revoke one API token
+      operationId: deleteAuthApiToken
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: Token revoked
+        '401':
+          description: Missing or invalid token
+        '404':
+          description: Token not found
+  /api/v1/auth/me:
+    get:
+      tags: [auth]
+      summary: Return current auth session
+      operationId: getAuthMe
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Authenticated user info
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MeResponse'
+        '401':
+          description: Missing or invalid token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /api/v1/auth/logout:
+    post:
+      tags: [auth]
+      summary: Logout and clear auth cookie
+      operationId: postAuthLogout
+      responses:
+        '200':
+          description: Logout success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OkResponse'
+  /api/v1/mic:
+    get:
+      tags: [device]
+      summary: Get microphone (audio-in) registration state
+      operationId: getMic
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Mic state
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [ok, data]
+                properties:
+                  ok:
+                    type: boolean
+                    enum: [true]
+                  data:
+                    type: object
+                    required: [enabled]
+                    properties:
+                      enabled:
+                        type: boolean
+        '401':
+          description: Missing or invalid token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+    post:
+      tags: [device]
+      summary: Set microphone (audio-in) registration state
+      operationId: postMic
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                enable:
+                  type: boolean
+                enabled:
+                  type: boolean
+      responses:
+        '200':
+          description: Updated mic state
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [ok, data]
+                properties:
+                  ok:
+                    type: boolean
+                    enum: [true]
+                  data:
+                    type: object
+                    required: [enabled]
+                    properties:
+                      enabled:
+                        type: boolean
+        '400':
+          description: Invalid request body
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Missing or invalid token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /api/v1/network:
+    get:
+      tags: [network]
+      summary: Network state (ports, protocol, interfaces)
+      operationId: getNetwork
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Network state
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NetworkGetResponse'
+        '401':
+          description: Missing or invalid token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/v1/hostname:
+    post:
+      tags: [network]
+      summary: Set hostname
+      operationId: postHostname
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [hostname]
+              properties:
+                hostname:
+                  type: string
+      responses:
+        '200':
+          description: Hostname updated
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [ok, data]
+                properties:
+                  ok:
+                    type: boolean
+                    enum: [true]
+                  data:
+                    type: object
+                    required: [hostname]
+                    properties:
+                      hostname:
+                        type: string
+        '400':
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Missing or invalid token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/v1/cloud:
+    get:
+      tags: [remote-access]
+      summary: Cloud binding and connection status (local device administrator only)
+      operationId: getCloudStatus
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Status; device secret is never returned
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok: { type: boolean }
+                  data:
+                    type: object
+                    properties:
+                      enabled: { type: boolean }
+                      url: { type: string }
+                      deviceId: { type: string }
+                      connected: { type: boolean }
+                      error: { type: string }
+        '401': { description: Device login required }
+        '403': { description: Administrator required }
+        '409': { description: Enable device authentication first }
+    post:
+      tags: [remote-access]
+      summary: Bind, enable, disable or unbind cloud access
+      operationId: configureCloudAccess
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [action]
+              properties:
+                action: { type: string, enum: [bind, enable, unbind] }
+                url: { type: string, description: HTTPS cloud origin for bind }
+                code: { type: string, description: Single-use pairing code for bind }
+                enabled: { type: boolean, description: Used with enable action }
+      responses:
+        '200': { description: Configuration applied }
+        '400': { description: Invalid configuration or cloud rejected request }
+        '401': { description: Device login required }
+        '403': { description: Administrator required }
+        '409': { description: Enable device authentication first }
+
+  /api/v1/remote-access/port-forwarding:
+    get:
+      tags: [remote-access]
+      summary: Saved and active WebRTC fixed UDP port configuration (administrator only)
+      security: [{ bearerAuth: [] }]
+      responses:
+        '200': { description: Configuration, active configuration, transportReady and restartRequired }
+        '401': { description: Device login required }
+        '403': { description: Administrator required }
+    put:
+      tags: [remote-access]
+      summary: Save fixed UDP port configuration; restart the service to apply
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              required: [enabled, udpPort, publicIPv4]
+              properties:
+                enabled: { type: boolean, default: false }
+                udpPort: { type: integer, minimum: 1024, maximum: 65535, default: 20000 }
+                publicIPv4: { type: string, description: Optional advertised IPv4; ignored when disabled }
+      responses:
+        '200': { description: Saved atomically; restartRequired indicates whether to restart }
+        '400': { description: Invalid configuration }
+        '401': { description: Device login required }
+        '403': { description: Administrator required }
+        '409': { description: Port unavailable or authentication disabled }
+
+  /api/v1/remote-access/uplink:
+    get:
+      tags: [remote-access]
+      summary: Uplink candidates and default routes
+      operationId: getRemoteAccessUplink
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Uplink status
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RemoteAccessUplinkGetResponse'
+        '401':
+          description: Missing or invalid token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+    post:
+      tags: [remote-access]
+      summary: Set preferred uplink interface
+      operationId: postRemoteAccessUplink
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [preferredInterface]
+              properties:
+                preferredInterface:
+                  type: string
+      responses:
+        '200':
+          description: Preference stored
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [ok, data]
+                properties:
+                  ok:
+                    type: boolean
+                    enum: [true]
+                  data:
+                    type: object
+                    required: [preferredInterface]
+                    properties:
+                      preferredInterface:
+                        type: string
+        '400':
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Missing or invalid token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/v1/wol:
+    get:
+      tags: [wol]
+      summary: List Wake-on-LAN devices
+      operationId: getWol
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: WOL devices
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WolListResponse'
+        '401':
+          description: Missing or invalid token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+    delete:
+      tags: [wol]
+      summary: Remove Wake-on-LAN device
+      operationId: deleteWol
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [mac]
+              properties:
+                mac:
+                  type: string
+      responses:
+        '200':
+          description: Updated list
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WolListResponse'
+        '400':
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Missing or invalid token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/v1/wol/send:
+    post:
+      tags: [wol]
+      summary: Send magic packet
+      operationId: postWolSend
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [mac]
+              properties:
+                mac:
+                  type: string
+      responses:
+        '200':
+          description: Packet sent
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OkResponse'
+        '400':
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Missing or invalid token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/v1/vpn:
+    get:
+      tags: [vpn]
+      summary: Get VPN service states
+      operationId: getVpn
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: VPN states
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VPNGetResponse'
+        '401':
+          description: Missing or invalid token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+    post:
+      tags: [vpn]
+      summary: Enable/disable a VPN service unit
+      operationId: postVpnToggle
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [vpn, active]
+              properties:
+                vpn:
+                  type: string
+                active:
+                  type: boolean
+      responses:
+        '200':
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OkResponse'
+        '400':
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Missing or invalid token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/v1/vpn/wireguard/config:
+    get:
+      tags: [vpn]
+      summary: Get WireGuard wg0 config status
+      operationId: getWireguardConfig
+      parameters:
+        - in: query
+          name: download
+          required: false
+          schema:
+            type: boolean
+          description: When true, downloads the current wg0.conf file instead of returning JSON status.
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: WireGuard status
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WireGuardConfigResponse'
+            text/plain:
+              schema:
+                type: string
+        '401':
+          description: Missing or invalid token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+    post:
+      tags: [vpn]
+      summary: Upload WireGuard wg0 config
+      operationId: postWireguardConfig
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [config, enable, restartIfActive]
+              properties:
+                config:
+                  type: string
+                enable:
+                  type: boolean
+                restartIfActive:
+                  type: boolean
+      responses:
+        '200':
+          description: WireGuard status
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WireGuardConfigResponse'
+        '400':
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Missing or invalid token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/v1/vpn/tailscale/config:
+    get:
+      tags: [vpn]
+      summary: Get Tailscale config and runtime status
+      operationId: getTailscaleConfig
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Tailscale config and status
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TailscaleConfigResponse'
+        '401':
+          description: Missing or invalid token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+    post:
+      tags: [vpn]
+      summary: Save Tailscale config
+      operationId: postTailscaleConfig
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TailscaleConfigInput'
+      responses:
+        '200':
+          description: Tailscale config and status
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TailscaleConfigResponse'
+        '400':
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Missing or invalid token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/v1/vpn/zerotier/config:
+    get:
+      tags: [vpn]
+      summary: Get ZeroTier config and runtime status
+      operationId: getZerotierConfig
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: ZeroTier config and status
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ZeroTierConfigResponse'
+        '401':
+          description: Missing or invalid token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+    post:
+      tags: [vpn]
+      summary: Save ZeroTier config
+      operationId: postZerotierConfig
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ZeroTierConfigInput'
+      responses:
+        '200':
+          description: ZeroTier config and status
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ZeroTierConfigResponse'
+        '400':
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Missing or invalid token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Config file not found
+
+  /api/v1/prometheus/state:
+    get:
+      tags: [prometheus]
+      summary: Get Prometheus exporter state
+      operationId: getPrometheusState
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Prometheus state
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PrometheusStateResponse'
+        '401':
+          description: Missing or invalid token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/v1/prometheus:
+    post:
+      tags: [prometheus]
+      summary: Enable/disable Prometheus exporter
+      operationId: postPrometheus
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [enable]
+              properties:
+                enable:
+                  type: boolean
+      responses:
+        '200':
+          description: Prometheus state
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [ok, data]
+                properties:
+                  ok:
+                    type: boolean
+                    enum: [true]
+                  data:
+                    type: object
+                    required: [enable]
+                    properties:
+                      enable:
+                        type: boolean
+        '400':
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Missing or invalid token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/v1/prometheus/metrics:
+    get:
+      tags: [prometheus]
+      summary: Prometheus metrics (text)
+      operationId: getPrometheusMetrics
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Prometheus metrics text
+          content:
+            text/plain:
+              schema:
+                type: string
+        '401':
+          description: Missing or invalid token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Prometheus disabled
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/v1/display:
+    get:
+      tags: [display]
+      summary: Get display settings
+      operationId: getDisplay
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Display settings
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DisplayResponse'
+        '401':
+          description: Missing or invalid token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+    post:
+      tags: [display]
+      summary: Update display settings
+      operationId: postDisplay
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DisplaySettings'
+      responses:
+        '200':
+          description: Display settings
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DisplayResponse'
+        '400':
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Missing or invalid token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/v1/hid/status:
+    get:
+      tags: [hid]
+      summary: Get HID settings/status
+      operationId: getHidStatus
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: HID status
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HidStatusResponse'
+        '401':
+          description: Missing or invalid token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/v1/hid:
+    post:
+      tags: [hid]
+      summary: Enable/disable HID (logical)
+      operationId: postHidToggle
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: query
+          name: action
+          required: true
+          schema:
+            type: string
+            enum: [enable, disable]
+      responses:
+        '200':
+          description: Updated
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [ok, data]
+                properties:
+                  ok:
+                    type: boolean
+                    enum: [true]
+                  data:
+                    type: object
+                    required: [enabled]
+                    properties:
+                      enabled:
+                        type: boolean
+        '400':
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Missing or invalid token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/v1/hid/mode:
+    get:
+      tags: [hid]
+      summary: Get mouse mode
+      operationId: getHidMouseMode
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Mouse mode
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [ok, data]
+                properties:
+                  ok:
+                    type: boolean
+                    enum: [true]
+                  data:
+                    type: object
+                    required: [mouseMode]
+                    properties:
+                      mouseMode:
+                        type: string
+                        enum: [dual, absolute, relative]
+        '401':
+          description: Missing or invalid token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+    post:
+      tags: [hid]
+      summary: Set mouse mode
+      operationId: postHidMouseMode
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [mouseMode]
+              properties:
+                mouseMode:
+                  type: string
+                  enum: [dual, absolute, relative]
+      responses:
+        '200':
+          description: Mouse mode updated
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [ok, data]
+                properties:
+                  ok:
+                    type: boolean
+                    enum: [true]
+                  data:
+                    type: object
+                    required: [mouseMode]
+                    properties:
+                      mouseMode:
+                        type: string
+                        enum: [dual, absolute, relative]
+        '400':
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Missing or invalid token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/v1/hid/reset:
+    post:
+      tags: [hid]
+      summary: Reset HID gadget nodes (best-effort)
+      operationId: postHidReset
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Reset completed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OkResponse'
+        '401':
+          description: Missing or invalid token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '503':
+          description: HID unavailable
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/v1/hid/events:
+    post:
+      tags: [hid]
+      summary: Inject a single HID event
+      description: |
+        Unified single-event HID injection endpoint.
+
+        Supported event types:
+        - `keyboard`: send one keyboard key press/release/tap
+        - `mouseButton`: send one mouse button press/release/click
+        - `mouseMove`: move the pointer to an absolute normalized position
+        - `mouseRelative`: move the pointer by a relative delta
+        - `mouseWheel`: send one wheel scroll event
+
+        Mouse mode behavior:
+        - `mouseMove` requires server HID mouse mode `absolute` or `dual`
+        - `mouseRelative` requires server HID mouse mode `relative` or `dual`
+        - In `dual` mode, `mouseButton` and `mouseWheel` use the relative mouse gadget by default,
+          so omitting `toX` and `toY` will not reposition the pointer
+        - If `toX` and `toY` are provided for `mouseButton` or `mouseWheel`, the server switches to
+          the absolute mouse gadget for that event
+
+        Keyboard notes:
+        - `key` uses browser-style `KeyboardEvent.code` values
+        - when `state` is omitted, the server performs a tap (`press -> release`)
+        - lock keys such as `CapsLock`, `NumLock`, and `ScrollLock` are handled as reliable taps
+      operationId: postHidEvent
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/HidEventRequest'
+            examples:
+              keyboardTap:
+                summary: Tap the Delete key
+                value:
+                  type: keyboard
+                  key: Delete
+              keyboardPress:
+                summary: Press ControlLeft and keep it down
+                value:
+                  type: keyboard
+                  key: ControlLeft
+                  state: true
+              keyboardPressAndRelease:
+                summary: Press Enter and release immediately
+                value:
+                  type: keyboard
+                  key: Enter
+                  state: true
+                  finish: true
+              mouseButtonClick:
+                summary: Left click at the last absolute pointer position
+                value:
+                  type: mouseButton
+                  button: left
+              mouseMove:
+                summary: Move the pointer to the screen center
+                value:
+                  type: mouseMove
+                  toX: 0.5
+                  toY: 0.5
+              mouseRelative:
+                summary: Move the pointer relatively
+                value:
+                  type: mouseRelative
+                  deltaX: 24
+                  deltaY: -12
+              mouseWheel:
+                summary: Scroll vertically
+                value:
+                  type: mouseWheel
+                  deltaX: 0
+                  deltaY: 120
+      responses:
+        '200':
+          description: Event accepted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OkResponse'
+        '400':
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Missing or invalid token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '409':
+          description: HID disabled or mouse mode conflict
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '503':
+          description: HID unavailable
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/v1/hid/paste:
+    post:
+      tags: [hid]
+      summary: Paste text into HID keyboard (ASCII subset)
+      operationId: postHidPaste
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [text]
+              properties:
+                text:
+                  type: string
+                lang:
+                  type: string
+                delay:
+                  type: integer
+                  format: int32
+      responses:
+        '200':
+          description: Done
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OkResponse'
+        '400':
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Missing or invalid token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '409':
+          description: HID disabled
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '503':
+          description: HID unavailable
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/v1/hid/shortcuts:
+    post:
+      tags: [hid]
+      summary: Send keyboard shortcut sequence
+      operationId: postHidShortcuts
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [shortcuts]
+              properties:
+                shortcuts:
+                  type: array
+                  items:
+                    type: string
+      responses:
+        '200':
+          description: Done
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OkResponse'
+        '400':
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Missing or invalid token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '409':
+          description: HID disabled
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '503':
+          description: HID unavailable
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/v1/hid/loop/status:
+    get:
+      tags: [hid]
+      summary: Get HID pass-through state
+      operationId: getHidLoopStatus
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Pass-through state
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [ok, data]
+                properties:
+                  ok:
+                    type: boolean
+                    enum: [true]
+                  data:
+                    type: object
+                    required: [enabled, wheelReverse]
+                    properties:
+                      enabled:
+                        type: boolean
+                      wheelReverse:
+                        type: boolean
+        '401':
+          description: Missing or invalid token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/v1/hid/loop/active:
+    post:
+      tags: [hid]
+      summary: Enable/disable HID pass-through
+      operationId: postHidLoopActive
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [isActive]
+              properties:
+                isActive:
+                  type: boolean
+      responses:
+        '200':
+          description: Updated
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [ok, data]
+                properties:
+                  ok:
+                    type: boolean
+                    enum: [true]
+                  data:
+                    type: object
+                    required: [enabled]
+                    properties:
+                      enabled:
+                        type: boolean
+        '400':
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Missing or invalid token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/v1/hid/loop/update:
+    post:
+      tags: [hid]
+      summary: Update HID pass-through settings
+      operationId: postHidLoopUpdate
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [wheelReverse]
+              properties:
+                wheelReverse:
+                  type: boolean
+      responses:
+        '200':
+          description: Updated
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [ok, data]
+                properties:
+                  ok:
+                    type: boolean
+                    enum: [true]
+                  data:
+                    type: object
+                    required: [wheelReverse]
+                    properties:
+                      wheelReverse:
+                        type: boolean
+        '400':
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Missing or invalid token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/v1/mouse/jiggler:
+    post:
+      tags: [hid]
+      summary: Configure mouse jiggler
+      operationId: postMouseJiggler
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [interval]
+              properties:
+                interval:
+                  type: integer
+                  format: int32
+      responses:
+        '200':
+          description: Updated
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [ok, data]
+                properties:
+                  ok:
+                    type: boolean
+                    enum: [true]
+                  data:
+                    type: object
+                    required: [intervalSec]
+                    properties:
+                      intervalSec:
+                        type: integer
+                        format: int32
+        '400':
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Missing or invalid token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/v1/msd/state:
+    get:
+      tags: [msd]
+      summary: Virtual media (MSD) state
+      operationId: getMsdState
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: MSD state
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MsdStateResponse'
+        '401':
+          description: Missing or invalid token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/v1/msd/service:
+    post:
+      tags: [msd]
+      summary: Initialize/destroy MSD gadget function
+      operationId: postMsdService
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: query
+          name: action
+          required: true
+          schema:
+            type: string
+            enum: [init, enable, destroy, disable]
+      responses:
+        '200':
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OkResponse'
+        '400':
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Missing or invalid token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/v1/msd/images:
+    get:
+      tags: [msd]
+      summary: List MSD images
+      operationId: getMsdImages
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: MSD images
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MsdImagesResponse'
+        '401':
+          description: Missing or invalid token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/v1/msd/images/{name}:
+    get:
+      tags: [msd]
+      summary: Download MSD image
+      operationId: getMsdImage
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: name
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Image file
+          content:
+            application/octet-stream:
+              schema:
+                type: string
+                format: binary
+        '401':
+          description: Missing or invalid token
+    delete:
+      tags: [msd]
+      summary: Delete MSD image
+      operationId: deleteMsdImage
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: name
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Deleted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OkResponse'
+        '400':
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Missing or invalid token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/v1/msd/storage:
+    get:
+      tags: [msd]
+      summary: Get MSD storage usage
+      operationId: getMsdStorage
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Storage
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [ok, data]
+                properties:
+                  ok:
+                    type: boolean
+                    enum: [true]
+                  data:
+                    type: object
+                    required: [total, used, avail]
+                    properties:
+                      total:
+                        type: integer
+                        format: int64
+                      used:
+                        type: integer
+                        format: int64
+                      avail:
+                        type: integer
+                        format: int64
+        '401':
+          description: Missing or invalid token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/v1/msd/mounted:
+    get:
+      tags: [msd]
+      summary: Get mounted MSD image
+      operationId: getMsdMounted
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Mounted image
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [ok, data]
+                properties:
+                  ok:
+                    type: boolean
+                    enum: [true]
+                  data:
+                    type: object
+                    required: [name, cdrom, readOnly]
+                    properties:
+                      name:
+                        type: string
+                      cdrom:
+                        type: boolean
+                      readOnly:
+                        type: boolean
+        '401':
+          description: Missing or invalid token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/v1/msd/mount:
+    post:
+      tags: [msd]
+      summary: Mount an MSD image
+      operationId: postMsdMount
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [name, cdrom, readOnly]
+              properties:
+                name:
+                  type: string
+                cdrom:
+                  type: boolean
+                readOnly:
+                  type: boolean
+      responses:
+        '200':
+          description: Mounted
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [ok, data]
+                properties:
+                  ok:
+                    type: boolean
+                    enum: [true]
+                  data:
+                    type: object
+                    required: [name, cdrom, readOnly]
+                    properties:
+                      name:
+                        type: string
+                      cdrom:
+                        type: boolean
+                      readOnly:
+                        type: boolean
+        '400':
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Missing or invalid token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/v1/msd/unmount:
+    post:
+      tags: [msd]
+      summary: Unmount current MSD image
+      operationId: postMsdUnmount
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Unmounted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OkResponse'
+        '401':
+          description: Missing or invalid token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/v1/msd/upload:
+    post:
+      tags: [msd]
+      summary: Upload MSD images (multipart)
+      operationId: postMsdUpload
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                file:
+                  type: string
+                  format: binary
+      responses:
+        '200':
+          description: Upload result
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [ok, data]
+                properties:
+                  ok:
+                    type: boolean
+                    enum: [true]
+                  data:
+                    type: object
+                    required: [uploaded]
+                    properties:
+                      uploaded:
+                        type: array
+                        items:
+                          type: object
+                          required: [name, size]
+                          properties:
+                            name:
+                              type: string
+                            size:
+                              type: integer
+                              format: int64
+        '400':
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Missing or invalid token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/v1/stream/status:
+    get:
+      tags: [stream]
+      summary: Stream state and rates
+      operationId: getStreamStatus
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Stream status
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StreamStatusResponse'
+        '401':
+          description: Missing or invalid token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /api/v1/stream/idr:
+    post:
+      tags: [stream]
+      summary: Force next keyframe (IDR)
+      operationId: postStreamIdr
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: IDR scheduled
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IdrResponse'
+        '401':
+          description: Missing or invalid token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Encoder error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /api/v1/session/ws:
+    get:
+      tags: [device]
+      summary: Session control channel (WebSocket)
+      description: >
+        Upgrades to WebSocket. Used by the UI to push system/video status and to send
+        keyboard/mouse/touch events. Requires bearer token (Authorization header or token query parameter).
+      operationId: wsSession
+      security:
+        - bearerAuth: []
+      responses:
+        '101':
+          description: Switching Protocols
+        '401':
+          description: Missing or invalid token
+  /api/v1/stream/h264/webrtc:
+    options:
+      tags: [stream]
+      summary: H.264 WHEP endpoint (OPTIONS)
+      description: Proxied to MediaMTX WHEP endpoint. Returns ICE server hints via Link headers.
+      operationId: whepH264Options
+      security: [{ bearerAuth: [] }]
+      responses:
+        '204': { description: No Content }
+        '401': { description: Missing or invalid token }
+        '502': { description: MediaMTX backend unavailable }
+    post:
+      tags: [stream]
+      summary: H.264 WHEP endpoint (POST offer SDP)
+      description: Proxied to MediaMTX WHEP endpoint.
+      operationId: whepH264Post
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/sdp:
+            schema: { type: string }
+      responses:
+        '201': { description: Created (answer SDP in body) }
+        '401': { description: Missing or invalid token }
+        '502': { description: MediaMTX backend unavailable }
+    patch:
+      tags: [stream]
+      summary: H.264 WHEP endpoint (PATCH trickle ICE)
+      description: Proxied to MediaMTX WHEP endpoint.
+      operationId: whepH264Patch
+      security: [{ bearerAuth: [] }]
+      responses:
+        '204': { description: No Content }
+        '401': { description: Missing or invalid token }
+        '502': { description: MediaMTX backend unavailable }
+    delete:
+      tags: [stream]
+      summary: H.264 WHEP endpoint (DELETE session)
+      description: Proxied to MediaMTX WHEP endpoint.
+      operationId: whepH264Delete
+      security: [{ bearerAuth: [] }]
+      responses:
+        '200': { description: OK }
+        '204': { description: No Content }
+        '401': { description: Missing or invalid token }
+        '502': { description: MediaMTX backend unavailable }
+    get:
+      tags: [stream]
+      summary: H.264 WHEP endpoint (GET passthrough)
+      description: Proxied to MediaMTX WHEP endpoint.
+      operationId: whepH264Get
+      security: [{ bearerAuth: [] }]
+      responses:
+        '200': { description: OK }
+        '401': { description: Missing or invalid token }
+        '502': { description: MediaMTX backend unavailable }
+    head:
+      tags: [stream]
+      summary: H.264 WHEP endpoint (HEAD passthrough)
+      description: Proxied to MediaMTX WHEP endpoint.
+      operationId: whepH264Head
+      security: [{ bearerAuth: [] }]
+      responses:
+        '200': { description: OK }
+        '401': { description: Missing or invalid token }
+        '502': { description: MediaMTX backend unavailable }
+  /api/v1/stream/h265/webrtc:
+    options:
+      tags: [stream]
+      summary: H.265 WHEP endpoint (OPTIONS)
+      description: Proxied to MediaMTX WHEP endpoint. Returns ICE server hints via Link headers.
+      operationId: whepH265Options
+      security: [{ bearerAuth: [] }]
+      responses:
+        '204': { description: No Content }
+        '401': { description: Missing or invalid token }
+        '502': { description: MediaMTX backend unavailable }
+    post:
+      tags: [stream]
+      summary: H.265 WHEP endpoint (POST offer SDP)
+      description: Proxied to MediaMTX WHEP endpoint.
+      operationId: whepH265Post
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/sdp:
+            schema: { type: string }
+      responses:
+        '201': { description: Created (answer SDP in body) }
+        '401': { description: Missing or invalid token }
+        '502': { description: MediaMTX backend unavailable }
+    patch:
+      tags: [stream]
+      summary: H.265 WHEP endpoint (PATCH trickle ICE)
+      description: Proxied to MediaMTX WHEP endpoint.
+      operationId: whepH265Patch
+      security: [{ bearerAuth: [] }]
+      responses:
+        '204': { description: No Content }
+        '401': { description: Missing or invalid token }
+        '502': { description: MediaMTX backend unavailable }
+    delete:
+      tags: [stream]
+      summary: H.265 WHEP endpoint (DELETE session)
+      description: Proxied to MediaMTX WHEP endpoint.
+      operationId: whepH265Delete
+      security: [{ bearerAuth: [] }]
+      responses:
+        '200': { description: OK }
+        '204': { description: No Content }
+        '401': { description: Missing or invalid token }
+        '502': { description: MediaMTX backend unavailable }
+    get:
+      tags: [stream]
+      summary: H.265 WHEP endpoint (GET passthrough)
+      description: Proxied to MediaMTX WHEP endpoint.
+      operationId: whepH265Get
+      security: [{ bearerAuth: [] }]
+      responses:
+        '200': { description: OK }
+        '401': { description: Missing or invalid token }
+        '502': { description: MediaMTX backend unavailable }
+    head:
+      tags: [stream]
+      summary: H.265 WHEP endpoint (HEAD passthrough)
+      description: Proxied to MediaMTX WHEP endpoint.
+      operationId: whepH265Head
+      security: [{ bearerAuth: [] }]
+      responses:
+        '200': { description: OK }
+        '401': { description: Missing or invalid token }
+        '502': { description: MediaMTX backend unavailable }
+  /api/v1/stream/audio/webrtc:
+    options:
+      tags: [stream]
+      summary: Audio WHEP endpoint (OPTIONS)
+      description: Proxied to MediaMTX WHEP endpoint. Returns ICE server hints via Link headers.
+      operationId: whepAudioOptions
+      security: [{ bearerAuth: [] }]
+      responses:
+        '204': { description: No Content }
+        '401': { description: Missing or invalid token }
+        '502': { description: MediaMTX backend unavailable }
+    post:
+      tags: [stream]
+      summary: Audio WHEP endpoint (POST offer SDP)
+      description: Proxied to MediaMTX WHEP endpoint.
+      operationId: whepAudioPost
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/sdp:
+            schema: { type: string }
+      responses:
+        '201': { description: Created (answer SDP in body) }
+        '401': { description: Missing or invalid token }
+        '502': { description: MediaMTX backend unavailable }
+    patch:
+      tags: [stream]
+      summary: Audio WHEP endpoint (PATCH trickle ICE)
+      description: Proxied to MediaMTX WHEP endpoint.
+      operationId: whepAudioPatch
+      security: [{ bearerAuth: [] }]
+      responses:
+        '204': { description: No Content }
+        '401': { description: Missing or invalid token }
+        '502': { description: MediaMTX backend unavailable }
+    delete:
+      tags: [stream]
+      summary: Audio WHEP endpoint (DELETE session)
+      description: Proxied to MediaMTX WHEP endpoint.
+      operationId: whepAudioDelete
+      security: [{ bearerAuth: [] }]
+      responses:
+        '200': { description: OK }
+        '204': { description: No Content }
+        '401': { description: Missing or invalid token }
+        '502': { description: MediaMTX backend unavailable }
+    get:
+      tags: [stream]
+      summary: Audio WHEP endpoint (GET passthrough)
+      description: Proxied to MediaMTX WHEP endpoint.
+      operationId: whepAudioGet
+      security: [{ bearerAuth: [] }]
+      responses:
+        '200': { description: OK }
+        '401': { description: Missing or invalid token }
+        '502': { description: MediaMTX backend unavailable }
+    head:
+      tags: [stream]
+      summary: Audio WHEP endpoint (HEAD passthrough)
+      description: Proxied to MediaMTX WHEP endpoint.
+      operationId: whepAudioHead
+      security: [{ bearerAuth: [] }]
+      responses:
+        '200': { description: OK }
+        '401': { description: Missing or invalid token }
+        '502': { description: MediaMTX backend unavailable }
+  /api/v1/stream/audio/test:
+    get:
+      tags: [stream]
+      summary: Standalone audio test page
+      description: Returns an HTML page that connects only to `/api/v1/stream/audio/webrtc`.
+      operationId: getStreamAudioTest
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: HTML page
+          content:
+            text/html:
+              schema:
+                type: string
+        '401':
+          description: Missing or invalid token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /api/v1/stream/mjpeg:
+    get:
+      tags: [stream]
+      summary: MJPEG stream
+      operationId: getStreamMjpeg
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: MJPEG multipart stream
+          content:
+            multipart/x-mixed-replace:
+              schema:
+                type: string
+                format: binary
+        '401':
+          description: Missing or invalid token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/v1/stream/usb-camera/h264/webrtc:
+    options:
+      tags: [stream]
+      summary: USB Camera H.264 WHEP endpoint (OPTIONS)
+      description: Proxied to MediaMTX WHEP endpoint.
+      operationId: whepUSBCameraOptions
+      security: [{ bearerAuth: [] }]
+      responses:
+        '200': { description: OK }
+        '401': { description: Missing or invalid token }
+        '502': { description: MediaMTX backend unavailable }
+    post:
+      tags: [stream]
+      summary: USB Camera H.264 WHEP endpoint (POST offer SDP)
+      description: Proxied to MediaMTX WHEP endpoint.
+      operationId: whepUSBCameraPost
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/sdp:
+            schema:
+              type: string
+      responses:
+        '201': { description: Created }
+        '401': { description: Missing or invalid token }
+        '502': { description: MediaMTX backend unavailable }
+    patch:
+      tags: [stream]
+      summary: USB Camera H.264 WHEP endpoint (PATCH trickle ICE)
+      description: Proxied to MediaMTX WHEP endpoint.
+      operationId: whepUSBCameraPatch
+      security: [{ bearerAuth: [] }]
+      responses:
+        '204': { description: No Content }
+        '401': { description: Missing or invalid token }
+        '502': { description: MediaMTX backend unavailable }
+    delete:
+      tags: [stream]
+      summary: USB Camera H.264 WHEP endpoint (DELETE session)
+      description: Proxied to MediaMTX WHEP endpoint.
+      operationId: whepUSBCameraDelete
+      security: [{ bearerAuth: [] }]
+      responses:
+        '200': { description: OK }
+        '204': { description: No Content }
+        '401': { description: Missing or invalid token }
+        '502': { description: MediaMTX backend unavailable }
+    get:
+      tags: [stream]
+      summary: USB Camera H.264 WHEP endpoint (GET passthrough)
+      description: Proxied to MediaMTX WHEP endpoint.
+      operationId: whepUSBCameraGet
+      security: [{ bearerAuth: [] }]
+      responses:
+        '200': { description: OK }
+        '401': { description: Missing or invalid token }
+        '502': { description: MediaMTX backend unavailable }
+    head:
+      tags: [stream]
+      summary: USB Camera H.264 WHEP endpoint (HEAD passthrough)
+      description: Proxied to MediaMTX WHEP endpoint.
+      operationId: whepUSBCameraHead
+      security: [{ bearerAuth: [] }]
+      responses:
+        '200': { description: OK }
+        '401': { description: Missing or invalid token }
+        '502': { description: MediaMTX backend unavailable }
+
+  /api/v1/usb-camera:
+    get:
+      tags: [device]
+      summary: Get USB camera config
+      operationId: getUSBCamera
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: USB camera config
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/USBCameraConfig'
+        '401':
+          description: Missing or invalid token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+    post:
+      tags: [device]
+      summary: Save USB camera config
+      operationId: postUSBCamera
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/USBCameraConfigInput'
+      responses:
+        '200':
+          description: USB camera config saved
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/USBCameraConfig'
+        '400':
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Missing or invalid token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/v1/system/metrics:
+    get:
+      tags: [system]
+      summary: Runtime and system metrics
+      operationId: getSystemMetrics
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Metrics
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SystemMetricsResponse'
+        '401':
+          description: Missing or invalid token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /api/v1/system/restart:
+    post:
+      tags: [system]
+      summary: Restart process
+      operationId: postSystemRestart
+      security:
+        - bearerAuth: []
+      responses:
+        '202':
+          description: Restart scheduled
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RestartResponse'
+        '401':
+          description: Missing or invalid token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /api/v1/system/reboot:
+    post:
+      tags: [system]
+      summary: Reboot device
+      operationId: postSystemReboot
+      security:
+        - bearerAuth: []
+      responses:
+        '202':
+          description: Reboot scheduled
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [ok, data]
+                properties:
+                  ok:
+                    type: boolean
+                    enum: [true]
+                  data:
+                    type: object
+                    required: [rebooting, atUnixMs]
+                    properties:
+                      rebooting:
+                        type: boolean
+                        enum: [true]
+                      atUnixMs:
+                        type: integer
+                        format: int64
+        '401':
+          description: Missing or invalid token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /api/v1/system/shutdown:
+    post:
+      tags: [system]
+      summary: Shutdown device
+      operationId: postSystemShutdown
+      security:
+        - bearerAuth: []
+      responses:
+        '202':
+          description: Shutdown scheduled
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [ok, data]
+                properties:
+                  ok:
+                    type: boolean
+                    enum: [true]
+                  data:
+                    type: object
+                    required: [shuttingDown, atUnixMs]
+                    properties:
+                      shuttingDown:
+                        type: boolean
+                        enum: [true]
+                      atUnixMs:
+                        type: integer
+                        format: int64
+        '401':
+          description: Missing or invalid token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /api/v1/updates/status:
+    get:
+      tags: [system]
+      summary: Get the current update task and running versions
+      operationId: getUpdateTaskStatus
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Current durable task, versions, device time and supported update capabilities
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [ok, data]
+                properties:
+                  ok: {type: boolean, enum: [true]}
+                  data:
+                    type: object
+                    required: [runningVersion, systemVersion, systemSlot, busy, deviceTime, capabilities, task]
+                    properties:
+                      runningVersion: {type: string}
+                      systemVersion: {type: string}
+                      systemSlot: {type: string}
+                      busy: {type: boolean}
+                      deviceTime: {type: string, format: date-time}
+                      task:
+                        allOf:
+                          - $ref: '#/components/schemas/UpdateTask'
+                        nullable: true
+                      capabilities:
+                        type: object
+                        properties:
+                          tasks: {type: boolean}
+                          signedAudit: {type: boolean, enum: [false]}
+                          versionFloor: {type: boolean, enum: [false]}
+        '401':
+          description: Authentication required
+        '500':
+          description: Durable task state could not be read or persisted
+  /api/v1/updates/events:
+    get:
+      tags: [system]
+      summary: Get up to ten recent completed update tasks
+      operationId: getUpdateTaskHistory
+      description: JSON history ordered by the durable task sequence. Active tasks are omitted. This endpoint is not a signed audit chain or an SSE stream.
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Recent terminal tasks with their real timestamps
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [ok, data]
+                properties:
+                  ok: {type: boolean, enum: [true]}
+                  data:
+                    type: object
+                    required: [tasks, signed]
+                    properties:
+                      signed: {type: boolean, enum: [false]}
+                      tasks:
+                        type: array
+                        maxItems: 10
+                        items:
+                          $ref: '#/components/schemas/UpdateTask'
+        '401':
+          description: Authentication required
+        '500':
+          description: Update history could not be read
+  /api/v1/updates/liveness:
+    get:
+      tags: [system]
+      summary: Observe server restart liveness without an authenticated session
+      operationId: getUpdateLiveness
+      security: []
+      responses:
+        '200':
+          description: Minimal public version and server process incarnation
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [version, bootId]
+                properties:
+                  version: {type: string}
+                  bootId:
+                    type: string
+                    description: Server process incarnation identifier. Changes on server restart; it is not the operating system boot ID.
+  /api/v1/updates/tasks:
+    post:
+      tags: [system]
+      summary: Start an administrator-authorized signed update task
+      operationId: createUpdateTask
+      description: Upload the matching track first, then bind the task to that exact SHA-256. System tasks requiring CM4 EEPROM maintenance return 428 until explicit consent is provided. Supported firmware uses the normal update flow.
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [track, sha256]
+              properties:
+                track: {type: string, enum: [application, system]}
+                sha256: {type: string, pattern: '^[0-9a-f]{64}$'}
+                eepromConsent:
+                  type: boolean
+                  default: false
+                  description: Explicit operator consent to the reported CM4 boot firmware maintenance. Never infer consent from uploading a system bundle.
+      responses:
+        '202':
+          description: Durable asynchronous task created
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [ok, data]
+                properties:
+                  ok: {type: boolean, enum: [true]}
+                  data:
+                    $ref: '#/components/schemas/UpdateTask'
+        '400':
+          description: Invalid track/request or no matching uploaded bundle
+        '401':
+          description: Authentication required
+        '403':
+          description: Administrator permission required
+        '409':
+          description: Bundle changed, another operation is active, maintenance is unavailable, or an earlier uncertain task needs operator review
+        '428':
+          description: Explicit CM4 EEPROM maintenance consent is required; no task is started
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [ok, error, code, data]
+                properties:
+                  ok: {type: boolean, enum: [false]}
+                  error: {type: string}
+                  code: {type: string, enum: [bootloader_consent_required]}
+                  data:
+                    $ref: '#/components/schemas/BootloaderPrerequisite'
+        '500':
+          description: Durable state could not be read or persisted
+  /api/v1/system/update/status:
+    get:
+      tags: [system]
+      summary: Get A/B system update status
+      operationId: getSystemUpdateStatus
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Current system version and uploaded RAUC bundle
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [ok, data]
+                properties:
+                  ok:
+                    type: boolean
+                    enum: [true]
+                  data:
+                    type: object
+                    required: [busy, uploaded, currentVersion]
+                    properties:
+                      busy:
+                        type: boolean
+                      uploaded:
+                        type: boolean
+                      currentVersion:
+                        type: string
+                      systemSlot: {type: string}
+                      bootloader:
+                        $ref: '#/components/schemas/BootloaderPrerequisite'
+                      bundle:
+                        $ref: '#/components/schemas/SystemUpdateBundle'
+        '401':
+          description: Missing or invalid token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /api/v1/system/update/upload:
+    post:
+      tags: [system]
+      summary: Upload a signed RAUC A/B system bundle
+      operationId: postSystemUpdateUpload
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [file]
+              properties:
+                file:
+                  type: string
+                  format: binary
+      responses:
+        '200':
+          description: System bundle uploaded
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [ok, data]
+                properties:
+                  ok:
+                    type: boolean
+                    enum: [true]
+                  data:
+                    $ref: '#/components/schemas/SystemUpdateBundle'
+        '400':
+          description: Invalid system bundle upload
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '409':
+          description: Another update is in progress
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Missing or invalid token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /api/v1/system/update/stream:
+    get:
+      tags: [system]
+      summary: Install the uploaded RAUC bundle and stream logs (SSE)
+      operationId: getSystemUpdateStream
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: SSE installation log stream
+          content:
+            text/event-stream:
+              schema:
+                type: string
+        '401':
+          description: Missing or invalid token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /api/v1/application/update/stream:
+    get:
+      tags: [application]
+      summary: Stream update logs (SSE)
+      operationId: getApplicationUpdateStream
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: SSE stream
+          content:
+            text/event-stream:
+              schema:
+                type: string
+        '401':
+          description: Missing or invalid token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /api/v1/account:
+    get:
+      tags: [account]
+      summary: List accounts and roles
+      operationId: getAccount
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Accounts state
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [ok, data]
+                properties:
+                  ok:
+                    type: boolean
+                    enum: [true]
+                  data:
+                    type: object
+                    required: [current, roles, accounts]
+                    properties:
+                      current:
+                        type: object
+                        required: [username, role]
+                        properties:
+                          username:
+                            type: string
+                          role:
+                            type: string
+                            enum: [admin, operator, viewer]
+                      roles:
+                        type: array
+                        items:
+                          type: string
+                          enum: [admin, operator, viewer]
+                      accounts:
+                        type: array
+                        items:
+                          type: object
+                          required: [username, role, enabled]
+                          properties:
+                            id: { type: string }
+                            permissions: { type: array, items: { type: string } }
+                            twoFaEnabled: { type: boolean }
+                            username:
+                              type: string
+                            role:
+                              type: string
+                              enum: [admin, operator, viewer]
+                            enabled:
+                              type: boolean
+        '401':
+          description: Missing or invalid token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /api/v1/changeaccount:
+    post:
+      tags: [account]
+      summary: Admin update an account (username/password/role)
+      operationId: postChangeAccount
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [targetUsername]
+              properties:
+                targetUsername:
+                  type: string
+                newUsername:
+                  type: string
+                newPassword:
+                  type: string
+                enabled: { type: boolean }
+                permissions: { type: array, items: { type: string } }
+                newRole:
+                  type: string
+                  enum: [admin, operator, viewer]
+      responses:
+        '200':
+          description: Updated user
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [ok, data]
+                properties:
+                  ok:
+                    type: boolean
+                    enum: [true]
+                  data:
+                    type: object
+                    required: [username]
+                    properties:
+                      username:
+                        type: string
+        '400':
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: Admin required
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Missing or invalid token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /api/v1/auth/update:
+    post:
+      tags: [auth]
+      summary: Alias of changeaccount (admin-only)
+      operationId: postAuthUpdate
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [targetUsername]
+              properties:
+                targetUsername:
+                  type: string
+                newUsername:
+                  type: string
+                newPassword:
+                  type: string
+                enabled: { type: boolean }
+                permissions: { type: array, items: { type: string } }
+                newRole:
+                  type: string
+                  enum: [admin, operator, viewer]
+      responses:
+        '200':
+          description: Updated user
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [ok, data]
+                properties:
+                  ok:
+                    type: boolean
+                    enum: [true]
+                  data:
+                    type: object
+                    required: [username]
+                    properties:
+                      username:
+                        type: string
+        '400':
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: Admin required
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Missing or invalid token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /api/v1/auth/sign-out:
+    post:
+      tags: [auth]
+      summary: Alias of logout
+      operationId: postAuthSignOut
+      responses:
+        '200':
+          description: Logout success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OkResponse'
+  /api/v1/auth/enable:
+    post:
+      tags: [auth]
+      summary: Set global auth enabled/disabled
+      operationId: postAuthEnable
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [auth]
+              properties:
+                auth:
+                  type: boolean
+                enabled:
+                  type: boolean
+      responses:
+        '200':
+          description: Auth state updated
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [ok, data]
+                properties:
+                  ok:
+                    type: boolean
+                    enum: [true]
+                  data:
+                    type: object
+                    required: [auth]
+                    properties:
+                      auth:
+                        type: boolean
+        '400':
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: Admin required
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Missing or invalid token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /api/v1/auth/user/create:
+    post:
+      tags: [auth]
+      summary: Create user (admin-only)
+      operationId: postAuthUserCreate
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [username, password]
+              properties:
+                username:
+                  type: string
+                password:
+                  type: string
+                permissions: { type: array, items: { type: string } }
+                role:
+                  type: string
+                  enum: [admin, operator, viewer]
+      responses:
+        '200':
+          description: User created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OkResponse'
+        '400':
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: Admin required
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Missing or invalid token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /api/v1/auth/user/delete:
+    post:
+      tags: [auth]
+      summary: Delete user (admin-only)
+      operationId: postAuthUserDelete
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [username]
+              properties:
+                username:
+                  type: string
+      responses:
+        '200':
+          description: User deleted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OkResponse'
+        '400':
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: Admin required
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Missing or invalid token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /api/v1/auth/2fa/info:
+    post:
+      tags: [auth]
+      summary: 2FA info / setup (TOTP)
+      operationId: postAuth2FAInfo
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                username:
+                  type: string
+                  description: Ignored; server uses the authenticated user
+                password:
+                  type: string
+                  description: Current password (required to generate a secret/QR)
+      responses:
+        '200':
+          description: 2FA info
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [ok, data]
+                properties:
+                  ok:
+                    type: boolean
+                    enum: [true]
+                  data:
+                    type: object
+                    required: [enable, secret, qrCode]
+                    properties:
+                      enable:
+                        type: boolean
+                      secret:
+                        type: string
+                      qrCode:
+                        type: string
+        '401':
+          description: Missing or invalid token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /api/v1/auth/2fa/enable:
+    post:
+      tags: [auth]
+      summary: Enable 2FA (confirm OTP)
+      operationId: postAuth2FAEnable
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [code]
+              properties:
+                code:
+                  type: string
+      responses:
+        '200':
+          description: 2FA enabled
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OkResponse'
+        '400':
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Missing or invalid token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /api/v1/auth/2fa/disable:
+    post:
+      tags: [auth]
+      summary: Disable 2FA
+      operationId: postAuth2FADisable
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [password]
+              properties:
+                password:
+                  type: string
+      responses:
+        '200':
+          description: 2FA disabled
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OkResponse'
+        '400':
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Missing or invalid token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /api/v1/conduct:
+    get:
+      tags: [system]
+      summary: Code of conduct settings
+      operationId: getConduct
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: CoC settings
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [ok, data]
+                properties:
+                  ok:
+                    type: boolean
+                    enum: [true]
+                  data:
+                    type: object
+                    required: [isActive, url]
+                    properties:
+                      isActive:
+                        type: boolean
+                      url:
+                        type: string
+        '401':
+          description: Missing or invalid token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /api/v1/conduct/active:
+    post:
+      tags: [system]
+      summary: Enable/disable code of conduct display
+      operationId: postConductActive
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [isActive]
+              properties:
+                isActive:
+                  type: boolean
+      responses:
+        '200':
+          description: Updated CoC settings
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [ok, data]
+                properties:
+                  ok:
+                    type: boolean
+                    enum: [true]
+                  data:
+                    type: object
+                    required: [isActive, url]
+                    properties:
+                      isActive:
+                        type: boolean
+                      url:
+                        type: string
+        '400':
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Missing or invalid token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /api/v1/conduct/update:
+    post:
+      tags: [system]
+      summary: Set code of conduct URL
+      operationId: postConductUpdate
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [url]
+              properties:
+                url:
+                  type: string
+      responses:
+        '200':
+          description: Updated CoC settings
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [ok, data]
+                properties:
+                  ok:
+                    type: boolean
+                    enum: [true]
+                  data:
+                    type: object
+                    required: [isActive, url]
+                    properties:
+                      isActive:
+                        type: boolean
+                      url:
+                        type: string
+        '400':
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Missing or invalid token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /api/v1/config/reset:
+    post:
+      tags: [system]
+      summary: Factory reset device data (administrator reauthentication, two reboots)
+      description: Native /data layout only. Deletes managed settings, credentials, network/VPN profiles, virtual media, scripts and TLS/SSH keys. Keeps OS/app versions and rollback releases. Not a secure disk erase. The legacy retainCredentials option is rejected.
+      operationId: postConfigReset
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              required: [password, confirm]
+              properties:
+                password:
+                  type: string
+                  format: password
+                code:
+                  type: string
+                  description: Required when the administrator has TOTP enabled
+                confirm:
+                  type: string
+                  enum: ['FACTORY RESET']
+      responses:
+        '202':
+          description: Durable reset request saved; manual reboot needed if automatic reboot fails. An optional warning indicates cloud unlink was not confirmed.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OkResponse'
+        '400':
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Missing or invalid token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /api/v1/hardware/fan:
+    get:
+      tags: [device]
+      summary: Get fan settings
+      operationId: getHardwareFan
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Fan settings
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [ok, data]
+                properties:
+                  ok:
+                    type: boolean
+                    enum: [true]
+                  data:
+                    type: object
+                    required: [tempThreshold]
+                    properties:
+                      tempThreshold:
+                        type: integer
+        '401':
+          description: Missing or invalid token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+    post:
+      tags: [device]
+      summary: Set fan temperature threshold
+      operationId: postHardwareFan
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [tempThreshold]
+              properties:
+                tempThreshold:
+                  type: integer
+      responses:
+        '200':
+          description: Updated fan settings
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [ok, data]
+                properties:
+                  ok:
+                    type: boolean
+                    enum: [true]
+                  data:
+                    type: object
+                    required: [tempThreshold]
+                    properties:
+                      tempThreshold:
+                        type: integer
+        '400':
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Missing or invalid token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /api/v1/healthcheck:
+    get:
+      tags: [device]
+      summary: Get healthcheck thresholds
+      operationId: getHealthcheck
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Thresholds
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [ok, data]
+                properties:
+                  ok:
+                    type: boolean
+                    enum: [true]
+                  data:
+                    type: object
+                    required: [ram, latencyMs, storage, temperature]
+                    properties:
+                      ram:
+                        type: number
+                      latencyMs:
+                        type: number
+                      storage:
+                        type: number
+                      temperature:
+                        type: number
+        '401':
+          description: Missing or invalid token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+    post:
+      tags: [device]
+      summary: Set healthcheck thresholds
+      operationId: postHealthcheck
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [RAM, latency, storage, temperature]
+              properties:
+                RAM:
+                  type: number
+                latency:
+                  type: number
+                storage:
+                  type: number
+                temperature:
+                  type: number
+      responses:
+        '200':
+          description: Updated thresholds
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [ok, data]
+                properties:
+                  ok:
+                    type: boolean
+                    enum: [true]
+                  data:
+                    type: object
+                    required: [ram, latencyMs, storage, temperature]
+                    properties:
+                      ram:
+                        type: number
+                      latencyMs:
+                        type: number
+                      storage:
+                        type: number
+                      temperature:
+                        type: number
+        '400':
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Missing or invalid token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /api/v1/atx:
+    get:
+      tags: [device]
+      summary: Get ATX settings
+      operationId: getATX
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: ATX settings
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [ok, data]
+                properties:
+                  ok:
+                    type: boolean
+                    enum: [true]
+                  data:
+                    type: object
+                    required: [isActive]
+                    properties:
+                      isActive:
+                        type: boolean
+        '401':
+          description: Missing or invalid token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+    post:
+      tags: [device]
+      summary: Set ATX settings
+      operationId: postATX
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [isActive]
+              properties:
+                isActive:
+                  type: boolean
+      responses:
+        '200':
+          description: ATX settings
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [ok, data]
+                properties:
+                  ok:
+                    type: boolean
+                    enum: [true]
+                  data:
+                    type: object
+                    required: [isActive]
+                    properties:
+                      isActive:
+                        type: boolean
+        '400':
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Missing or invalid token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /api/v1/atx/power:
+    post:
+      tags: [device]
+      summary: Control ATX power (not supported)
+      operationId: postATXPower
+      security:
+        - bearerAuth: []
+      responses:
+        '503':
+          description: Not supported
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Missing or invalid token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /api/v1/network/port:
+    post:
+      tags: [network]
+      summary: Set HTTP/HTTPS ports (service restarts)
+      operationId: postNetworkPort
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [http_port, https_port]
+              properties:
+                http_port:
+                  type: integer
+                https_port:
+                  type: integer
+      responses:
+        '200':
+          description: Ports saved
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [ok, data]
+                properties:
+                  ok:
+                    type: boolean
+                    enum: [true]
+                  data:
+                    type: object
+                    required: [http_port, https_port]
+                    properties:
+                      http_port:
+                        type: integer
+                      https_port:
+                        type: integer
+        '400':
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Missing or invalid token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /api/v1/network/protocol:
+    post:
+      tags: [network]
+      summary: Set protocol (http/https) (service restarts)
+      operationId: postNetworkProtocol
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [protocol]
+              properties:
+                protocol:
+                  type: string
+                  enum: [http, https]
+      responses:
+        '200':
+          description: Protocol saved
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [ok, data]
+                properties:
+                  ok:
+                    type: boolean
+                    enum: [true]
+                  data:
+                    type: object
+                    required: [protocol]
+                    properties:
+                      protocol:
+                        type: string
+                        enum: [http, https]
+        '400':
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Missing or invalid token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /api/v1/network/acl:
+    get:
+      tags: [network]
+      summary: Get ACL settings
+      operationId: getNetworkACL
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: ACL settings
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [ok, data]
+                properties:
+                  ok:
+                    type: boolean
+                    enum: [true]
+                  data:
+                    type: object
+                    required: [mode, allowList, blockList]
+                    properties:
+                      mode:
+                        type: string
+                        enum: [none, allow, block]
+                      allowList:
+                        type: object
+                        required: [items]
+                        properties:
+                          items:
+                            type: array
+                            items:
+                              type: object
+                              required: [ip, ts]
+                              properties:
+                                ip:
+                                  type: string
+                                ts:
+                                  type: integer
+                                  format: int64
+                      blockList:
+                        type: object
+                        required: [items]
+                        properties:
+                          items:
+                            type: array
+                            items:
+                              type: object
+                              required: [ip, ts]
+                              properties:
+                                ip:
+                                  type: string
+                                ts:
+                                  type: integer
+                                  format: int64
+        '401':
+          description: Missing or invalid token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+    post:
+      tags: [network]
+      summary: Add ACL entry
+      operationId: postNetworkACL
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [mode, ip]
+              properties:
+                mode:
+                  type: string
+                  enum: [allow, block]
+                ip:
+                  type: string
+      responses:
+        '200':
+          description: Updated ACL settings
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [ok, data]
+                properties:
+                  ok:
+                    type: boolean
+                    enum: [true]
+                  data:
+                    type: object
+        '400':
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Missing or invalid token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+    delete:
+      tags: [network]
+      summary: Remove ACL entry
+      operationId: deleteNetworkACL
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [mode, ip]
+              properties:
+                mode:
+                  type: string
+                  enum: [allow, block]
+                ip:
+                  type: string
+      responses:
+        '200':
+          description: Updated ACL settings
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [ok, data]
+                properties:
+                  ok:
+                    type: boolean
+                    enum: [true]
+                  data:
+                    type: object
+        '400':
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Missing or invalid token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /api/v1/network/acl/mode:
+    post:
+      tags: [network]
+      summary: Set ACL mode
+      operationId: postNetworkACLMode
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [mode]
+              properties:
+                mode:
+                  type: string
+                  enum: [none, allow, block]
+      responses:
+        '200':
+          description: Updated ACL mode
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [ok, data]
+                properties:
+                  ok:
+                    type: boolean
+                    enum: [true]
+                  data:
+                    type: object
+                    required: [mode]
+                    properties:
+                      mode:
+                        type: string
+                        enum: [none, allow, block]
+        '400':
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Missing or invalid token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /api/v1/ip/{iface}:
+    get:
+      tags: [network]
+      summary: Get IPv4 config for an interface
+      operationId: getIPConfig
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: iface
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: IPv4 config
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [ok, data]
+                properties:
+                  ok:
+                    type: boolean
+                    enum: [true]
+                  data:
+                    type: object
+                    required: [iface, method, dhcp, addresses, gateway, dns]
+                    properties:
+                      iface:
+                        type: string
+                      method:
+                        type: string
+                      dhcp:
+                        type: boolean
+                      addresses:
+                        type: array
+                        items:
+                          type: string
+                      gateway:
+                        type: string
+                      dns:
+                        type: array
+                        items:
+                          type: string
+        '401':
+          description: Missing or invalid token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Interface not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /api/v1/ip/{iface}/dhcp:
+    post:
+      tags: [network]
+      summary: Switch interface to DHCP
+      operationId: postIPDhcp
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: iface
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: IPv4 config
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          description: Missing or invalid token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /api/v1/ip/{iface}/static:
+    post:
+      tags: [network]
+      summary: Switch interface to static IPv4
+      operationId: postIPStatic
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: iface
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [address]
+              properties:
+                address:
+                  type: string
+                gateway:
+                  type: string
+                dns:
+                  type: array
+                  items:
+                    type: string
+      responses:
+        '200':
+          description: IPv4 config
+          content:
+            application/json:
+              schema:
+                type: object
+        '400':
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Missing or invalid token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /api/v1/serial/device:
+    get:
+      tags: [device]
+      summary: List serial devices
+      operationId: getSerialDevices
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Serial device list
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [ok, data]
+                properties:
+                  ok:
+                    type: boolean
+                    enum: [true]
+                  data:
+                    type: object
+                    required: [items]
+                    properties:
+                      items:
+                        type: array
+                        items:
+                          type: string
+        '401':
+          description: Missing or invalid token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /api/v1/serial:
+    get:
+      tags: [device]
+      summary: Get serial terminal config
+      operationId: getSerialConfig
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Serial config
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [ok, data]
+                properties:
+                  ok:
+                    type: boolean
+                    enum: [true]
+                  data:
+                    type: object
+                    required: [path, baudrate]
+                    properties:
+                      targetDevice: { type: boolean, description: Administrator-confirmed target UART rather than KVM console }
+                      path:
+                        type: string
+                      baudrate:
+                        type: integer
+        '401':
+          description: Missing or invalid token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+    post:
+      tags: [device]
+      summary: Save serial terminal config
+      operationId: postSerialConfig
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [path, baudrate]
+              properties:
+                targetDevice: { type: boolean }
+                path:
+                  type: string
+                baudrate:
+                  type: integer
+      responses:
+        '200':
+          description: Serial config saved
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [ok, data]
+                properties:
+                  ok:
+                    type: boolean
+                    enum: [true]
+                  data:
+                    type: object
+                    required: [path, baudrate]
+                    properties:
+                      targetDevice: { type: boolean, description: Administrator-confirmed target UART rather than KVM console }
+                      path:
+                        type: string
+                      baudrate:
+                        type: integer
+        '400':
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Missing or invalid token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /api/v1/switch:
+    get:
+      tags: [device]
+      summary: HDMI switch state (may be empty on devices without switch)
+      operationId: getSwitch
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Switch state
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          description: Missing or invalid token
+    post:
+      tags: [device]
+      summary: HDMI switch actions (device-specific)
+      operationId: postSwitch
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Switch state
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          description: Missing or invalid token
+  /api/v1/switch/{path}:
+    post:
+      tags: [device]
+      summary: HDMI switch sub-actions (device-specific)
+      operationId: postSwitchSubpath
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Switch state
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          description: Missing or invalid token
+  /api/v1/video:
+    post:
+      tags: [stream]
+      summary: Start/stop video (logical state only)
+      operationId: postVideoAction
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: query
+          name: action
+          required: true
+          schema:
+            type: string
+            enum: [start, stop]
+      responses:
+        '200':
+          description: Updated state
+          content:
+            application/json:
+              schema:
+                type: object
+        '400':
+          description: Invalid action
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Missing or invalid token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /api/v1/video/config:
+    post:
+      tags: [stream]
+      summary: Set video encoder config (fps/bitrate/gop)
+      operationId: postVideoConfig
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [fps, kbps, gop]
+              properties:
+                fps:
+                  type: integer
+                kbps:
+                  type: integer
+                gop:
+                  type: integer
+      responses:
+        '200':
+          description: Saved config
+          content:
+            application/json:
+              schema:
+                type: object
+        '400':
+          description: Invalid config
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Missing or invalid token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /api/v1/video/resolution:
+    post:
+      tags: [stream]
+      summary: Set video resolution preset
+      operationId: postVideoResolution
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                resolution:
+                  type: string
+      responses:
+        '200':
+          description: Saved resolution
+          content:
+            application/json:
+              schema:
+                type: object
+        '400':
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Missing or invalid token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /api/v1/video/passthrough:
+    get:
+      tags: [stream]
+      summary: Get HDMI passthrough setting
+      operationId: getVideoPassthrough
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Passthrough state
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          description: Missing or invalid token
+    put:
+      tags: [stream]
+      summary: Set HDMI passthrough setting
+      operationId: putVideoPassthrough
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [enable]
+              properties:
+                enable:
+                  type: boolean
+      responses:
+        '200':
+          description: Passthrough state
+          content:
+            application/json:
+              schema:
+                type: object
+        '400':
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Missing or invalid token
+  /api/v1/video/edid:
+    get:
+      tags: [stream]
+      summary: Get EDID selection, write capability, bridge presets and latest operation
+      description: >-
+        data includes edid (hex), file (uploaded basename), writable, presets
+        (bridge-specific reference profiles or null), and operation (null or an
+        object with id, state, error, startedAt, finishedAt, hardwareApplied).
+        Operation state is running, succeeded or failed. Poll this endpoint
+        after a Flash operation receives HTTP 202. IDs are scoped to the
+        current application process; after a restart reload the actual EDID.
+      operationId: getVideoEDID
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: EDID
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          description: Missing or invalid token
+    post:
+      tags: [stream]
+      summary: Apply EDID hex or an uploaded profile (administrator only)
+      description: >-
+        Choose exactly one of edid or file. Ordinary receivers apply
+        synchronously. Flash-backed receivers return 202 immediately and
+        continue verification and RESET independently of the HTTP connection.
+        Poll GET /api/v1/video/edid for the result; do not retry a mutation
+        merely because a connection was interrupted. Keep device power on.
+      operationId: postVideoEDID
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                edid:
+                  type: string
+                  description: EDID as hexadecimal data
+                file:
+                  type: string
+                  description: Uploaded .bin basename from the profile list
+              oneOf:
+                - required: [edid]
+                - required: [file]
+      responses:
+        '200':
+          description: EDID applied and saved synchronously
+          content:
+            application/json:
+              schema:
+                type: object
+        '202':
+          description: >-
+            Flash operation accepted. data.operation contains its id and
+            running state. Success is not established until polling reports
+            succeeded; hardwareApplied can be true even if saving the
+            selection failed.
+          content:
+            application/json:
+              schema:
+                type: object
+        '400':
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Missing or invalid token
+  /api/v1/video/edid/custom:
+    get:
+      tags: [stream]
+      summary: List custom EDID profiles
+      operationId: getVideoEDIDCustom
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Custom EDID list
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          description: Missing or invalid token
+  /api/v1/video/edid/upload:
+    post:
+      tags: [stream]
+      summary: Upload custom EDID profile
+      operationId: postVideoEDIDUpload
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [file]
+              properties:
+                file:
+                  type: string
+                  format: binary
+      responses:
+        '200':
+          description: Uploaded EDID profile
+          content:
+            application/json:
+              schema:
+                type: object
+        '400':
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Missing or invalid token
+  /api/v1/video/edid/delete:
+    post:
+      tags: [stream]
+      summary: Delete custom EDID profile
+      operationId: postVideoEDIDDelete
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [edid]
+              properties:
+                edid:
+                  type: string
+      responses:
+        '200':
+          description: EDID profile deleted
+          content:
+            application/json:
+              schema:
+                type: object
+        '400':
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Missing or invalid token
+  /api/v1/video/snapshot:
+    get:
+      tags: [stream]
+      summary: Snapshot image
+      operationId: getVideoSnapshot
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: JPEG image
+          content:
+            image/jpeg:
+              schema:
+                type: string
+                format: binary
+        '401':
+          description: Missing or invalid token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /api/v1/shortcuts/{os}:
+    get:
+      tags: [hid]
+      summary: List keyboard shortcuts for OS
+      operationId: getShortcuts
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: os
+          required: true
+          schema:
+            type: string
+            enum: [windows, linux, mac]
+      responses:
+        '200':
+          description: Shortcuts list
+          content:
+            application/json:
+              schema:
+                type: object
+        '400':
+          description: Invalid OS
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Missing or invalid token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+    post:
+      tags: [hid]
+      summary: Add keyboard shortcut
+      operationId: postShortcuts
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: os
+          required: true
+          schema:
+            type: string
+            enum: [windows, linux, mac]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [name, keys]
+              properties:
+                name:
+                  type: string
+                keys:
+                  type: array
+                  items:
+                    type: string
+                category:
+                  type: string
+      responses:
+        '200':
+          description: Saved
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OkResponse'
+        '400':
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Missing or invalid token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /api/v1/shortcuts/{os}/reset:
+    post:
+      tags: [hid]
+      summary: Reset shortcuts to defaults
+      operationId: postShortcutsReset
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: os
+          required: true
+          schema:
+            type: string
+            enum: [windows, linux, mac]
+      responses:
+        '200':
+          description: Reset complete
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OkResponse'
+        '401':
+          description: Missing or invalid token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /api/v1/shortcuts/{os}/{name}:
+    patch:
+      tags: [hid]
+      summary: Update a shortcut
+      operationId: patchShortcut
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: os
+          required: true
+          schema:
+            type: string
+            enum: [windows, linux, mac]
+        - in: path
+          name: name
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [keys]
+              properties:
+                name:
+                  type: string
+                keys:
+                  type: array
+                  items:
+                    type: string
+                category:
+                  type: string
+      responses:
+        '200':
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OkResponse'
+        '400':
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '409':
+          description: Conflict
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Missing or invalid token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+    delete:
+      tags: [hid]
+      summary: Delete a shortcut
+      operationId: deleteShortcut
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: os
+          required: true
+          schema:
+            type: string
+            enum: [windows, linux, mac]
+        - in: path
+          name: name
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Deleted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OkResponse'
+        '404':
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Missing or invalid token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: BliKVM API Token
+  schemas:
+    BootloaderPrerequisite:
+      type: object
+      required: [required, canUpdate]
+      properties:
+        required:
+          type: boolean
+          description: The running Pi boot firmware cannot safely perform the paired A/B update.
+        canUpdate:
+          type: boolean
+          description: Verified CM4 hardware and this signed App provide the supported automatic maintenance path.
+        currentVersion: {type: string, format: date}
+        recommendedVersion: {type: string, format: date}
+        reason: {type: string}
+    UpdateTask:
+      type: object
+      required: [id, track, state, sourceVersion, bundleSha256, bundleName, startedAt, updatedAt, logs, checks]
+      properties:
+        id: {type: string, pattern: '^[0-9a-f]{32}$'}
+        sequence: {type: integer, format: int64, minimum: 0}
+        track: {type: string, enum: [application, system]}
+        state:
+          type: string
+          enum: [bootloader, verifying, installing, restarting, checking, staged, committed, rolled_back, failed, attention]
+          description: Attention requires operator recovery and must not be silently dismissed or retried.
+        bootloaderPhase:
+          type: string
+          description: Actual EEPROM journal phase, for example preparing, maintenance_reboot, backing_up, writing, verified, verifying_reboot, ready or failed.
+        sourceVersion: {type: string}
+        targetVersion: {type: string}
+        sourceSlot: {type: string}
+        targetSlot: {type: string}
+        bundleSha256: {type: string}
+        bundleName: {type: string}
+        startedAt: {type: string, format: date-time}
+        updatedAt: {type: string, format: date-time}
+        reason: {type: string}
+        logs:
+          type: array
+          items: {type: string}
+        checks:
+          type: array
+          items:
+            type: object
+            required: [name, result]
+            properties:
+              name: {type: string}
+              result: {type: string}
+              detail: {type: string}
+    OkResponse:
+      type: object
+      required: [ok]
+      properties:
+        ok:
+          type: boolean
+          enum: [true]
+    ErrorResponse:
+      type: object
+      required: [ok, error]
+      properties:
+        ok:
+          type: boolean
+          enum: [false]
+        error:
+          type: string
+    SystemUpdateBundle:
+      type: object
+      required: [name, sizeBytes, uploadedAt]
+      properties:
+        name:
+          type: string
+        sizeBytes:
+          type: integer
+          format: int64
+        uploadedAt:
+          type: string
+          format: date-time
+        type:
+          type: string
+          enum: [system-ab]
+        sha256:
+          type: string
+    LoginRequest:
+      type: object
+      required: [username, password]
+      properties:
+        username:
+          type: string
+        password:
+          type: string
+        rememberDevice:
+          type: boolean
+          default: false
+    LoginResponse:
+      type: object
+      required: [ok, data]
+      properties:
+        ok:
+          type: boolean
+          enum: [true]
+        data:
+          type: object
+          required: [expiresAt, user]
+          properties:
+            expiresAt:
+              type: string
+              format: date-time
+            rememberDevice:
+              type: boolean
+            user:
+              type: object
+              required: [username]
+              properties:
+                username:
+                  type: string
+    ControlResponse:
+      type: object
+      properties:
+        ok: { type: boolean }
+        data:
+          type: object
+          properties:
+            held: { type: boolean }
+            mine: { type: boolean }
+            owner: { type: string }
+            required: { type: boolean, enum: [false] }
+            mode: { type: string, enum: [shared] }
+            authEnabled: { type: boolean }
+    MeResponse:
+      type: object
+      required: [ok, data]
+      properties:
+        ok:
+          type: boolean
+          enum: [true]
+        data:
+          type: object
+          required: [username, exp, iat]
+          properties:
+            role: { type: string, enum: [admin, operator, viewer] }
+            authEnabled: { type: boolean }
+            permissions: { type: array, items: { type: string } }
+            username:
+              type: string
+            exp:
+              type: integer
+              format: int64
+            iat:
+              type: integer
+              format: int64
+    ApiTokenCreateRequest:
+      type: object
+      required: [name]
+      properties:
+        permissions:
+          type: array
+          items: { type: string }
+          description: Subset of current account permissions. Omitted snapshots current permissions; empty array grants none. Effective permissions are intersected with current account permissions.
+        name:
+          type: string
+          maxLength: 80
+        expiresInDays:
+          type: integer
+          minimum: 1
+          maximum: 365
+          default: 90
+    ApiTokenMetadata:
+      type: object
+      required: [id, name, subject, createdAt, expiresAt]
+      properties:
+        permissions: { type: array, items: { type: string } }
+        id: { type: string }
+        name: { type: string }
+        subject: { type: string }
+        createdAt: { type: integer, format: int64 }
+        expiresAt: { type: integer, format: int64 }
+        lastUsedAt: { type: integer, format: int64 }
+        revokedAt: { type: integer, format: int64 }
+    ApiTokenCreateResponse:
+      type: object
+      required: [ok, data]
+      properties:
+        ok: { type: boolean, enum: [true] }
+        data:
+          type: object
+          required: [token, tokenInfo]
+          properties:
+            token: { type: string }
+            tokenInfo:
+              $ref: '#/components/schemas/ApiTokenMetadata'
+    ApiTokenListResponse:
+      type: object
+      required: [ok, data]
+      properties:
+        ok: { type: boolean, enum: [true] }
+        data:
+          type: object
+          required: [tokens]
+          properties:
+            tokens:
+              type: array
+              items:
+                $ref: '#/components/schemas/ApiTokenMetadata'
+    HealthResponse:
+      type: object
+      required: [ok, listen, pid, uptimeSec, stream]
+      properties:
+        ok:
+          type: boolean
+        listen:
+          type: string
+        pid:
+          type: integer
+          format: int64
+        uptimeSec:
+          type: integer
+          format: int64
+        stream:
+          type: object
+          additionalProperties: true
+    StreamStatusResponse:
+      type: object
+      required: [ok, data]
+      properties:
+        ok:
+          type: boolean
+          enum: [true]
+        data:
+          type: object
+          required: [pid, listen, startedAt, uptimeSec, stream, rates]
+          properties:
+            pid:
+              type: integer
+              format: int64
+            listen:
+              type: string
+            startedAt:
+              type: string
+              format: date-time
+            uptimeSec:
+              type: integer
+              format: int64
+            stream:
+              type: object
+              additionalProperties: true
+            rates:
+              type: object
+              additionalProperties:
+                type: number
+                format: double
+    IdrResponse:
+      type: object
+      required: [ok, data]
+      properties:
+        ok:
+          type: boolean
+          enum: [true]
+        data:
+          type: object
+          required: [atUnixMs]
+          properties:
+            atUnixMs:
+              type: integer
+              format: int64
+    SystemMetricsResponse:
+      type: object
+      required: [ok, data]
+      properties:
+        ok:
+          type: boolean
+          enum: [true]
+        data:
+          type: object
+          required: [uptimeSec, pid, system]
+          properties:
+            uptimeSec:
+              type: integer
+              format: int64
+            pid:
+              type: integer
+              format: int64
+            system:
+              type: object
+              additionalProperties: true
+    RestartResponse:
+      type: object
+      required: [ok, data]
+      properties:
+        ok:
+          type: boolean
+          enum: [true]
+        data:
+          type: object
+          required: [restarting, atUnixMs]
+          properties:
+            restarting:
+              type: boolean
+            atUnixMs:
+              type: integer
+              format: int64
+
+    NetworkInterface:
+      type: object
+      required: [iface, type, mac, ip4, ip6, dhcp]
+      properties:
+        iface:
+          type: string
+        type:
+          type: string
+          description: wired|wifi
+        mac:
+          type: string
+        ip4:
+          type: string
+          description: IPv4 with CIDR (e.g. 192.168.0.3/24)
+        ip6:
+          type: array
+          description: Assigned IPv6 addresses in CIDR notation, including link-local addresses; tentative and failed addresses are excluded.
+          items:
+            type: string
+          example: ["fd12::10/64", "fe80::20/64"]
+        dhcp:
+          type: boolean
+
+    NetworkGetResponse:
+      type: object
+      required: [ok, data]
+      properties:
+        ok:
+          type: boolean
+          enum: [true]
+        data:
+          type: object
+          required: [protocol, http_port, https_port, interfaces]
+          properties:
+            protocol:
+              type: string
+              enum: [http, https]
+            http_port:
+              type: integer
+              format: int32
+            https_port:
+              type: integer
+              format: int32
+            interfaces:
+              type: array
+              items:
+                $ref: '#/components/schemas/NetworkInterface'
+
+    RemoteAccessUplinkCandidate:
+      type: object
+      required: [device, type, state]
+      properties:
+        device:
+          type: string
+        connection:
+          type: string
+          nullable: true
+        type:
+          type: string
+          description: nmcli device type (wifi|ethernet)
+        state:
+          type: string
+
+    RemoteAccessDefaultRoute:
+      type: object
+      properties:
+        via:
+          type: string
+          nullable: true
+        dev:
+          type: string
+          nullable: true
+        metric:
+          type: integer
+          format: int32
+          nullable: true
+
+    RemoteAccessUplinkGetResponse:
+      type: object
+      required: [ok, data]
+      properties:
+        ok:
+          type: boolean
+          enum: [true]
+        data:
+          type: object
+          required: [preferredInterface, candidates, defaultRoutes]
+          properties:
+            preferredInterface:
+              type: string
+            candidates:
+              type: array
+              items:
+                $ref: '#/components/schemas/RemoteAccessUplinkCandidate'
+            defaultRoutes:
+              type: array
+              items:
+                $ref: '#/components/schemas/RemoteAccessDefaultRoute'
+
+    WolDevice:
+      type: object
+      required: [name, mac]
+      properties:
+        name:
+          type: string
+        mac:
+          type: string
+
+    WolListResponse:
+      type: object
+      required: [ok, data]
+      properties:
+        ok:
+          type: boolean
+          enum: [true]
+        data:
+          type: object
+          required: [items]
+          properties:
+            items:
+              type: array
+              items:
+                $ref: '#/components/schemas/WolDevice'
+
+    VPNServiceStatus:
+      type: object
+      required: [state, ip]
+      properties:
+        state:
+          type: string
+          description: systemctl is-active output (active|inactive|failed|...)
+        ip:
+          type: string
+
+    VPNGetResponse:
+      type: object
+      required: [ok, data]
+      properties:
+        ok:
+          type: boolean
+          enum: [true]
+        data:
+          type: object
+          additionalProperties:
+            $ref: '#/components/schemas/VPNServiceStatus'
+
+    WireGuardConfigStatus:
+      type: object
+      required: [state, config, webrtcPublicHost]
+      properties:
+        state:
+          type: string
+        config:
+          type: object
+          required: [exists, path]
+          properties:
+            exists:
+              type: boolean
+            path:
+              type: string
+        webrtcPublicHost:
+          type: object
+          required: [effectiveHost, source]
+          properties:
+            effectiveHost:
+              type: string
+            source:
+              type: string
+
+    WireGuardConfigResponse:
+      type: object
+      required: [ok, data]
+      properties:
+        ok:
+          type: boolean
+          enum: [true]
+        data:
+          $ref: '#/components/schemas/WireGuardConfigStatus'
+
+    TailscaleConfigInput:
+      type: object
+      properties:
+        authKey:
+          type: string
+        controlURL:
+          type: string
+        hostname:
+          type: string
+        advertiseRoutes:
+          type: string
+        acceptRoutes:
+          type: boolean
+
+    TailscaleConfigStatus:
+      type: object
+      required: [enabled, state, ip, config]
+      properties:
+        enabled:
+          type: boolean
+        state:
+          type: string
+        ip:
+          type: string
+        config:
+          type: object
+          required: [authKeyConfigured, controlURL, hostname, advertiseRoutes, acceptRoutes]
+          properties:
+            authKeyConfigured:
+              type: boolean
+            controlURL:
+              type: string
+            hostname:
+              type: string
+            advertiseRoutes:
+              type: string
+            acceptRoutes:
+              type: boolean
+
+    TailscaleConfigResponse:
+      type: object
+      required: [ok, data]
+      properties:
+        ok:
+          type: boolean
+          enum: [true]
+        data:
+          $ref: '#/components/schemas/TailscaleConfigStatus'
+
+    ZeroTierConfigInput:
+      type: object
+      properties:
+        networkID:
+          type: string
+
+    ZeroTierConfigStatus:
+      type: object
+      required: [enabled, state, ip, config]
+      properties:
+        enabled:
+          type: boolean
+        state:
+          type: string
+        ip:
+          type: string
+        config:
+          type: object
+          required: [networkID, nodeID, networkName, networkStatus, joined]
+          properties:
+            networkID:
+              type: string
+            nodeID:
+              type: string
+            networkName:
+              type: string
+            networkStatus:
+              type: string
+            joined:
+              type: boolean
+
+    ZeroTierConfigResponse:
+      type: object
+      required: [ok, data]
+      properties:
+        ok:
+          type: boolean
+          enum: [true]
+        data:
+          $ref: '#/components/schemas/ZeroTierConfigStatus'
+
+    PrometheusStateResponse:
+      type: object
+      required: [ok, data]
+      properties:
+        ok:
+          type: boolean
+          enum: [true]
+        data:
+          type: object
+          required: [enable, endpoint]
+          properties:
+            enable:
+              type: boolean
+            endpoint:
+              type: string
+
+    DisplaySettings:
+      type: object
+      required: [mode, onBootTime, cycleInterval, displayTime, secondaryIP]
+      properties:
+        mode:
+          type: string
+        onBootTime:
+          type: integer
+          format: int32
+        cycleInterval:
+          type: integer
+          format: int32
+        displayTime:
+          type: integer
+          format: int32
+        secondaryIP:
+          type: string
+
+    DisplayResponse:
+      type: object
+      required: [ok, data]
+      properties:
+        ok:
+          type: boolean
+          enum: [true]
+        data:
+          $ref: '#/components/schemas/DisplaySettings'
+
+    HidStatusResponse:
+      type: object
+      required: [ok, data]
+      properties:
+        ok:
+          type: boolean
+          enum: [true]
+        data:
+          type: object
+          required: [enabled, mouseMode, passThrough, jiggler]
+          properties:
+            enabled:
+              type: boolean
+            mouseMode:
+              type: string
+              enum: [dual, absolute, relative]
+            passThrough:
+              type: object
+              required: [enabled, wheelReverse]
+              properties:
+                enabled:
+                  type: boolean
+                wheelReverse:
+                  type: boolean
+            jiggler:
+              type: object
+              required: [intervalSec]
+              properties:
+                intervalSec:
+                  type: integer
+                  format: int32
+
+    HidEventRequest:
+      type: object
+      required: [type]
+      description: |
+        Request body for `/api/v1/hid/events`.
+
+        Required fields by event type:
+        - `keyboard`: `type`, `key`
+        - `mouseButton`: `type`, `button`
+        - `mouseMove`: `type`, `toX`, `toY`
+        - `mouseRelative`: `type`, `deltaX`, `deltaY`
+        - `mouseWheel`: `type`, `deltaX`, `deltaY`
+
+        Optional fields:
+        - `state` is valid for `keyboard` and `mouseButton`
+        - `finish` is valid for `keyboard`
+        - `toX`/`toY` can also be supplied for `mouseButton` and `mouseWheel` when absolute positioning matters
+        - in `dual` mouse mode, omitting `toX`/`toY` for `mouseButton` and `mouseWheel` keeps the pointer in place
+      properties:
+        type:
+          type: string
+          enum: [keyboard, mouseButton, mouseMove, mouseRelative, mouseWheel]
+          description: |
+            Event type. Supported values:
+            - keyboard: key, optional state, optional finish
+            - mouseButton: button, optional state, optional toX/toY for absolute positioning
+            - mouseMove: toX, toY
+            - mouseRelative: deltaX, deltaY
+            - mouseWheel: deltaX, deltaY, optional toX/toY for absolute positioning
+        key:
+          $ref: '#/components/schemas/HidKeyboardCode'
+        state:
+          type: boolean
+          description: |
+            Press state for keyboard and mouseButton events.
+            When omitted, the server sends a tap/click (press then release).
+        finish:
+          type: boolean
+          description: |
+            For keyboard events, release the key right after a press when `state=true`.
+            Ignored for other event types.
+        button:
+          type: string
+          enum: [left, middle, right]
+          description: Mouse button name for mouseButton events.
+        toX:
+          type: number
+          format: double
+          minimum: 0
+          maximum: 1
+          description: Absolute X coordinate normalized to 0..1.
+        toY:
+          type: number
+          format: double
+          minimum: 0
+          maximum: 1
+          description: Absolute Y coordinate normalized to 0..1.
+        deltaX:
+          type: number
+          format: double
+          description: Relative X movement or horizontal wheel delta depending on the event type.
+        deltaY:
+          type: number
+          format: double
+          description: Relative Y movement or vertical wheel delta depending on the event type.
+
+    HidKeyboardCode:
+      type: string
+      description: |
+        Supported keyboard code values for `type=keyboard`.
+        These follow browser `KeyboardEvent.code` naming, not printable characters.
+
+        Examples:
+        - letters: `KeyA`, `KeyB`, `KeyZ`
+        - digits: `Digit0`, `Digit1`
+        - modifiers: `ControlLeft`, `ShiftLeft`, `AltLeft`, `MetaLeft`
+        - arrows: `ArrowUp`, `ArrowLeft`
+        - numpad: `Numpad0`, `NumpadEnter`
+      enum:
+        - ControlLeft
+        - ShiftLeft
+        - AltLeft
+        - MetaLeft
+        - ControlRight
+        - ShiftRight
+        - AltRight
+        - MetaRight
+        - KeyA
+        - KeyB
+        - KeyC
+        - KeyD
+        - KeyE
+        - KeyF
+        - KeyG
+        - KeyH
+        - KeyI
+        - KeyJ
+        - KeyK
+        - KeyL
+        - KeyM
+        - KeyN
+        - KeyO
+        - KeyP
+        - KeyQ
+        - KeyR
+        - KeyS
+        - KeyT
+        - KeyU
+        - KeyV
+        - KeyW
+        - KeyX
+        - KeyY
+        - KeyZ
+        - Digit1
+        - Digit2
+        - Digit3
+        - Digit4
+        - Digit5
+        - Digit6
+        - Digit7
+        - Digit8
+        - Digit9
+        - Digit0
+        - Enter
+        - Escape
+        - Backspace
+        - Tab
+        - Space
+        - Minus
+        - Equal
+        - BracketLeft
+        - BracketRight
+        - Backslash
+        - NonUSHash
+        - Semicolon
+        - Quote
+        - Backquote
+        - Comma
+        - Period
+        - Slash
+        - CapsLock
+        - F1
+        - F2
+        - F3
+        - F4
+        - F5
+        - F6
+        - F7
+        - F8
+        - F9
+        - F10
+        - F11
+        - F12
+        - PrintScreen
+        - ScrollLock
+        - Pause
+        - Insert
+        - Home
+        - PageUp
+        - Delete
+        - End
+        - PageDown
+        - ArrowRight
+        - ArrowLeft
+        - ArrowDown
+        - ArrowUp
+        - NumLock
+        - NumpadDivide
+        - NumpadMultiply
+        - NumpadSubtract
+        - NumpadAdd
+        - NumpadEnter
+        - Numpad1
+        - Numpad2
+        - Numpad3
+        - Numpad4
+        - Numpad5
+        - Numpad6
+        - Numpad7
+        - Numpad8
+        - Numpad9
+        - Numpad0
+        - NumpadDecimal
+        - NumpadEqual
+        - IntlBackslash
+        - ContextMenu
+
+    MsdStateResponse:
+      type: object
+      required: [ok, data]
+      properties:
+        ok:
+          type: boolean
+          enum: [true]
+        data:
+          type: object
+          required: [imagesDir, service, storage, mounted]
+          properties:
+            imagesDir:
+              type: string
+            service:
+              type: object
+              required: [enabled]
+              properties:
+                enabled:
+                  type: boolean
+            storage:
+              type: object
+              required: [total, used, avail]
+              properties:
+                total:
+                  type: integer
+                  format: int64
+                used:
+                  type: integer
+                  format: int64
+                avail:
+                  type: integer
+                  format: int64
+            mounted:
+              type: object
+              required: [name, cdrom, readOnly]
+              properties:
+                name:
+                  type: string
+                cdrom:
+                  type: boolean
+                readOnly:
+                  type: boolean
+
+    MsdImagesResponse:
+      type: object
+      required: [ok, data]
+      properties:
+        ok:
+          type: boolean
+          enum: [true]
+        data:
+          type: object
+          required: [items]
+          properties:
+            items:
+              type: array
+              items:
+                type: object
+                required: [name, size]
+                properties:
+                  name:
+                    type: string
+                  size:
+                    type: integer
+                    format: int64
+
+    USBCameraConfig:
+      type: object
+      required: [enabled, device, width, height, fps, bitrate]
+      properties:
+        enabled:
+          type: boolean
+        device:
+          type: string
+          description: V4L2 device path (e.g., /dev/video1)
+        width:
+          type: integer
+          format: int32
+        height:
+          type: integer
+          format: int32
+        fps:
+          type: integer
+          format: int32
+        bitrate:
+          type: integer
+          format: int32
+          description: Bitrate in kbps
+
+    USBCameraConfigInput:
+      type: object
+      required: [enabled, device, width, height, fps, bitrate]
+      properties:
+        enabled:
+          type: boolean
+        device:
+          type: string
+          description: V4L2 device path (e.g., /dev/video1)
+        width:
+          type: integer
+          format: int32
+        height:
+          type: integer
+          format: int32
+        fps:
+          type: integer
+          format: int32
+        bitrate:
+          type: integer
+          format: int32
+          description: Bitrate in kbps

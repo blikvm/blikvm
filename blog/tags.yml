@@ -1,0 +1,28 @@
+# BliKVM相关标签
+blikvm:
+  label: BliKVM
+  description: BliKVM open source KVM over IP solution
+  permalink: /blikvm
+
+# 视频采集相关
+hdmi-to-csi:
+  label: HDMI-To-CSI
+  description: HDMI to CSI-2 interface conversion technology
+  permalink: /hdmi-to-csi
+
+raspberry-pi:
+  label: Raspberry Pi
+  description: Raspberry Pi related content and tutorials
+  permalink: /raspberry-pi
+
+# 产品标签
+c792:
+  label: C792
+  description: C792 HDMI to CSI-2 converter module
+  permalink: /c792
+
+# 应用标签
+video-capture:
+  label: Video Capture
+  description: Video capture and processing technology
+  permalink: /video-capture

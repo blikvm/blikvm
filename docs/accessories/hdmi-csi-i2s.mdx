@@ -1,0 +1,140 @@
+# HDMI to CSI & Audio
+
+## HDMI to CSI&I2S bridge guide
+
+> Convert HDMI signal acquisition into CSI signal and I2S audio signal. Currently, all platforms are supported (Zero, Pi3B, Pi4B, CM4, Pi5B), and the maximum capture resolution not only depends on the HDMI to CSI converter board you are using but also on the Raspberry Pi hardware version you have. Raspberry Pi hardware versions are primarily divided into two series, one supporting a maximum of 1080P60Hz and the other supporting a maximum of 1080P50Hz.
+
+- The Raspberry Pi versions that support a maximum of 1080P60Hz are CM3, CM4, and Pi5B.
+
+- The Raspberry Pi versions that support a maximum of 1080P50Hz are Zero, Zero 2, Pi3B, Pi4B, and so on.
+
+## **Introduction**
+
+This module takes the incoming HDMI signal and converts it into a separate CSI signal and I2S audio signal. HDMI input supports up to 1080P60Hz. It works well on Raspberry Pi, there are three versions of this module in history (C779, C780, C790). C790 is the later version among these three legacy modules. C790 has mitigated HDMI backpowering, and also has two csi channels and four csi channels at the same time.
+![hdmi-csi-i2s](/assets/images/hdmi-csi-i2s/c790.png)
+
+## **Features**
+
+### **C790**
+
+:::note "Hardware Parameters"
+    - HDMI input: supports up to 1080P60Hz on Raspberry Pi
+    - HDMI to CSI-2 bridge chip: Toshiba TC358743XBG
+    - 4 CSI-2 channels & clock
+    - The CSI-2 interface, with 15 pin FPC seat, spacing 1.0 mm, is located on the front of the C790 module.
+    - The CSI-2 interface, with 22 pin FPC seat, spacing 0.5 mm, is located on the back of the C790 module.
+    - Size: 30 x 45 mm
+    - Install: 4 x M2.5
+    - Power supply: 3.3V
+    - Weight: 10g
+:::
+
+:::warning "Pi 4B only support 1080P50Hz, limited by the number of CSI-2 channels. CM4 support 1080P60HZ, So if you must use 1080P60Hz input, please use CM4 and C790 together."
+:::
+
+:::note "Interface"
+    ![c790-interface](/assets/images/hdmi-csi-i2s/c790-interface.png)
+    C790 has two CSI output interfaces. In front of C790, the CSI-2 interface is 15 pin FPC seat, spacing 1.0 mm. In back of C790, the CSI-2 interface is 22 pin FPC seat, spacing 0.5 mm.
+    ![c790-i2s-connect](/assets/images/hdmi-csi-i2s/c790-i2s-connect.png)
+:::
+
+:::note "Size"
+    ![c790-size](/assets/images/hdmi-csi-i2s/c790-size.png)
+:::
+
+:::note "Install C790 on Raspberry Pi for reference"
+    ![install-c790-pi4b](/assets/images/hdmi-csi-i2s/install_c790_pi4b.png)
+:::
+
+### **C780**
+
+:::info "C780A Hardware Parameters"
+    - HDMI input: supports up to 1080P50Hz on Raspberry Pi(Limited by the number of CSI-2 channels)
+    - HDMI to CSI-2 bridge chip: Toshiba TC358743XBG
+    - 2 CSI-2 channels & clock
+    - CSI-2 interface: 15 pin FPC seat, spacing 1.0 mm
+    - Size: 30 x 65 mm (unbroken PCB size); 30 x 45 mm (PCB size after breaking)
+    - Install: 6 x M2.5
+    - Power supply: 3.3V
+    - Weight: 10g
+:::
+
+:::info "C780B Hardware Parameters"
+    - HDMI input: supports up to 1080P60Hz on Raspberry Pi
+    - HDMI to CSI-2 bridge chip: Toshiba TC358743XBG
+    - 4 CSI-2 channels & clock
+    - CSI-2 interface: 22 pin FPC seat, spacing 0.5 mm
+    - Size: 30 x 65 mm (unbroken PCB size); 30 x 45 mm (PCB size after breaking)
+    - Install: 6 x M2.5
+    - Power supply: 3.3V
+    - Weight: 10g
+:::
+
+:::info "Interface"
+    ![2-4](/assets/images/hdmi-csi-i2s/2-4.png)
+    The wiring of audio part is shown in Figure.  
+    ![2-8](/assets/images/hdmi-csi-i2s/2-8.png)
+:::
+
+:::info "Size"
+    The size of C780 is shown in the image below. There are 6 mounting holes with a diameter of 2.75mm, which are suitable for M2.5 screws.  
+    ![2-1](/assets/images/hdmi-csi-i2s/2-1.png)
+    As shown in the image below, the user can directly fix the module on the Raspberry Pi Zero. C780 is designed to be broken, and the hole spacing before breaking can be perfectly installed with most series of Raspberry Pi.
+    ![2-2](/assets/images/hdmi-csi-i2s/2-2.png)
+:::
+
+### **C779**
+
+:::info "Hardware Parameters"
+    - HDMI input: supports up to 1080P50Hz on Raspberry Pi(Limited by the number of CSI-2 channels)
+    - HDMI to CSI-2 bridge chip: Toshiba TC358743XBG
+    - 2 CSI-2 channels & clock
+    - CSI-2 interface: 15 pin FPC seat, spacing 1.0 mm
+    - Size: 35 x 50 mm
+    - Install: 4 x M2.5
+    - Power supply: 3.3V
+    - Weight: 10g
+:::
+
+:::info "Size"
+    The size of C779 is shown in Figure. There are 4 mounting holes with a diameter of 2.75mm, which are suitable for M2.5 screws.  
+    ![C779-size](/assets/images/hdmi-csi-i2s/c779-size.png)
+:::
+
+## **CSI Interface Definitions**
+
+The CSI (Camera Serial Interface) interfaces C779 and C780A have 15 pins each, while the C780B interface has 22 pins. The C790 interface is unique as it supports both 15 and 22 PIN configurations.
+
+![Interface](/assets/images/hdmi-csi-i2s/interface.png)
+<div style={{display: 'flex', gap: '1em', justifyContent: 'center', alignItems: 'center'}}>
+    <img src="/assets/images/hdmi-csi-i2s/c779-1thpin.png" alt="C779 1th pin" style={{width: '50%'}} />
+    <img src="/assets/images/hdmi-csi-i2s/c790-15-1thpin.png" alt="C790 15th pin" style={{width: '50%'}} />
+</div>
+<img src="/assets/images/hdmi-csi-i2s/c790-22-1thpin.png" alt="C790 22th pin" style={{width: '45%'}} />
+
+## Software integration {#software-demo}
+
+For independent use, follow [Linux integration and troubleshooting](/docs/capture/linux-integration); BliKVM is not a prerequisite.
+
+When using a BliKVM image, choose a build matching the board and capture module and follow [First steps](/docs/getting-started/first-steps). Working capture does not establish USB input or network-video configuration.
+
+## **Chip Docs**
+
+[TC358743 Documentation](https://zcwrego195.feishu.cn/drive/folder/V3dXfMA5UlBNmXdX2hycYZuLnxc?from=from_copylink)
+
+## **Packing List**
+
+:::info "C790"
+    ![packing-list](/assets/images/hdmi-csi-i2s/c790-packing-list.png)
+
+## **Test Video**
+
+[C780A Test](https://www.youtube.com/watch?v=ecqyINoiHNQ)
+
+[C780B Test](https://www.youtube.com/watch?v=nc-hwPT2Uak)
+
+## **Purchase Link**
+
+[Purchase C780 & C790](https://www.aliexpress.com/item/1005002861310912.html?pdp_ext_f=%7B%22sku_id%22:%2212000022635165947%22,%22ship_from%22:%22CN%22%7D)
+
+[Purchase C779](https://www.aliexpress.com/item/1005003033156483.html?algo_exp_id=2bfab2d1-a9c7-4c29-9434-2f451401d0e1-9&pdp_ext_f=%7B%22sku_id%22%3A%2212000023351081819%22%7D)

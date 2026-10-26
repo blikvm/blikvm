@@ -1,0 +1,28 @@
+# FAQ and troubleshooting order
+
+Record the model, app / system versions and error text. Change one condition at a time, test LAN before remote access, and avoid starting with a factory reset or reinstallation.
+
+| Symptom | Check first | Guide |
+| --- | --- | --- |
+| No address or page access | Power, Ethernet, DHCP, subnet, ports and access rules | [Network](../network/notes.md) |
+| HTTPS / 2FA / VPN errors | Address, certificate, device time and authentication | [Certificates](../network/https.md), [Accounts](./auth.mdx) |
+| Page works but black video | Computer power, HDMI direction and input format, then media connectivity | [Video](../video/video-modes.md) |
+| LAN video works but remote video fails | ICE, VPN routing, proxy signaling and media paths | [WebRTC](../video/webrtc.md) |
+| Picture but no input | USB data cable, device port, USB classes and input permissions | [USB](../peripheral-devices/usb.md) |
+| Pointer mismatch or reversed wheel | Absolute / relative mode, sensitivity and direction | [Mouse](../peripheral-devices/keyboard-mouse/mouse.md) |
+| Uploaded image will not boot | Mount state, USB, architecture, boot mode and order | [Virtual media](../peripheral-devices/msd.md) |
+| Missing function | Role, feature permissions, capabilities and image components | [Interface](./web-interface.md) |
+| Disconnect or unchanged version after update | The same update task, slot and health checks | [Updates](../function/update.md) |
+| ATX / WOL request succeeds but no power-on | Wiring or network, firmware and standby power; a successful request does not prove an action occurred | [ATX](../function/atx.md), [WOL](../function/wake-on-lan.md) |
+
+## Power and USB
+
+Use the model's required power supply and data cables. Distinguish power, USB host and USB device ports. Charge-only cables may carry no data; USB back-power may leave some circuits powered after shutdown. Use the specified splitter accessories rather than combining power sources arbitrarily.
+
+## Restart, reset or reinstall?
+
+A service restart applies relevant saved configuration; a device reboot interrupts connections. [Factory reset](../function/factory-reset.md) removes managed user data, while [reinstallation](./flashing-os.mdx) rewrites the storage. Identify the goal, save needed information and check recovery access first.
+
+## Reporting a problem
+
+Use the [diagnostic template](../function/diagnostics.md) with versions, access path, reproduction steps and credential-free logs. Label simulated or unverified information clearly; a successful demo screen does not establish real hardware state.

@@ -1,0 +1,78 @@
+{
+  "link.title.Community": {
+    "message": "Community",
+    "description": "The title of the footer links column with title=Community in the footer"
+  },
+  "link.title.More": {
+    "message": "More",
+    "description": "The title of the footer links column with title=More in the footer"
+  },
+  "link.item.label.QQ": {
+    "message": "QQ",
+    "description": "The label of footer link with label=QQ linking to https://qm.qq.com/q/V0qWcbNoIi"
+  },
+  "link.item.label.Discord": {
+    "message": "Discord",
+    "description": "The label of footer link with label=Discord linking to https://discord.com/invite/ffTDcauqyZ"
+  },
+  "link.item.label.GitHub": {
+    "message": "GitHub",
+    "description": "The label of footer link with label=GitHub linking to https://github.com/yeecord"
+  },
+  "link.title.BliKVM": {
+    "message": "BliKVM",
+    "description": "The title of the footer links column with title=BliKVM in the footer"
+  },
+  "link.title.Peripherals": {
+    "message": "Peripherals",
+    "description": "The title of the footer links column with title=Peripherals in the footer"
+  },
+  "link.item.label.BliKVM v4 Allwinner": {
+    "message": "BliKVM v4 Allwinner",
+    "description": "The label of footer link with label=BliKVM v4 Allwinner linking to /docs/device-guides/BliKVM-v4-guide"
+  },
+  "link.item.label.BliKVM v3 HAT": {
+    "message": "BliKVM v3 HAT",
+    "description": "The label of footer link with label=BliKVM v3 HAT linking to /docs/device-guides/BliKVM-v3-guide"
+  },
+  "link.item.label.BliKVM v2 PCIe": {
+    "message": "BliKVM v2 PCIe",
+    "description": "The label of footer link with label=BliKVM v2 PCIe linking to /docs/device-guides/BliKVM-v2-guide"
+  },
+  "link.item.label.BliKVM v1 CM4": {
+    "message": "BliKVM v1 CM4",
+    "description": "The label of footer link with label=BliKVM v1 CM4 linking to /docs/device-guides/BliKVM-v1-guide"
+  },
+  "link.item.label.BliSwitch v2": {
+    "message": "BliSwitch v2",
+    "description": "The label of footer link with label=BliSwitch v2 linking to /docs/device-guides/BliSwitch-v2-guide"
+  },
+  "link.item.label.BliSwitch v1": {
+    "message": "BliSwitch v1",
+    "description": "The label of footer link with label=BliSwitch v1 linking to /docs/device-guides/BliSwitch-v1-guide"
+  },
+  "link.item.label.ATX": {
+    "message": "ATX",
+    "description": "The label of footer link with label=ATX linking to /docs/accessories/atx-guide"
+  },
+  "link.item.label.HDMI to CSI&I2S": {
+    "message": "HDMI to CSI&I2S",
+    "description": "The label of footer link with label=HDMI to CSI&I2S linking to /docs/accessories/hdmi-csi-i2s"
+  },
+  "link.item.label.Youtube": {
+    "message": "Youtube",
+    "description": "The label of footer link with label=Youtube linking to https://www.youtube.com/@blicube9879"
+  },
+  "link.item.label.info@blicube.com": {
+    "message": "info@blicube.com",
+    "description": "The label of footer link with label=info@blicube.com linking to mailto:info@blicube.com"
+  },
+  "link.item.label.store": {
+    "message": "store",
+    "description": "The label of footer link with label=store linking to https://blicube.aliexpress.com/store/1101755276?spm=a2g0o.store_pc_home.1000001.12.5c0050ae6aIIul"
+  },
+  "copyright": {
+    "message": "Copyright © 2025 Blicube LLC",
+    "description": "The footer copyright"
+  }
+}

@@ -1,0 +1,94 @@
+{
+  "sidebar.tutorialSidebar.category.Device guides": {
+    "message": "设备指南",
+    "description": "The label for category Device guides in sidebar tutorialSidebar"
+  },
+  "sidebar.tutorialSidebar.category.Getting started": {
+    "message": "快速开始",
+    "description": "The label for category Getting started in sidebar tutorialSidebar"
+  },
+  "sidebar.tutorialSidebar.category.Network": {
+    "message": "网络",
+    "description": "The label for category Network in sidebar tutorialSidebar"
+  },
+  "sidebar.tutorialSidebar.category.Internet Access": {
+    "message": "公网访问",
+    "description": "The label for category Internet Access in sidebar tutorialSidebar"
+  },
+  "sidebar.tutorialSidebar.category.Video": {
+    "message": "视频",
+    "description": "The label for category Video in sidebar tutorialSidebar"
+  },
+  "sidebar.tutorialSidebar.category.Peripheral devices": {
+    "message": "外设",
+    "description": "The label for category Peripheral devices in sidebar tutorialSidebar"
+  },
+  "sidebar.tutorialSidebar.category.Keyboard & mouse": {
+    "message": "键盘和鼠标",
+    "description": "The label for category Keyboard & mouse in sidebar tutorialSidebar"
+  },
+  "sidebar.tutorialSidebar.category.Function": {
+    "message": "功能",
+    "description": "The label for category Function in sidebar tutorialSidebar"
+  },
+  "sidebar.tutorialSidebar.category.Installation Instructions": {
+    "message": "安装说明",
+    "description": "The label for category Installation Instructions in sidebar tutorialSidebar"
+  },
+  "sidebar.tutorialSidebar.category.Accessories": {
+    "message": "配件",
+    "description": "The label for category Accessories in sidebar tutorialSidebar"
+  },
+  "sidebar.tutorialSidebar.category.Development": {
+    "message": "开发",
+    "description": "The label for category Development in sidebar tutorialSidebar"
+  },
+  "version.label": {
+    "message": "Next",
+    "description": "The label for version current"
+  },
+  "sidebar.tutorialSidebar.category.快速开始": {
+    "message": "快速开始",
+    "description": "中文文档目录：快速开始"
+  },
+  "sidebar.tutorialSidebar.category.视频与音频": {
+    "message": "视频与音频",
+    "description": "中文文档目录：视频与音频"
+  },
+  "sidebar.tutorialSidebar.category.键鼠与 USB": {
+    "message": "键鼠与 USB",
+    "description": "中文文档目录：键鼠与 USB"
+  },
+  "sidebar.tutorialSidebar.category.网络与远程访问": {
+    "message": "网络与远程访问",
+    "description": "中文文档目录：网络与远程访问"
+  },
+  "sidebar.tutorialSidebar.category.远程接入方案": {
+    "message": "远程接入方案",
+    "description": "中文文档目录：远程接入方案"
+  },
+  "sidebar.tutorialSidebar.category.设备与维护": {
+    "message": "设备与维护",
+    "description": "中文文档目录：设备与维护"
+  },
+  "sidebar.tutorialSidebar.category.硬件与安装": {
+    "message": "硬件与安装",
+    "description": "中文文档目录：硬件与安装"
+  },
+  "sidebar.tutorialSidebar.category.型号与接口": {
+    "message": "型号与接口",
+    "description": "中文文档目录：型号与接口"
+  },
+  "sidebar.tutorialSidebar.category.装配与接线": {
+    "message": "装配与接线",
+    "description": "中文文档目录：装配与接线"
+  },
+  "sidebar.tutorialSidebar.category.采集模块": {
+    "message": "采集模块",
+    "description": "中文文档目录：采集模块"
+  },
+  "sidebar.tutorialSidebar.category.开发与接口": {
+    "message": "开发与接口",
+    "description": "中文文档目录：开发与接口"
+  }
+}

@@ -1,0 +1,8 @@
+{
+  "label": "型号与接口",
+  "position": 4,
+  "link": {
+    "type": "generated-index",
+    "description": "BliKVM 硬件接口与接线参考"
+  }
+}

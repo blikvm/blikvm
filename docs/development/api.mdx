@@ -1,0 +1,57 @@
+import {ApiReferenceEntry} from '@site/src/components/ApiReference';
+import openapiMetadata from '@site/static/api/current/metadata.json';
+
+# API and OpenAPI
+
+The current service provides `/api/v1` endpoints according to device capabilities and permissions, not a single legacy beta model. Automation should first inspect the running device's version, capabilities and contract.
+
+## Obtain the contract
+
+- Device `/openapi.yaml`: ships with the running service and should take precedence.
+- Device `/docs`: its interactive API page, distinct from this website's tutorials at `/docs/`.
+- [Website contract snapshot](/api/current/openapi.yaml): synchronized during website builds. If device versions differ, use the device's own contract.
+
+<p>Contract synchronization time (UTC): <code>{openapiMetadata.syncedAt}</code>; API version: <code>{openapiMetadata.apiVersion}</code>.</p>
+<p>{openapiMetadata.source.kind === 'local-file' ? 'This local preview reads a configured backend contract file; it does not automatically pull the latest backend revision.' : 'The website build fetched this snapshot from the configured backend source. The deployed static site does not poll for updates.'}</p>
+
+## Authentication and permissions
+
+Browser login uses a server-managed HttpOnly session cookie. For automation, create a separate API token in account management and send it in `Authorization: Bearer ...`, never query parameters. Its scopes cannot exceed the account's permissions. Expiry, revocation or account changes may require issuing a new token.
+
+These read-only examples assume `BLIKVM_URL` is the device's HTTPS origin, `BLIKVM_API_TOKEN` is a valid token and the certificate is trusted:
+
+```sh
+curl --fail --show-error \
+  --header "Authorization: Bearer $BLIKVM_API_TOKEN" \
+  "$BLIKVM_URL/api/v1/auth/me"
+
+curl --fail --show-error \
+  --header "Authorization: Bearer $BLIKVM_API_TOKEN" \
+  "$BLIKVM_URL/api/v1/capabilities"
+```
+
+Do not bypass TLS verification or save real tokens in examples or shared logs. Cookies, API tokens and OS SSH credentials are separate.
+
+## Common endpoint groups
+
+| Task | Example | Consideration |
+| --- | --- | --- |
+| Identity / permissions | `/api/v1/auth/me` | Check the account before acting |
+| Capabilities | `/api/v1/capabilities` | Avoid hardcoding support by model |
+| Monitoring | `/api/v1/system/metrics` | Follow contract permissions and sensitive-field rules |
+| Media state | `/api/v1/stream/status` | Not proof of hardware action completion |
+| USB / media | `/api/v1/usb/device/config`, `/api/v1/msd/state` | Changes can re-enumerate USB or interrupt writes |
+| Update tasks | `/api/v1/updates/status`, `/api/v1/updates/tasks` | Read persisted conclusions, not disconnects |
+| Audit | `/api/v1/audit` | Requires audit-read permission |
+
+Ordinary JSON often uses `ok` with `data` / `error`. Files, streams, WebSockets and health checks have other formats. Check both HTTP status and payload; `200` alone does not mean task completion. Follow the current contract and implementation for fields, methods, permissions and errors.
+
+## Real-time interfaces
+
+The browser establishes sessions through `/api/v1/stream/webrtc/signaling`. Input, RPC and terminals use their respective channels without exclusive-control acquisition. Compatibility WHEP routes, WebSockets and REST requests are not interchangeable protocols.
+
+## Browse the contract
+
+The dedicated full-width reference provides endpoint search, category navigation and request / response examples. Prefer your device's own contract when its version differs.
+
+<ApiReferenceEntry />

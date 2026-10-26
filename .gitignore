@@ -1,0 +1,21 @@
+.DS_Store
+.vscode
+node_modules
+.docusaurus/
+build/*
+.env
+.env.*
+
+# Local PDF export artifacts
+exports/
+.pdf-tmp/
+# Local backend contract source (machine-specific, no credentials)
+.openapi-source.local.json
+.openapi-sync.tmp
+
+# Written by CI for deployment verification
+static/site-version.json
+
+# Temporary source checkout used only during migration
+.website-source/
+.migration-checkout/

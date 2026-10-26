@@ -1,0 +1,219 @@
+import useBaseUrl from '@docusaurus/useBaseUrl';
+
+# BliKVM v4 Allwinner
+
+:::info 硬件与软件分开阅读
+本文保留本型号的接口、供电与接线资料。当前网页操作请从[首次使用](../getting-started/first-steps.mdx)和[网页界面](../getting-started/web-interface.md)开始；请先核对所装系统与硬件适配，不根据历史出厂镜像推断当前能力。
+:::
+
+
+<div style={{ display: 'flex', gap: '1rem', justifyContent: 'center' }}>
+<a href={useBaseUrl('/assets/images/v4/BliKVM-v4-front.png')} target="_blank">
+  <img
+    src={useBaseUrl('/assets/images/v4/BliKVM-v4-front.png')}
+    alt="Front"
+    style={{ width: '80%', cursor: 'zoom-in' }}
+  />
+</a>
+  <a href={useBaseUrl('/assets/images/v4/BliKVM-v4-back.png')} target="_blank">
+    <img src={useBaseUrl('/assets/images/v4/BliKVM-v4-back.png')} alt="Back" style={{ width: '90%', cursor: 'zoom-in' }} />
+  </a>
+</div>
+
+BliKVM v4是一款生产就绪、即插即用的 KVM-over-IP 设备，为专业用户提供了**远程服务器或工作站管理**的便捷解决方案。 它运行基于 Linux 的系统。 借助 BliKVM，您可以轻松**打开/关闭电源、重新启动计算机、配置 UEFI/BIOS 设置以及使用模拟大容量存储设备执行操作系统重新安装**。 BliKVM 模拟键盘、鼠标和显示器，所有这些都可以通过 Web 浏览器访问，确保无缝的用户体验。 **其硬件级访问保证独立于特定的远程端口、协议或服务**，使其成为专业人士高度灵活且可靠的远程管理解决方案！
+
+* [BliKVM v4 硬件参数手册](/zh-CN/docs/device-guides/BliKVM-v4-datasheet)
+* [v4 板级硬件参考](/zh-CN/docs/development/dev-BliKVM-v4-Allwinner)
+
+<details>
+    <summary>Craft Computing: Goodbye IPMI - Blicube BliKVM V4 测评</summary>
+    <iframe style={{width: '100%', maxWidth: '100%', aspectRatio: '16 / 9', height: 'auto'}} src="//player.bilibili.com/player.html?aid=410062899&bvid=BV1cG411k7Cs&cid=1374719019&p=1" scrolling="no" border="0" frameborder="no" framespacing="0" allowfullscreen="true"> </iframe>
+</details>
+
+<details>
+    <summary>Lawrence Systems: Blicube BliKVM V4: Is This the Best Linux IP KVM Yet?</summary>
+    <iframe style={{width: '100%', maxWidth: '100%', aspectRatio: '16 / 9', height: 'auto'}} src="//player.bilibili.com/player.html?aid=836180766&bvid=BV1vg4y1S7Qk&cid=1404763711&p=1" scrolling="no" border="0" frameborder="no" framespacing="0" allowfullscreen="true"> </iframe>
+</details>
+
+<details>
+    <summary>RainCat: BliKVM V4 Allwinnner安装PiKVM教程</summary>
+    <iframe style={{width: '100%', maxWidth: '100%', aspectRatio: '16 / 9', height: 'auto'}} src="//player.bilibili.com/player.html?aid=1053799981&bvid=BV1zH4y1P7kP&cid=1528566167&p=1" scrolling="no" border="0" frameborder="no" framespacing="0" allowfullscreen="true"> </iframe>
+</details>
+
+## **功能特点**
+
+- **视频捕获** (HDMI,最高支持4K@30Hz输入)
+- **键盘转发**
+- **鼠标转发**
+- **虚拟U盘(重装系统)**
+- **HDMI视频环出**
+- **ATX** 使用 ATX 功能控制服务器电源
+- **全屏模式**
+- 通过 **Web UI** 访问
+- 支持 **多语言** 切换
+- 支持 **PoE & DC**
+- 支持 **Wi-Fi**；适配新版镜像可通过[双键长按进入配网](#wifi-setup)
+- **串口** 控制台端口
+- 1.33 英寸彩色 **LCD** 状态屏，提供[BUTTON 1 / BUTTON 2 操作](#front-panel)
+- **实时时钟 (RTC)**  
+
+
+<details>
+<summary>HDMI支持的分辨率类型</summary>
+<a href="/assets/images/v4/v4-hdmi.jpg" target="_blank">
+  <img src="/assets/images/v4/v4-hdmi.jpg" alt="pic" width="70%" />
+</a>
+</details>
+
+## **安装要求**
+
+:::tip "除v4套件外，您还需自备以下设备:"
+    * 电源适配器（5V 3A, USB-C端口或12V 2ADC端口）,若你计划使用PoE供电，或者所的被控计算机USB口有充足的供电能力，则也不需要单独的电源适配器；
+    * 实测v4功耗在环出和单web端接入时，功耗为4瓦左右。
+    * HDMI 线缆(至少一根)，若您同时需要使用HDMI环出接口，则需要2根；
+    * 网线（结合您需求自备）,使用ATX开关机功能需一根，使用网线上网功能需一根；
+    * USB-C转USB-A线缆一根（用于鼠标和键盘数据传输）.
+:::
+
+
+:::warning "v4供电异常解决方案"
+    v4设计多输入方式可同时供电，譬如5v端口,USB-PC端口，12V端口，PoE端口,如果多路电源接入时，v4会选择由电压最高的端口供电。
+    这就有可能实际由被控PC供电，很多PC USB供电能力有限，若你发现当被控PC开关机时，v4有可能也跟着被影响，那么你需要在USB口加一个
+    [USB分电板](/zh-CN/docs/accessories/usb-splitter-guide)杜绝此问题。
+:::
+
+:::info "BliKVM v4 拆箱，连接，使用参考视频"
+    <iframe style={{width: '100%', maxWidth: '100%', aspectRatio: '16 / 9', height: 'auto'}} src="//player.bilibili.com/player.html?aid=488438623&bvid=BV1NN41127g9&cid=1195577253&page=1" scrolling="no" border="0" frameborder="no" framespacing="0" allowfullscreen="true"> </iframe>
+:::
+
+## **安装步骤**
+
+**1.** 打开v4套件包装，根据下面所示的连接示意图，将BliKVM和被控计算机连接起来；
+![v4-Connection-Diagram](/assets/images/v4/v4-Connection-Diagram.png)
+
+**ATX连接**
+请参考[ATX连接指南](/zh-CN/docs/accessories/atx-guide).
+
+**2.** 在所有连接线连接好后,对BliKVM进行上电，直到显示屏出现画面，即设备正常启动。
+
+**3.** 仔细阅读[**"第一步"** ](/zh-CN/docs/getting-started/first-steps) 指南-如何在网络上查找设备、如何登录、更改密码等等。按照上面描述的步骤操作，然后返回本页。
+
+**4.** **尝试使用 Web 界面管理计算机的 BliKVM。** 确保您可以看到图像并且键盘和鼠标都正常工作。如果遇到任何问题，请查看我们的[常见问题](/zh-CN/docs/getting-started/faq)
+（它非常有用）。如果没有任何帮助，请在我们的[Discord聊天室](https://discord.com/invite/9Y374gUF6C)或者[QQ群](https://qm.qq.com/q/V0qWcbNoIi)寻求支持。
+
+**5.** 您可以查看wiki其他的页面，探索BliKVM的更多功能，祝您玩的开心！
+
+## 前面板 LCD 与 BUTTON 1 / BUTTON 2 {#front-panel}
+
+v4 配备 1.33 英寸彩色 **LCD** 状态屏；它显示 BliKVM 自身状态，不是被控电脑的 HDMI 显示器。其他型号常用 OLED，不能直接套用 v4 的双键操作。
+
+面向设备前面板，以机壳上的 **SW1 / SW2** 标识辨认按键：
+
+| 按键 | 位置与标识 | 普通状态下的短按功能 |
+| --- | --- | --- |
+| BUTTON 1 | 下方，SW1 | 切换屏幕背光开 / 关；关闭背光不会关闭 BliKVM 或被控电脑 |
+| BUTTON 2 | 上方，SW2 | 翻页；屏幕熄灭时可先唤醒显示 |
+| 双键组合 | 同时按住 BUTTON 1 + BUTTON 2 约 3 秒 | 在包含新版配网服务的镜像中，进入或退出 Wi-Fi 配网 |
+
+新版小屏服务在松开单键后执行短按动作；双键组合不会同时触发单键动作。长按未到 3 秒时松开任意一键，会取消本次配网进入 / 退出操作。
+
+### 小屏显示什么
+
+- **概览**：访问地址、温度、负载、内存、运行时间与访问二维码。
+- **网络**：设备名、网络接口和地址；接口较多时轮换显示子页，可查看 VPN 地址。
+- **系统**：温度、CPU / 内存、SD 总容量、数据分区剩余空间、App / OS 版本与当前系统槽位。
+- **品牌页**：启动、唤醒及翻页循环中的品牌画面。空闲后会返回概览页。
+
+<div style={{display:'flex', flexWrap:'wrap', gap:'1rem'}}>
+<img src="/assets/images/v4-current/page-1.png" alt="v4 小屏概览示意" width="240" />
+<img src="/assets/images/v4-current/page-2.png" alt="v4 小屏网络页示意" width="240" />
+<img src="/assets/images/v4-current/page-3.png" alt="v4 小屏系统页示意" width="240" />
+</div>
+
+*按当前小屏绘制代码生成的示意图，非本轮实机截图；地址、版本和状态仅为示例。*
+
+常亮、启动后保持开启和间隔显示等策略见[LCD / OLED 显示屏](../function/OLED-display.md)。不同镜像的显示服务可能不同；旧版仅有唤醒屏幕等功能，不能仅凭机壳上有两个按钮就判断支持新版配网。
+
+## Wi-Fi 配网：双键进入，无需先插网线 {#wifi-setup}
+
+:::info 镜像要求
+以下流程需要镜像包含新版 v4 小屏配网服务、NetworkManager 和适配的无线驱动。较旧镜像仅升级网页应用不一定获得此能力；没有出现配网页面时，可先通过网线按[网页 Wi-Fi 连接](../network/wifi.md)配置，并核对所装镜像的功能说明。
+:::
+
+1. 为 v4 装好 Wi-Fi 天线并接通稳定电源。同时按住前面板 **BUTTON 1 + BUTTON 2 约 3 秒**，等屏幕显示 Wi-Fi 配网倒计时和热点页面。
+2. 在手机上连接屏幕显示的 **`BliKVM-xxxx`** 临时热点。可扫描屏幕上的 Wi-Fi 二维码，也可手动选择 SSID 并输入屏幕显示的密码。**每次配网会生成新密码，以屏幕为准**；示意图中的密码不能用于实机。
+3. 手机可能提示此热点“无互联网”，请保持连接。若未自动打开配网页面，在手机浏览器输入 **`http://192.168.4.1`**；此地址仅用于配网，不是连接成功后的 KVM 管理地址。
+4. 在配网页面选择家中或办公室的 Wi-Fi，填写密码，点击**连接**。隐藏网络可手工填写 SSID。重新扫描可能让手机短暂断开热点，按页面提示重连。
+5. 设备连接目标 Wi-Fi 时，临时热点会关闭，手机断开属于预期过程。查看 v4 小屏：成功时显示新 IP，约 5 秒后返回概览页。
+6. 将手机或电脑接入同一目标网络，再打开小屏显示的管理地址，验证网页、画面与输入。不要继续使用配网地址 `192.168.4.1` 访问 KVM。
+
+<div style={{display:'flex', flexWrap:'wrap', gap:'1rem'}}>
+<img src="/assets/images/v4-current/wifi-hold.png" alt="双键长按进入配网的示意" width="240" />
+<img src="/assets/images/v4-current/wifi-hotspot.png" alt="临时热点与二维码示意" width="240" />
+<img src="/assets/images/v4-current/wifi-success.png" alt="Wi-Fi 连接成功及新地址示意" width="240" />
+</div>
+
+*配网流程示意，非实机截图；热点名称、密码、二维码和 IP 均为示例。扫码不能加入时，优先尝试按屏幕内容手动连接。*
+
+### 失败、退出与恢复
+
+- 目标网络连接失败时，设备会恢复配网热点。检查小屏上的当前 SSID / 密码，重新连接热点后核对目标 Wi-Fi 密码和信号，再重试。
+- 在配网页面选择**关闭热点并退出**，或再次同时长按双键约 3 秒，可退出配网；未完成连接时会尝试恢复原无线连接。
+- 配网热点连续约 10 分钟没有配网操作，会自动退出。配网页面自动刷新状态不等于新的配网操作。
+- 配网会暂时中断 v4 原有的无线连接。需要保持管理连接时，可保留网线；配网热点用于设置，不提供互联网共享。
+- 看不到热点时，先检查屏幕是否已进入配网、天线、系统版本和无线驱动；不要反复猜测固定出厂密码。
+
+## 视频模式
+
+当前原生 H616 适配包含硬件 H.264 编码路径与 MJPEG 采集，实际可用性取决于镜像中的驱动及硬件运行库。以[视频模式](../video/video-modes.md)和实机能力为准，不再沿用旧固件“软件 H.264 编码”的结论。
+
+HDMI 输入规格、实际采集格式和网络编码输出应分别查看，不能从最高输入规格推导所有模式的输出分辨率或延迟。
+
+## **发货清单**
+
+| BLIKVM v4 Allwinner版本            | 1    |
+| -------------------------------------- | ---- |
+| BLIKVM v4               | 1    |
+| WiFi天线               | 1    |
+| ATX适配板               | 1    |
+| ATX杜邦线缆 8pin 母对母 60cm | 1    |
+| ATX杜邦线缆 8pin 母对公 60cm | 1    |
+| 1U安装挂耳             | 2   |
+| M2.5x5螺丝               | 8   |
+| 硅胶防撞粒              | 1   |
+
+## **通过5V端口访问串行控制台**
+
+5V端口可以同时用于供电和串行控制台访问，默认波特率为115200。BliKVM v4内部有一个基于CH341的USB到UART转换器，它连接到[mCore-H616 SoC](https://linux-sunxi.org/H616)的UART0，所以你可以将PC的USB端口连接到5V端口，无需外部UART和USB-C到杜邦适配器。
+
+
+:::warning "PC USB端口电流输出"
+    尝试使用5V端口时要小心，因为单独的PC USB端口可能无法提供3A（5V），这是板卡工作的要求。可以同时使用12V 2A DC端口供电和5V端口进行串行通信，无需[USB分线器板](/zh-CN/docs/accessories/usb-splitter-guide)。
+    或者使用分线器板分离出VCC引脚，并使用单独的5V 3A电源为5V端口的VCC引脚供电。同样，当BliKVM通电时从12V 2A DC端口断开电缆时，要确保先从5V端口断开电缆（因为在12V 2A电源断开后，除非使用了分线器，否则5V端口将成为BliKVM v4的电源）。
+:::
+
+当你将USB电缆连接到BliKVM v4的5V端口时，你应该在主机内核日志中看到类似这样的内容（如果你使用的是基于Linux的操作系统）:
+    ```
+    usb 1-1.2: new full-speed USB device number 12 using xhci_hcd
+    usb 1-1.2: New USB device found, idVendor=1a86, idProduct=7523, bcdDevice=81.34
+    usb 1-1.2: New USB device strings: Mfr=0, Product=2, SerialNumber=0
+    usb 1-1.2: Product: USB Serial
+    ch341 1-1.2:1.0: ch341-uart converter detected
+    usb 1-1.2: ch341-uart converter now attached to ttyUSB0
+    ```
+
+然后，可以使用[GNU screen](https://www.gnu.org/software/screen/)或[TIO](https://github.com/tio/tio)访问此端口:
+    ```
+    tio /dev/ttyUSB0
+    mangopimcore login: blikvm
+    # ...
+    ```
+
+如果你需要检查通过UART0接收了多少数据，可以通过查看通过proc公开的计数器来实现（当从外部主机发送数据时，如果内置的USB到UART转换器工作正常，rx计数器应该会增加）：
+    ```
+    root@mangopimcore:~# grep '0: uart' /proc/tty/driver/serial
+    0: uart:16550A mmio:0x05000000 irq:284 tx:20306 rx:40 pe:1 RTS|DTR
+    ```
+
+## **购买链接**
+[v4淘宝地址](https://item.taobao.com/item.htm?spm=a1z10.3-c-s.w4002-24390589055.12.25da4adfmEV9JL&id=730202747005)

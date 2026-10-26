@@ -1,0 +1,118 @@
+.compareSection {
+  margin: 40px auto;
+  max-width: 1100px;
+  background: #fff;
+  border-radius: 16px;
+  box-shadow: 0 2px 12px rgba(0,0,0,0.07);
+  padding: 32px 24px;
+}
+
+.compareTitle {
+  font-size: 2rem;
+  font-weight: bold;
+  text-align: center;
+  margin-bottom: 32px;
+}
+
+.comparePage {
+  max-width: 1100px;
+  margin: 40px auto;
+  padding: 0 16px;
+}
+
+.compareTipBox {
+  background: #e8f0fe;
+  border: 1px solid #b6d0ff;
+  border-radius: 8px;
+  padding: 20px 28px 20px 48px;
+  margin-bottom: 32px;
+  display: flex;
+  align-items: flex-start;
+  font-size: 1rem;
+  position: relative;
+  max-width: 1100px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.tipIcon {
+  position: absolute;
+  left: 18px;
+  top: 22px;
+  font-size: 1.5rem;
+  color: #1976d2;
+}
+
+.compareTipBox ul {
+  margin: 8px 0 0 0;
+  padding-left: 18px;
+}
+
+.compareTipBox li {
+  margin-bottom: 6px;
+  line-height: 1.7;
+}
+
+.compareTableWrapper {
+  overflow-x: auto;
+  display: flex;
+  justify-content: center;
+}
+
+.compareTable {
+  width: auto;
+  border-collapse: collapse;
+  background: #fff;
+  font-size: 1rem;
+}
+
+.compareTable th, .compareTable td {
+  border-bottom: 1px solid #eee;
+  padding: 14px 10px;
+  text-align: center;
+}
+
+.compareTable th {
+  background: #fafbfc;
+  font-weight: 600;
+  color: #222;
+}
+
+.compareTable td:first-child, .compareTable th:first-child {
+  text-align: left;
+  font-weight: 500;
+  background: #f5f7fa;
+}
+
+.compareTable tr:last-child td {
+  border-bottom: none;
+}
+
+.productHeader {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.productImg {
+  width: 80px;
+  height: 80px;
+  object-fit: contain;
+  margin-bottom: 8px;
+}
+
+.productPrice {
+  color: #1976d2;
+  font-weight: bold;
+  margin-top: 4px;
+}
+
+.featureName {
+  text-align: left;
+  font-weight: 500;
+  background: #fafafa;
+}
+
+.featureValue {
+  font-size: 1.3rem;
+}

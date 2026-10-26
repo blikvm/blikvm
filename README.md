@@ -167,3 +167,8 @@ When reporting a problem, include your hardware model, system version, App versi
 Thank you to [PiKVM](https://github.com/pikvm/pikvm), [TinyPilot](https://github.com/tiny-pilot/tinypilot), and the open-source projects supporting the KVM ecosystem.
 
 The license for historical code is preserved in the [historical LICENSE file](https://github.com/blikvm/blikvm/blob/3e34c04a1dfa84636050585d12d5e585098258ea/LICENSE). Components and third-party dependencies in release packages retain their respective licenses and terms.
+
+
+## Website and documentation source
+
+The website and bilingual manuals are maintained in this repository. See [website maintenance](WEBSITE.md) for local development, deployment and demo synchronization.

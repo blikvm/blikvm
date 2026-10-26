@@ -1,0 +1,45 @@
+---
+title: C790 采集模块
+---
+
+# C790 采集模块
+
+
+
+:::note "硬件参数"
+    - HDMI 输入：支持树莓派最高 1080P60Hz
+    - HDMI 转 CSI-2 桥接芯片：东芝 TC358743XBG
+    - 4 路 CSI-2 通道和时钟
+    - CSI-2 接口（位于 C790 模块正面）：15 针 FPC 插座，间距 1.0 mm
+    - CSI-2 接口（位于 C790 模块背面）：22 针 FPC 插座，间距 0.5 mm
+    - 尺寸：30 x 45 mm
+    - 安装：4 x M2.5
+    - 电源：3.3V
+    - 重量：10g
+:::
+
+:::warning "Pi 4B 仅支持 1080P50Hz，受限于 CSI-2 通道数量。CM4 支持 1080P60Hz，因此如果必须使用 1080P60Hz 输入，请使用 CM4 和 C790 搭配。"
+:::
+
+:::note "接口"
+    ![c790-interface](/assets/images/hdmi-csi-i2s/c790-interface.png)
+    C790 提供两个 CSI 输出接口。在 C790 正面，CSI-2 接口为 15 针 FPC 插座，间距 1.0 mm。在 C790 背面，CSI-2 接口为 22 针 FPC 插座，间距 0.5 mm。
+    ![c790-i2s-connect](/assets/images/hdmi-csi-i2s/c790-i2s-connect.png)
+:::
+
+:::note "尺寸"
+    ![c790-size](/assets/images/hdmi-csi-i2s/c790-size.png)
+:::
+
+:::note "在树莓派上安装 C790 的参考"
+    ![install-c790-pi4b](/assets/images/hdmi-csi-i2s/install_c790_pi4b.png)
+:::
+
+
+## 接线与软件验证
+
+断电后连接与主板匹配的 CSI 排线，检查触点方向。接口针数相同不代表任意排线都兼容。
+
+- [CSI 引脚与方向参考](/zh-CN/docs/accessories/hdmi-csi-i2s)
+- [独立 Linux 接入与排查](/zh-CN/docs/capture/linux-integration)
+- [返回采集模块手册](/zh-CN/docs/manuals/capture/)

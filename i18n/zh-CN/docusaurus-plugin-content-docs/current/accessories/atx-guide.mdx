@@ -1,0 +1,82 @@
+# ATX 指南
+
+本页介绍 ATXA 控制板套件的安装、信号与接线。它可搭配兼容控制器使用；使用 BliKVM 时，网页操作另见[ATX 电源控制](../function/atx.md)。
+
+## 安装与检查顺序
+
+1. 关闭被控电脑并断开供电，查阅主板说明书，找到电源按钮、复位按钮与指示灯接口。
+2. 将 B 板对应信号连接到主板，核对指示灯正负极；需要保留机箱按钮时，按下文双排接口图接回原机箱线缆。
+3. 将 A 板连接到兼容控制器，核对供电、地线与 GPIO 定义，再连接 A / B 板之间的线缆。下文 RPI4 表是 PiKVM 示例，不适用于所有 BliKVM 型号。
+4. 重新供电，先检查原机箱按钮，再测试控制器短按电源与复位。长按电源可能强制关机，只在确有需要时使用。
+
+A / B 板的 RJ45 接口传输 ATX 控制信号，不能接入以太网交换机或 PoE 设备。
+
+
+
+## **1. 简介**
+
+ATXA 是一款 ATX 适配器板，用于管理您的计算机电源。
+
+该产品包括两个模块：A 板和 B 板。A 板连接到树莓派，B 板连接到计算机主板，A 板通过网线连接到 B 板。
+
+加入 <a href="https://discord.gg/9Y374gUF6C" target="_blank">Discord 社区聊天</a>, [QQ群](https://qm.qq.com/q/V0qWcbNoIi), 获取新闻、提问和支持！
+
+| ATXA_A                                       | ATXA_B                                       |
+|----------------------------------------------|----------------------------------------------|
+| ![ATXA_A](/assets/images/atx/ATXA_A.png) | ![ATXA_B](/assets/images/atx/ATXA_B.png) |
+
+## **2. A 板**
+
+<img src="/assets/images/atx/status.png" alt="pic" width="50%" />
+
+A 板连接到树莓派。
+
+***
+
+以下表格是 PiKVM 应用中的典型连接方法。
+
+| A 板   | RPI4   |
+| ------- | ------ |
+| GND     | GND    |
+| 3V3     | 3V3    |
+| LED PWR | GPIO24 |
+| LED HDD | GPIO22 |
+| SW PWR  | GPIO23 |
+| SW RST  | GPIO27 |
+|![raspberry-board](/assets/images/atx/raspberry-board.png)|![raspberry-gpio](/assets/images/atx/raspberry-gpio.png)|  
+
+A 板通过网线连接到 B 板。以下表格是 A 板和 B 板引脚状态的对应关系。
+
+|  A 板引脚状态  |                          B 板引脚状态                           |
+|:-----------------:|:------------------------------------------------------------------:|
+|  LED PWR 为 HIGH  |                 LED PWR+ 为 HIGH， LED PWR- 为 LOW                 |
+|  LED PWR 为 LOW   |                 LED PWR+ 为 LOW， LED PWR- 为 LOW                  |
+|  LED HDD 为 HIGH  |                 LED HDD+ 为 HIGH， LED HDD- 为 LOW                 |
+|  LED HDD 为 LOW   |                 LED HDD+ 为 LOW， LED HDD- 为 LOW                  |
+|  SW PWR 为 HIGH   |    BTN PWR+ 和 BTN PWR- 连接，表示电源按钮被按下                  |
+|   SW PWR 为 LOW   | BTN PWR+ 和 BTN PWR- 断开，表示电源按钮未被按下                  |
+|  SW RST 为 HIGH   |    BTN RST+ 和 BTN RST- 连接，表示重置按钮被按下                  |
+|   SW RST 为 LOW   | BTN RST+ 和 BTN RST- 断开，表示重置按钮未被按下                  |
+
+## **3. B 板**
+
+B 板配备了全高和半高金属 PCI 安装板，可安装在计算机机箱上。用户使用产品附带的彩色杜邦线将 B 板上的引脚连接到计算机主板上的 ATX 控制接口。  
+![3](/assets/images/atx/physical_map.png)
+
+:::info "ATXA-B 连接到计算机主板的说明"
+    根据计算机主板的说明，首先找到主板上与 ATX 功能相关的引脚位置，然后拔下已连接到主板的 ATX 线。拔下后，计算机的电源按钮将失去功能。ATXA-B 主板上有两排 8PIN 引脚。当它们具有相同功能时，无需区分两排引脚。一排引脚用于 KVM 控制 ATX 相关功能，另一排引脚连接到从主板上拔下的 ATX 杜邦头，以保持原机箱电源按钮功能。根据主板和 ATXA-B 上的具体引脚定义连接每根线。以下图所示为连接关系：  
+    ![ATXA-B-motherboard](/assets/images/atx/ATXA-B-motherboard.png)
+:::
+
+## **4. 机械图**
+
+![4](/assets/images/atx/4.png)
+
+## **5. 测试视频**
+
+YouTube: <a href="https://www.youtube.com/watch?v=gOFdGrVMBU8" target="_blank">ATX</a>
+
+## **6. 购买**
+
+购买：<a href="https://www.aliexpress.com/item/1005003761450893.html?spm=a2g0o.store_pc_allProduct.8148356.12.4c8f16b4prvvUV" target="_blank">ATX</a>
+

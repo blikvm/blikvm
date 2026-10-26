@@ -1,0 +1,142 @@
+# HDMI 转 CSI 和音频
+
+## HDMI 转 CSI&I2S 桥接指南
+
+> 将 HDMI 信号转换为 CSI 信号和 I2S 音频信号。适配时需核对主板接口、内核驱动与设备树配置，最大捕获分辨率不仅取决于您使用的 HDMI 转 CSI 转换板，还取决于您使用的树莓派硬件版本。树莓派硬件版本主要分为两类，一类支持最高 1080P60Hz，另一类支持最高 1080P50Hz。
+
+- 支持最高 1080P60Hz 的树莓派版本包括 CM3、CM4 和 Pi5B。
+
+- 支持最高 1080P50Hz 的树莓派版本包括 Zero、Zero 2、Pi3B、Pi4B 等。
+
+## **简介**
+
+该模块将输入的 HDMI 信号转换为独立的 CSI 信号和 I2S 音频信号。HDMI 输入支持最高 1080P60Hz。它在树莓派上运行良好，历史上有三个版本的该模块（C779、C780、C790）。在这三个历史型号中，C790 是后续版本，解决了 HDMI 反向供电问题，同时支持两路 CSI 通道和四路 CSI 通道。
+![hdmi-csi-i2s](/assets/images/hdmi-csi-i2s/c790.png)
+
+## **特性**
+
+### **C790**
+
+:::note "硬件参数"
+    - HDMI 输入：支持树莓派最高 1080P60Hz
+    - HDMI 转 CSI-2 桥接芯片：东芝 TC358743XBG
+    - 4 路 CSI-2 通道和时钟
+    - CSI-2 接口（位于 C790 模块正面）：15 针 FPC 插座，间距 1.0 mm
+    - CSI-2 接口（位于 C790 模块背面）：22 针 FPC 插座，间距 0.5 mm
+    - 尺寸：30 x 45 mm
+    - 安装：4 x M2.5
+    - 电源：3.3V
+    - 重量：10g
+:::
+
+:::warning "Pi 4B 仅支持 1080P50Hz，受限于 CSI-2 通道数量。CM4 支持 1080P60Hz，因此如果必须使用 1080P60Hz 输入，请使用 CM4 和 C790 搭配。"
+:::
+
+:::note "接口"
+    ![c790-interface](/assets/images/hdmi-csi-i2s/c790-interface.png)
+    C790 提供两个 CSI 输出接口。在 C790 正面，CSI-2 接口为 15 针 FPC 插座，间距 1.0 mm。在 C790 背面，CSI-2 接口为 22 针 FPC 插座，间距 0.5 mm。
+    ![c790-i2s-connect](/assets/images/hdmi-csi-i2s/c790-i2s-connect.png)
+:::
+
+:::note "尺寸"
+    ![c790-size](/assets/images/hdmi-csi-i2s/c790-size.png)
+:::
+
+:::note "在树莓派上安装 C790 的参考"
+    ![install-c790-pi4b](/assets/images/hdmi-csi-i2s/install_c790_pi4b.png)
+:::
+
+### **C780**
+
+:::info "C780A 硬件参数"
+    - HDMI 输入：在树莓派上支持最高 1080P50Hz（受限于 CSI-2 通道数量）
+    - HDMI 转 CSI-2 桥接芯片：东芝 TC358743XBG
+    - 2 路 CSI-2 通道和时钟
+    - CSI-2 接口：15 针 FPC 插座，间距 1.0 mm
+    - 尺寸：30 x 65 mm（未断裂 PCB 尺寸）；30 x 45 mm（断裂后 PCB 尺寸）
+    - 安装：6 x M2.5
+    - 电源：3.3V
+    - 重量：10g
+:::
+
+:::info "C780B 硬件参数"
+    - HDMI 输入：在树莓派上支持最高 1080P60Hz
+    - HDMI 转 CSI-2 桥接芯片：东芝 TC358743XBG
+    - 4 路 CSI-2 通道和时钟
+    - CSI-2 接口：22 针 FPC 插座，间距 0.5 mm
+    - 尺寸：30 x 65 mm（未断裂 PCB 尺寸）；30 x 45 mm（断裂后 PCB 尺寸）
+    - 安装：6 x M2.5
+    - 电源：3.3V
+    - 重量：10g
+:::
+
+:::info "接口"
+    ![2-4](/assets/images/hdmi-csi-i2s/2-4.png)
+    音频部分的接线如图所示。  
+    ![2-8](/assets/images/hdmi-csi-i2s/2-8.png)
+:::
+
+:::info "尺寸"
+    C780 的尺寸如下图所示。模块有 6 个直径为 2.75mm 的安装孔，适用于 M2.5 螺丝。  
+    ![2-1](/assets/images/hdmi-csi-i2s/2-1.png)
+    如下图所示，用户可以直接将模块固定在树莓派 Zero 上。C780 设计为可断裂，断裂前的孔间距可以完美适配大多数系列的树莓派。
+    ![2-2](/assets/images/hdmi-csi-i2s/2-2.png)
+:::
+
+### **C779**
+
+:::info "硬件参数"
+    - HDMI 输入：在树莓派上支持最高 1080P50Hz（受限于 CSI-2 通道数量）
+    - HDMI 转 CSI-2 桥接芯片：东芝 TC358743XBG
+    - 2 路 CSI-2 通道和时钟
+    - CSI-2 接口：15 针 FPC 插座，间距 1.0 mm
+    - 尺寸：35 x 50 mm
+    - 安装：4 x M2.5
+    - 电源：3.3V
+    - 重量：10g
+:::
+
+:::info "尺寸"
+    C779 的尺寸如图所示。模块有 4 个直径为 2.75mm 的安装孔，适用于 M2.5 螺丝。  
+    ![C779-size](/assets/images/hdmi-csi-i2s/c779-size.png)
+:::
+
+## **CSI 接口定义**
+
+C779 和 C780A 的 CSI（摄像头串行接口）接口均为 15 针，而 C780B 的接口为 22 针。C790 的接口较为独特，支持 15 针和 22 针两种配置。
+
+![Interface](/assets/images/hdmi-csi-i2s/interface.png)
+<div style={{display: 'flex', gap: '1em', justifyContent: 'center', alignItems: 'center'}}>
+    <img src="/assets/images/hdmi-csi-i2s/c779-1thpin.png" alt="C779 1th pin" style={{width: '50%'}} />
+    <img src="/assets/images/hdmi-csi-i2s/c790-15-1thpin.png" alt="C790 15th pin" style={{width: '50%'}} />
+</div>
+<img src="/assets/images/hdmi-csi-i2s/c790-22-1thpin.png" alt="C790 22th pin" style={{width: '45%'}} />
+
+
+## 软件接入 {#software-demo}
+
+独立开发请阅读 [Linux 接入与排查](/zh-CN/docs/capture/linux-integration)，不需要先安装 BliKVM。
+
+使用 BliKVM 镜像时，选择与主板和采集模块匹配的构建，再按[首次使用](/zh-CN/docs/getting-started/first-steps)验证。硬件采集成功不代表 USB 键鼠或网络视频服务已经配置完成。
+
+## **芯片文档**
+
+[TC358743 文档](https://zcwrego195.feishu.cn/drive/folder/V3dXfMA5UlBNmXdX2hycYZuLnxc?from=from_copylink)
+
+## **包装清单**
+
+:::info "C790"
+    ![包装清单](/assets/images/hdmi-csi-i2s/c790-packing-list.png)
+:::
+
+## **测试视频**
+
+[C780A 测试](https://www.youtube.com/watch?v=ecqyINoiHNQ)
+
+[C780B 测试](https://www.youtube.com/watch?v=nc-hwPT2Uak)
+
+## **购买链接**
+
+[购买 C780 和 C790](https://www.aliexpress.com/item/1005002861310912.html?pdp_ext_f=%7B%22sku_id%22:%2212000022635165947%22,%22ship_from%22:%22CN%22%7D)
+
+[购买 C779](https://www.aliexpress.com/item/1005003033156483.html?algo_exp_id=2bfab2d1-a9c7-4c29-9434-2f451401d0e1-9&pdp_ext_f=%7B%22sku_id%22%3A%2212000023351081819%22%7D)

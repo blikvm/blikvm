@@ -1,0 +1,60 @@
+# First steps
+
+Connect BliKVM on your LAN first. Verify the picture, keyboard and mouse before configuring remote access.
+
+:::info Scope
+This guide describes the current BliKVM interface. Functions depend on hardware, installed system and permissions. Screenshots come from the [online demo](https://blikvm.com/demo/): computer images and status are simulated, and do not prove that real HDMI, USB or power control has been tested.
+:::
+
+## Before you begin: do you need to flash the system?
+
+A preinstalled device that boots normally can start with wiring below. For a blank SD card, a self-built device or reinstallation, follow [Flashing an SD card and reinstalling](./flashing-os.mdx). Installing BliKVM itself is different from using virtual media to install the controlled computer's OS.
+
+## 1. Connect the hardware
+
+1. Connect power and Ethernet as shown in your model guide.
+2. Connect the **controlled computer's HDMI output** to BliKVM's HDMI input.
+3. Use a data-capable USB cable between BliKVM's **USB device / OTG port** and the computer. Keyboard, mouse and virtual media use this connection; HDMI alone cannot control the computer.
+4. Wait for boot and first-run initialization to finish without interrupting power.
+
+ATX wiring is optional. Verify video and input first, then add power control using the model's wiring guide.
+
+## 2. Find the address and sign in
+
+BliKVM normally receives a DHCP address from your router. Check its display, if fitted, or the router's DHCP client list.
+
+Open the actual device address in a current browser, for example `https://192.168.0.100/`, using its configured protocol. If HTTP redirects to HTTPS, keep using HTTPS. Check the address and certificate before accepting a private device's certificate warning.
+
+A fresh installation using default credentials has web username `admin` and password `admin`. Initialized or customized devices may differ. Change the password under **Settings → Accounts & Security → Accounts, Password & Two-Factor Authentication**; see [Accounts and security](./auth.mdx).
+
+Web accounts and OS SSH accounts are separate. Do not assume that the web password or an old image's SSH defaults apply.
+
+## 3. Verify video and input
+
+![BliKVM demo console](/assets/images/software-current/console-en.png)
+
+*Demo screenshot: the computer image and connection status are simulated.*
+
+1. Check that the real computer's picture appears. For a black screen, wake the computer and check HDMI direction and input resolution.
+2. Click the picture and try a harmless operation, such as opening and closing an application menu.
+3. Verify keyboard and mouse input. If video works but input does not, check the USB data cable, device / OTG port, USB configuration and account input permissions.
+4. Select a supported mode under **Settings → Video & Cameras → HDMI Video → Advanced Settings**. Start with H.264 WebRTC if available; see [Video modes](../video/video-modes.md).
+
+Basic validation requires a real picture, working input and successful reconnection after refresh. A green connection indicator alone does not prove HDMI and USB both work.
+
+## 4. Next steps
+
+- Learn the toolbar and settings in the [web interface guide](./web-interface.md).
+- Install an OS using [virtual media](../peripheral-devices/msd.md).
+- Check your version and [update BliKVM](../function/update.md).
+- Configure remote access after LAN operation works. Loading the remote page may still leave a separate [WebRTC connectivity problem](../video/webrtc.md).
+
+## Initial troubleshooting
+
+| Symptom | Check first |
+| --- | --- |
+| Cannot find an address | Power, Ethernet and the router's DHCP list; confirm your browser's network can reach the device. |
+| Login fails | Correct device, username, password and any required 2FA code. |
+| Page works but no picture | Computer power and HDMI signal, then browser and media transport. |
+| Picture works but no control | USB data connection, USB functions and permissions. |
+| A menu is missing | Hardware, installed system and role; the demo may expose functions absent on your device. |

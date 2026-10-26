@@ -1,0 +1,51 @@
+# Accounts and security
+
+Go to **Settings → Accounts & Security → Accounts, Password & Two-Factor Authentication**, then open account management. Give each person an account with appropriate viewing, input and maintenance permissions.
+
+[![Demo account settings](/assets/images/software-current/accounts-en-detail.png)](/assets/images/software-current/accounts-en.png)
+
+*Demo screenshot: this shows the management entry, not real accounts or their security state.*
+
+## Roles and permissions
+
+| Role | Default access | Additional access |
+| --- | --- | --- |
+| Administrator | All permissions, including configuration, updates, accounts, security and audit. | The administrator role always has the complete permission set. |
+| Operator | View the console and send keyboard and mouse input. | Administrators can separately grant power, virtual media, serial, switch, audio / camera and input automation permissions. |
+| Viewer | View the console without keyboard or mouse control. | Audio listening and camera viewing can be granted separately. |
+
+Uploading media also requires media-use permission. Forced power actions need the corresponding force-power permission. Operators do not receive device configuration, update or account management permissions by default.
+
+## Change your password
+
+1. Open the account panel and choose the current account's password action.
+2. Enter the current and new passwords as requested and save.
+3. Verify the new password in another browser session before closing the existing one.
+
+Change `admin` / `admin` defaults before enabling remote access. A web password change does not change the OS SSH password.
+
+## Create an account as an administrator
+
+1. Open account management and select **Create user**.
+2. Enter account details, choose a role and grant optional permissions for the intended tasks.
+3. Save and sign in with the new account in another browser session.
+4. Verify both allowed and blocked operations. A viewer should see video but be unable to send input.
+
+Keep at least one working administrator account. Users with input permissions share input; a role does not reserve exclusive control for one person.
+
+## Enable two-factor authentication
+
+2FA is configured **separately for each account**.
+
+1. Open your account's 2FA settings and start setup.
+2. Scan the QR code in an authenticator or enter the setup key manually.
+3. Enter a current one-time code to finish enabling it. Generating a QR code alone does not enable 2FA.
+4. Sign in again to verify password and code. Protect authenticator setup information using your security procedures; never publish the secret.
+
+If codes fail, check device and authenticator time. Administrators can reset a selected account's 2FA rather than replacing a shared key for everyone. If the only administrator loses access, use the installed image's recovery procedure; guessing a default password will not recover it.
+
+## Sessions and API tokens
+
+Sign out using the user menu when finished. Administrators can disable accounts that should no longer have access; account changes invalidate existing browser sessions and API tokens. Automation uses separate API tokens: grant only needed scopes, save newly issued tokens securely and revoke unused tokens. Keep them out of screenshots, URLs and shared logs.
+
+Authentication settings and IP rules affect access. Before changing them, verify a working administrator session and an address that will still be allowed. If account management is unavailable, check that authentication is enabled and your role is authorized.

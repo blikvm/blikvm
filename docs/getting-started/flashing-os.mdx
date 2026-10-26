@@ -1,0 +1,71 @@
+# Flash an SD card and reinstall the system
+
+Reinstall for a fresh installation, unrecoverable system or intentional full-image replacement. For routine version changes use [app / system updates](../function/update.md); for configuration cleanup see [factory reset](../function/factory-reset.md).
+
+## Choose an image
+
+1. Check the hardware model, SoC, storage and release compatibility notes.
+2. Use [Firmware downloads](/download) to select a matching full-disk image. Check its size and supplied checksums.
+3. Back up needed data and arrange local recovery access. Full images, app archives and RAUC bundles are different packages.
+
+This procedure uses a whole-disk `.img`. Inspect compressed packages and release instructions: extract an enclosed `.img` before writing it. App packages use the app update flow. A `.raucb` is a system update bundle and cannot be flashed directly to an SD card. Renaming another model's image does not make it compatible.
+
+## Prepare for your storage type
+
+| Storage | Basic procedure |
+| --- | --- |
+| Removable microSD | Power off, remove the card and write a matching full image with a card reader. |
+| Onboard eMMC, such as CM4 variants | Follow the model guide to enter USB boot / flashing mode, expose the target storage to the host, then write the image. |
+| Other onboard storage | Use the recovery tool explicitly specified for that board and release. |
+
+Use a tool that writes and verifies entire disks. Writing overwrites the selected storage. Disconnect unrelated removable drives and identify the target by its details, not drive-letter order.
+
+## Flash microSD step by step
+
+This section applies to devices booting from removable microSD. For onboard eMMC, enter the model-specific flashing mode first; inserting an arbitrary SD card does not reinstall eMMC.
+
+### 1. Prepare the image, card and tool
+
+- A Windows, macOS or Linux computer and working card reader.
+- A microSD card meeting the release's capacity requirement, including the full uncompressed image size.
+- A matching image from [Firmware downloads](/download). Verify any supplied checksum after downloading.
+- Install the appropriate version of [balenaEtcher](https://etcher.balena.io/). Button names may vary by version or language.
+
+:::warning Back up before writing
+Flashing overwrites the entire selected card, including its system, configuration and files. Back up first, disconnect unrelated drives and check the target's capacity and name.
+:::
+
+### 2. Remove and connect the card
+
+If the device works, shut it down normally, then disconnect power. Remove microSD and connect it to the computer through the reader. Cancel any format prompt; manual formatting is unnecessary.
+
+### 3. Select the image
+
+Open Etcher, choose **Flash from file** and select the downloaded, extracted `.img`. Do not choose an app archive or RAUC bundle, or simply copy the image file into the card's directory.
+
+### 4. Select the target
+
+Choose **Select target**. Identify the card by capacity, name and reader details. If unsure, unplug the reader to see which device disappears, then reconnect and select it again.
+
+Confirm it is the card to reinstall, rather than your computer's system or backup drive.
+
+### 5. Write and verify
+
+Choose **Flash!**, grant OS disk-write permission when prompted and keep the reader connected until writing and verification finish successfully. Do not remove the card while progress is incomplete.
+
+Etcher's [official site](https://etcher.balena.io/) covers verification and troubleshooting. On failure, check the download, reader, USB port and card, then repeat writing and verification.
+
+### 6. Eject and reinstall
+
+If the tool has not ejected the card, safely eject it through your OS before disconnecting. Reinsert it into the powered-off BliKVM, connect network and stable power, then check first boot below.
+
+The flashed card contains Linux partitions your computer may not read. Do not format them to dismiss a warning. Successful writing still needs a successful device boot.
+
+## First-boot checks
+
+1. Safely remove the medium, reinstall it and restore the model's normal boot mode.
+2. Connect stable power and network; let initialization finish without interruption.
+3. Find the router-assigned address and verify login, HDMI and USB using [First steps](./first-steps.mdx).
+4. Check app / system versions, then restore necessary settings. Do not overwrite a new system with an entire old configuration.
+
+Use the current model's instructions for flashing buttons, jumpers and drivers. They are not interchangeable between boards.

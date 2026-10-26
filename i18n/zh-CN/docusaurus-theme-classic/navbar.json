@@ -1,0 +1,34 @@
+{
+  "title": {
+    "message": "BliKVM",
+    "description": "The title in the navbar"
+  },
+  "logo.alt": {
+    "message": "BliKVM Logo",
+    "description": "The alt text of navbar logo"
+  },
+  "item.label.Blog": {
+    "message": "博客",
+    "description": "Navbar item with label Blog"
+  },
+  "item.label.Products": {
+    "message": "产品介绍",
+    "description": "Navbar item with label Products"
+  },
+  "item.label.Docs": {
+    "message": "文档中心",
+    "description": "Navbar item with label Docs"
+  },
+  "item.label.Download": {
+    "message": "下载固件",
+    "description": "Navbar item with label Download"
+  },
+  "item.label.Partners": {
+    "message": "合作伙伴",
+    "description": "Navbar item with label Partners"
+  },
+  "item.label.Demo": {
+    "message": "在线体验",
+    "description": "Navbar item with label Demo"
+  }
+}

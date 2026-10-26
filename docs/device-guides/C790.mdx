@@ -1,0 +1,38 @@
+---
+title: C790 capture module
+---
+
+# C790 capture module
+
+## Hardware specifications
+
+- HDMI input up to 1080p60 on a compatible Raspberry Pi platform.
+- Toshiba TC358743XBG HDMI-to-CSI-2 bridge.
+- Four CSI-2 data lanes and clock.
+- Front: 15-pin FPC, 1.0 mm pitch; rear: 22-pin FPC, 0.5 mm pitch.
+- 30 × 45 mm, four M2.5 mounts, 3.3V, 10g.
+
+:::warning CSI lane limits
+Pi 4B is limited to 1080p50 by its CSI-2 lane count. CM4 supports 1080p60; use the compatible four-lane connection when that input is required.
+:::
+
+## Interfaces
+
+![C790 interfaces](/assets/images/hdmi-csi-i2s/c790-interface.png)
+
+C790 offers both 15-pin front and 22-pin rear CSI connections. Check pitch and contact orientation before wiring.
+
+![I²S connection](/assets/images/hdmi-csi-i2s/c790-i2s-connect.png)
+
+## Dimensions and mounting example
+
+![C790 dimensions](/assets/images/hdmi-csi-i2s/c790-size.png)
+![Pi 4B mounting](/assets/images/hdmi-csi-i2s/install_c790_pi4b.png)
+
+## Wiring and verification
+
+Power off before connecting a matching ribbon. Equal pin counts do not guarantee cable compatibility.
+
+- [CSI pinout and direction](/docs/accessories/hdmi-csi-i2s)
+- [Independent Linux integration](/docs/capture/linux-integration)
+- [Capture-module manual](/docs/manuals/capture/)

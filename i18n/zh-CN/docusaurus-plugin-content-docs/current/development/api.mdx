@@ -1,0 +1,57 @@
+import {ApiReferenceEntry} from '@site/src/components/ApiReference';
+import openapiMetadata from '@site/static/api/current/metadata.json';
+
+# API 与 OpenAPI
+
+当前服务提供 `/api/v1` 接口，适用范围由设备能力与权限决定，不限定于某个旧内测型号。自动化程序应先读取当前设备的版本、能力和接口契约。
+
+## 从哪里获取契约
+
+- 设备自身的 `/openapi.yaml`：与正在运行的服务一同发布，应优先使用。
+- 设备自身的 `/docs`：服务提供的交互接口页；与官网教程的 `/zh-CN/docs/` 不是同一个站点。
+- [官网构建时同步的契约](/api/current/openapi.yaml)：随网站构建更新，供接口查阅；设备版本不同，应以设备自身契约为准。
+
+<p>本次契约同步时间（UTC）：<code>{openapiMetadata.syncedAt}</code>；接口版本：<code>{openapiMetadata.apiVersion}</code>。</p>
+<p>{openapiMetadata.source.kind === 'local-file' ? '当前本地预览读取本机配置的后端契约文件，不代表已同步远端最新提交。' : '此快照在网站构建时从配置的后端来源获取；网站运行期间不会轮询更新。'}</p>
+
+## 认证与权限
+
+浏览器登录使用服务端管理的 HttpOnly 会话 Cookie。自动化使用账号管理中创建的独立 API 令牌，放入 `Authorization: Bearer ...` 请求头，不放在查询参数中。令牌权限不能超过账号本身，过期、撤销或账号变更后需重新签发。
+
+以下只读示例假设环境变量 `BLIKVM_URL` 是设备 HTTPS 来源，`BLIKVM_API_TOKEN` 是已有的有效令牌，且证书已受信任：
+
+```sh
+curl --fail --show-error \
+  --header "Authorization: Bearer $BLIKVM_API_TOKEN" \
+  "$BLIKVM_URL/api/v1/auth/me"
+
+curl --fail --show-error \
+  --header "Authorization: Bearer $BLIKVM_API_TOKEN" \
+  "$BLIKVM_URL/api/v1/capabilities"
+```
+
+不要关闭 TLS 校验来绕过证书问题，也不要把真实令牌写入示例文件或共享日志。Cookie、API 令牌和系统 SSH 凭据不能混用。
+
+## 常见接口组
+
+| 任务 | 入口示例 | 使用注意 |
+| --- | --- | --- |
+| 身份和权限 | `/api/v1/auth/me` | 先核对当前账号，再发操作 |
+| 能力 | `/api/v1/capabilities` | 不按型号硬编码支持情况 |
+| 设备监控 | `/api/v1/system/metrics` | 权限与敏感字段按当前契约处理 |
+| 媒体状态 | `/api/v1/stream/status` | 不等于硬件动作完成 |
+| USB / 虚拟介质 | `/api/v1/usb/device/config`、`/api/v1/msd/state` | 修改可能重枚举或影响介质写入 |
+| 升级任务 | `/api/v1/updates/status`、`/api/v1/updates/tasks` | 读取持久任务结论，不由断线推断成功 |
+| 审计 | `/api/v1/audit` | 需要审计读取权限 |
+
+普通 JSON 接口通常使用 `ok`、`data` / `error` 包装；文件、流、WebSocket 和健康检查有自己的响应格式。程序应同时检查 HTTP 状态和接口返回，不把 `200` 一概视为任务完成。具体字段、方法、权限和错误以当前契约及实现为准。
+
+## 实时接口
+
+当前浏览器使用 `/api/v1/stream/webrtc/signaling` 建立实时会话。输入、RPC 和终端经相应通道传输，不需要先申请独占控制权。不要把兼容 WHEP 路径、WebSocket 和普通 REST 请求当作可互换协议。
+
+## 契约浏览
+
+接口参考采用独立宽屏视图，支持接口搜索、分类导航与请求 / 响应示例。设备版本不同，应优先查阅设备自身的接口契约。
+
+<ApiReferenceEntry />

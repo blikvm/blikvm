@@ -1,0 +1,33 @@
+---
+title: C779 采集模块
+---
+
+# C779 采集模块
+
+
+
+:::info "硬件参数"
+    - HDMI 输入：在树莓派上支持最高 1080P50Hz（受限于 CSI-2 通道数量）
+    - HDMI 转 CSI-2 桥接芯片：东芝 TC358743XBG
+    - 2 路 CSI-2 通道和时钟
+    - CSI-2 接口：15 针 FPC 插座，间距 1.0 mm
+    - 尺寸：35 x 50 mm
+    - 安装：4 x M2.5
+    - 电源：3.3V
+    - 重量：10g
+:::
+
+:::info "尺寸"
+    C779 的尺寸如图所示。模块有 4 个直径为 2.75mm 的安装孔，适用于 M2.5 螺丝。
+
+    ![C779-size](/assets/images/hdmi-csi-i2s/c779-size.png)
+:::
+
+
+## 接线与软件验证
+
+断电后连接与主板匹配的 CSI 排线，检查触点方向。接口针数相同不代表任意排线都兼容。
+
+- [CSI 引脚与方向参考](/zh-CN/docs/accessories/hdmi-csi-i2s)
+- [独立 Linux 接入与排查](/zh-CN/docs/capture/linux-integration)
+- [返回采集模块手册](/zh-CN/docs/manuals/capture/)

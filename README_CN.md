@@ -167,3 +167,8 @@ BliKVM 提供基于 Raspberry Pi CM4、Pi 4B、Allwinner H616 和 Rockchip RV112
 感谢 [PiKVM](https://github.com/pikvm/pikvm)、[TinyPilot](https://github.com/tiny-pilot/tinypilot) 及相关开源项目对 KVM 生态的贡献。
 
 历史代码的许可证保留在 [历史 LICENSE 文件](https://github.com/blikvm/blikvm/blob/3e34c04a1dfa84636050585d12d5e585098258ea/LICENSE)中。发行包中各组件及第三方依赖遵循各自的许可证与使用条款。
+
+
+## 官网与文档源码
+
+官网和中英文手册已统一迁入本仓库。开发、部署与 Demo 同步方法见[网站维护说明](WEBSITE.md)。

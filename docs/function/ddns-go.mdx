@@ -1,0 +1,17 @@
+# Dynamic DNS
+
+Open **Settings → Remote Access → DDNS**. DDNS updates a domain with changing IPv4 / IPv6 addresses; it does not traverse NAT, open a firewall or relay video.
+
+## Configure
+
+1. Check outbound connectivity and obtain a domain and DNS-provider access.
+2. Enable DDNS-GO on the device and wait for the service to run.
+3. Open its configuration, select your provider, enter the necessary credentials and domain, and choose the IPv4 / IPv6 update policy.
+4. Check update logs and DNS resolution, then test externally.
+5. For IPv6, verify reachable IPv6 on the client and suitable device / router firewall rules.
+
+## Interpret the result
+
+Correct DNS resolution does not establish inbound port access. Private addresses, carrier NAT and link-local IPv6 do not create public entry points. Address changes also involve DNS caching and firewall rules.
+
+If enabled but not running, check components, uplink and time. Manage configuration through the current service entry. Update retention depends on release notes; factory reset removes its managed state. Remove DNS credentials before sharing logs.
