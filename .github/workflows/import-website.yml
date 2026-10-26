@@ -1,79 +1,27 @@
-name: Import website sources
+name: Prepare migrated local checkout
 on:
   push:
     branches: [codex/migrate-website]
+    paths: [.github/workflows/import-website.yml]
 permissions:
-  contents: write
+  contents: read
 jobs:
-  import:
+  export:
     runs-on: ubuntu-latest
-    timeout-minutes: 12
+    timeout-minutes: 5
     steps:
-      - name: Checkout main repository migration branch
+      - name: Checkout migrated main repository
         uses: actions/checkout@v4
         with:
           ref: codex/migrate-website
-      - name: Checkout verified website source
+          fetch-depth: 4
+      - name: Checkout source objects already available locally
         uses: actions/checkout@v4
         with:
           repository: blikvm/BliKVM-Website
           ref: 037e760d9cc7863e560d7337dac503fd124aabe2
           path: .website-source
           persist-credentials: false
-      - name: Import website while preserving project files
-        run: |
-          python3 - <<'PYTHON'
-          from pathlib import Path
-          import subprocess,shutil,json
-          root=Path.cwd();source=root/'.website-source'
-          files=subprocess.check_output(['git','-C',str(source),'ls-files','-z']).decode().split('\0')
-          original_readmes={name:(root/name).read_bytes() for name in ['README.md','README_CN.md']}
-          original_images={str(p.relative_to(root)):p.read_bytes() for p in (root/'images').rglob('*') if p.is_file()}
-          count=0
-          for name in files:
-              if not name or name=='README.md' or name.startswith('.github/workflows/'):
-                  continue
-              target=root/name
-              if target.exists():
-                  raise RuntimeError('Unexpected file collision: '+name)
-              target.parent.mkdir(parents=True,exist_ok=True)
-              shutil.copy2(source/name,target);count+=1
-          p=root/'docusaurus.config.js';p.write_text(p.read_text().replace("projectName: 'BliKVM-Website'", "projectName: 'blikvm'"))
-          p=root/'.github/copilot-instructions.md';p.write_text(p.read_text().replace('# Copilot instructions for BliKVM-Website','# Copilot instructions for BliKVM website and documentation'))
-          p=root/'.gitignore';p.write_text(p.read_text()+'\n# Temporary source checkout used only during migration\n.website-source/\n.migration-checkout/\n')
-          for name,data in original_readmes.items():
-              assert (root/name).read_bytes()==data
-              suffix='\n\n## Website and documentation source\n\nThe website and bilingual manuals are maintained in this repository. See [website maintenance](WEBSITE.md) for local development, deployment and demo synchronization.\n' if name=='README.md' else '\n\n## 官网与文档源码\n\n官网和中英文手册已统一迁入本仓库。开发、部署与 Demo 同步方法见[网站维护说明](WEBSITE.md)。\n'
-              with (root/name).open('a') as f:f.write(suffix)
-          for name,data in original_images.items():
-              assert (root/name).read_bytes()==data,'Existing image changed: '+name
-          (root/'WEBSITE.md').write_text('# Website and documentation maintenance\n\nThis repository contains the BliKVM project landing page, firmware Releases,\nthe full Docusaurus website and bilingual product manuals. The production site\nremains at https://blikvm.com/ with existing URLs unchanged.\n\n## Content\n\n- `README.md`, `README_CN.md`, `images/`: project overview and product gallery.\n- `docs/`: English manuals; `i18n/zh-CN/`: Chinese manuals and translations.\n- `src/`: website pages and shared components; `static/`: images and demo build.\n- `sidebars.js`, `sidebars.zh-CN.js`: the matching product-manual navigation.\n- `scripts/`: OpenAPI synchronization and PDF export.\n\nKeep both language versions aligned. Firmware binaries belong in Releases,\nnot in the Git tree. Frontend and backend implementation repositories remain\nprivate; this repository contains public documentation and a prebuilt demo.\n\n## Local development\n\nUse Node.js 18+ and Yarn 1 (versions are pinned in `package.json`).\n\n```sh\nyarn install --frozen-lockfile\n# Configure backend contract access; see scripts/OPENAPI-SYNC.md.\nyarn start\nyarn start --locale zh-CN\nyarn build\nyarn serve\n```\n\n`yarn build` fetches and validates the backend contract before compiling both\nlocales. Local development may use the ignored `.openapi-source.local.json`.\nThe deployed site is static; its API snapshot changes with website builds.\n\n## Production deployment\n\nPushes to `master` automatically run **Deploy Docusaurus** in this repository.\nIt tests contract synchronization, builds the website, publishes `gh-pages`,\nand uploads to the existing production server. It can also be run manually.\n`https://blikvm.com/site-version.json` records the repository, commit and build time.\n\nRequired Actions secrets: `OPENAPI_SOURCE_TOKEN`, `SERVER_HOST`, `SERVER_USER`,\n`SERVER_SSH_KEY`, and `FRONTEND_DEMO_SSH_KEY` for demo synchronization. These\nare encrypted repository settings, never files in Git.\n\nTo update the demo, run **Sync latest frontend demo** on `master`. It builds\n`blikvm/web_client_vanilla`, updates `static/demo/` and its version metadata,\nthen calls the website deployment workflow. Check `/demo/version.json` afterward.\n\nWebsite source was migrated from `blikvm/BliKVM-Website` at commit\n037e760d9cc7863e560d7337dac503fd124aabe2. The old repository is a private backup;\nall future website and documentation changes belong here.\n\n## 中文维护说明\n\n官网和中英文文档统一在本仓库维护，现有官网地址不变。中文文档位于\n`i18n/zh-CN/`，英文文档位于 `docs/`；修改时同步正文、导航及图片。\n推送 `master` 后自动部署。Demo 更新请运行本仓库的\n**Sync latest frontend demo**，固件镜像继续发布到 Releases。\n原 `BliKVM-Website` 仓库仅作为私有备份，不再承担生产部署。\n')
-          print('Imported',count,'website files; original README content and',len(original_images),'images preserved.')
-          PYTHON
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: 18
-          cache: yarn
-      - name: Install dependencies
-        run: yarn install --frozen-lockfile
-      - name: Test OpenAPI synchronization
-        run: node --test scripts/sync-openapi.test.mjs
-      - name: Build both locales from migrated source
-        env:
-          OPENAPI_SOURCE_TOKEN: ${{ secrets.OPENAPI_SOURCE_TOKEN }}
-        run: yarn build
-      - name: Commit imported website
-        run: |
-          git config user.name 'github-actions[bot]'
-          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add .
-          if git diff --cached --name-only | grep -q '^.github/workflows/'; then
-            echo 'Unexpected workflow changes in import commit.' >&2
-            exit 1
-          fi
-          git commit -m 'feat: migrate website and bilingual documentation into main repository'
-          git push origin HEAD:codex/migrate-website
       - name: Prepare local checkout objects
         run: |
           python3 - <<'PYTHON'
@@ -93,6 +41,7 @@ jobs:
       - name: Upload local checkout pack
         uses: actions/upload-artifact@v4
         with:
+          include-hidden-files: true
           name: website-migration-checkout
           path: .migration-checkout/
           retention-days: 1
