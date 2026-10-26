@@ -1,0 +1,68 @@
+name: Deploy Docusaurus
+
+on:
+  workflow_dispatch:
+  workflow_call:
+    inputs:
+      source-ref:
+        type: string
+        default: ""
+  push:
+    branches:
+      - master
+
+jobs:
+  deploy:
+    concurrency:
+      group: website-production-deploy
+      cancel-in-progress: false
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout source code
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.source-ref || github.sha }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 18
+          cache: yarn
+
+      - name: Install dependencies
+        run: yarn install --frozen-lockfile
+
+      - name: Test OpenAPI synchronization
+        run: node --test scripts/sync-openapi.test.mjs
+
+      - name: Record website revision
+        run: |
+          node -e "require('fs').writeFileSync('static/site-version.json', JSON.stringify({repository:process.env.GITHUB_REPOSITORY,commit:require('child_process').execFileSync('git',['rev-parse','HEAD'],{encoding:'utf8'}).trim(),builtAt:new Date().toISOString()}, null, 2)+'\n')"
+
+      - name: Build website (sync backend OpenAPI first)
+        env:
+          OPENAPI_SOURCE_TOKEN: ${{ secrets.OPENAPI_SOURCE_TOKEN }}
+          OPENAPI_SOURCE_REPOSITORY: blikvm/web_server_go
+          OPENAPI_SOURCE_REF: main
+        run: yarn build
+
+      - name: Deploy to GitHub Pages
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_branch: gh-pages
+          publish_dir: ./build
+
+      - name: Upload built website to server
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.SERVER_HOST }}
+          username: ${{ secrets.SERVER_USER }}
+          key: ${{ secrets.SERVER_SSH_KEY }}
+          source: "build/**"
+          target: "/www/wwwroot/blikvm.com"
+          overwrite: true
+          strip_components: 1
