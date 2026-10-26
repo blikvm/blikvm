@@ -1,0 +1,1 @@
+"use strict";(self.webpackChunkmy_website=self.webpackChunkmy_website||[]).push([[7472],{55513:e=>{e.exports=JSON.parse('{"title":"Recent posts","items":[{"title":"C792 HDMI-to-CSI Converter: Bridging 4K Input to 1080p@60Hz Output","permalink":"/blog/c792-hdmi-csi-converter","unlisted":false,"date":"2025-08-02T00:00:00.000Z"}]}')}}]);

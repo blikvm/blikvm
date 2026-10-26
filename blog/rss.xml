@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="utf-8"?><?xml-stylesheet type="text/xsl" href="rss.xsl"?>
+<rss version="2.0" xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:content="http://purl.org/rss/1.0/modules/content/">
+    <channel>
+        <title>BliKVM Blog</title>
+        <link>https://www.blikvm.com/blog</link>
+        <description>BliKVM Blog</description>
+        <lastBuildDate>Sat, 02 Aug 2025 00:00:00 GMT</lastBuildDate>
+        <docs>https://validator.w3.org/feed/docs/rss2.html</docs>
+        <generator>https://github.com/jpmonette/feed</generator>
+        <language>en</language>
+        <item>
+            <title><![CDATA[C792 HDMI-to-CSI Converter: Bridging 4K Input to 1080p@60Hz Output]]></title>
+            <link>https://www.blikvm.com/blog/c792-hdmi-csi-converter</link>
+            <guid>https://www.blikvm.com/blog/c792-hdmi-csi-converter</guid>
+            <pubDate>Sat, 02 Aug 2025 00:00:00 GMT</pubDate>
+            <description><![CDATA[The C792 HDMI-to-CSI-2 converter module is now available! This specialized converter designed for Raspberry Pi and Jetson platforms can transform 4K@60Hz HDMI input signals into 1080p@60Hz CSI-2 output, providing the perfect solution for your embedded video projects]]></description>
+            <content:encoded><![CDATA[<p>The C792 HDMI-to-CSI-2 converter module is now available! This specialized converter designed for Raspberry Pi and Jetson platforms can transform 4K@60Hz HDMI input signals into 1080p@60Hz CSI-2 output, providing the perfect solution for your embedded video projects
+with I2S audio capture.</p>
+<p><img decoding="async" loading="lazy" alt="c792" src="https://www.blikvm.com/assets/images/C792-4-eba2f15550f5b3071131ef9458f59b4d.png" width="1280" height="720" class="img_ev3q"></p>
+<h2 class="anchor anchorWithStickyNavbar_LWe7" id="-key-features">🎯 Key Features<a href="https://www.blikvm.com/blog/c792-hdmi-csi-converter#-key-features" class="hash-link" aria-label="Direct link to 🎯 Key Features" title="Direct link to 🎯 Key Features">​</a></h2>
+<ul>
+<li><strong>4K Input Support</strong>: Up to 4K@60Hz HDMI input capability</li>
+<li><strong>Dual Output</strong>: Simultaneous HDMI loop-out and CSI-2 conversion output</li>
+<li><strong>Audio Support</strong>: I2S digital audio capture</li>
+<li><strong>Wide Compatibility</strong>: Perfect support for Raspberry Pi series and Jetson platforms</li>
+<li><strong>Plug &amp; Play</strong>: No complex configuration required, quick setup</li>
+</ul>
+<h2 class="anchor anchorWithStickyNavbar_LWe7" id="-interface-configuration">🔌 Interface Configuration<a href="https://www.blikvm.com/blog/c792-hdmi-csi-converter#-interface-configuration" class="hash-link" aria-label="Direct link to 🔌 Interface Configuration" title="Direct link to 🔌 Interface Configuration">​</a></h2>
+<p>C792 provides two CSI-2 interfaces for different hardware:</p>
+<ul>
+<li><strong>15-pin FPC</strong>: 2-lane, suitable for Raspberry Pi Zero/3B/4B</li>
+<li><strong>22-pin FPC</strong>: 4-lane, suitable for Raspberry Pi CM4/5B and Jetson series</li>
+</ul>
+<p>Besides, the I2S interface is also provided for audio capture.</p>
+<table><thead><tr><th><img decoding="async" loading="lazy" alt="c792-interface" src="https://www.blikvm.com/assets/images/C792-front-interface-en-27adc09a344e23b8b30e732dc331c94d.png" width="2060" height="1257" class="img_ev3q"></th><th><img decoding="async" loading="lazy" alt="c792-interface1" src="https://www.blikvm.com/assets/images/C792-back-interface-en-5b285b9601f1ff02639c6b9553f8e2da.png" width="1512" height="1054" class="img_ev3q"></th></tr></thead></table>
+<h2 class="anchor anchorWithStickyNavbar_LWe7" id="-application-scenarios">🚀 Application Scenarios<a href="https://www.blikvm.com/blog/c792-hdmi-csi-converter#-application-scenarios" class="hash-link" aria-label="Direct link to 🚀 Application Scenarios" title="Direct link to 🚀 Application Scenarios">​</a></h2>
+<ul>
+<li><strong>Media Centers</strong>: Game console/set-top box video capture</li>
+<li><strong>Industrial Monitoring</strong>: 1080p@60Hz video capture from manufacturing equipment</li>
+<li><strong>AI Development</strong>: Computer vision projects on Jetson platform</li>
+</ul>
+<p>By the way, the C792 is originally designed for Raspberry Pi with proper mounting holes and screws.</p>
+<p><img decoding="async" loading="lazy" alt="c792&amp;amp;Pi" src="https://www.blikvm.com/assets/images/C792&amp;Pi-2-a2cf3e6b7b7c5fb7fe623c46f3b77dc3.png" width="2591" height="1457" class="img_ev3q"></p>
+<p>And here is a typical user case:</p>
+<ul>
+<li>You can use the C792 to capture the video output from a PC, loop it through to a local monitor, and convert the HDMI signal into a CSI signal for direct use with Raspberry Pi or other devices.</li>
+</ul>
+<p><img decoding="async" loading="lazy" alt="c792-user-case" src="https://www.blikvm.com/assets/images/C792-UserCase-699c9039bbc9c128b322c5910dd7642a.png" width="2508" height="1437" class="img_ev3q"></p>
+<p>👉 <a href="https://www.blikvm.com/docs/device-guides/C792">View Complete Documentation</a></p>]]></content:encoded>
+            <category>C792</category>
+            <category>HDMI-To-CSI</category>
+            <category>Raspberry Pi</category>
+            <category>Video Capture</category>
+        </item>
+    </channel>
+</rss>
