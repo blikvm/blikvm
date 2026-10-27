@@ -57,6 +57,49 @@ curl --fail-with-body --show-error \
 
 The current report holds up to **6 non-modifier keys**, with modifier bits separate. Do not submit text as one shortcut array. Ctrl+V uses the target computer's clipboard; it does not transfer the caller's clipboard. For text input, see [Paste and OCR](../peripheral-devices/paste-ocr.md) and the paste endpoint in the device contract.
 
+## Batch input: execute groups in order
+
+`POST /api/v1/hid/paste` submits multiple key groups in one request. Despite the path name, **the body takes sequence, not text or lang**. Convert text into key groups on the client according to the target keyboard layout.
+
+```json
+{
+  "delay": 35,
+  "sequence": [
+    ["KeyA"],
+    ["KeyB"],
+    ["ShiftLeft", "KeyC"],
+    ["Enter"]
+  ]
+}
+```
+
+This taps A, B, Shift+C and Enter in order. Each inner array is one simultaneous chord; the outer array specifies execution order. Character labels assume a US layout and still depend on Caps Lock, input method and focus.
+
+```sh
+curl --fail-with-body --show-error \
+  --header "Authorization: Bearer $BLIKVM_API_TOKEN" \
+  --header 'Content-Type: application/json' \
+  --data '{"delay":35,"sequence":[["KeyA"],["KeyB"],["ShiftLeft","KeyC"],["Enter"]]}' \
+  "$BLIKVM_URL/api/v1/hid/paste"
+```
+
+- Each group is held for delay milliseconds, released completely, then followed by another delay before the next group. Each takes approximately `2 × delay` plus processing time.
+- delay must be an integer. Omitted values effectively use **5 ms**; values below 5 are clamped to 5 and values above 250 to 250. Repeat keys as separate groups, such as `[["KeyA"],["KeyA"]]`, so they are released between taps.
+- A request accepts at most **1024 non-empty groups** after whitespace trimming and removal of empty groups. Submit only supported codes; do not rely on invalid codes being silently ignored.
+- Modifiers do not carry over between groups. For Ctrl+A then Ctrl+C, use `[["ControlLeft","KeyA"],["ControlLeft","KeyC"]]`.
+- The request stays open during execution and returns after completion; it is not a background job. Split longer input into batches, wait for each batch and allow an adequate client timeout. For example, 1024 groups at delay=35 require about 71.68 seconds for holds and gaps alone.
+- A disconnect, revoked permission or HID write failure may leave input partially executed. The server attempts to clear keys on exit. Inspect the target before retrying to avoid duplicate input, and serialize input across the web UI and other clients.
+
+### Choose an endpoint
+
+| Need | Endpoint | Behavior |
+| --- | --- | --- |
+| Tap or hold one key | `/api/v1/hid/events` | One key with state / finish controls |
+| One simultaneous chord | `/api/v1/hid/shortcuts` | Press all shortcuts keys for about 35 ms, then release; no duration parameter |
+| Multiple keys or chords in order | `/api/v1/hid/paste` | Execute sequence groups in order with a configurable delay |
+
+See [OpenAPI](./api.mdx) or the device's own `/docs` for details and examples. These endpoints do not set the target clipboard or automatically convert arbitrary Unicode into IME events.
+
 ## Complete supported codes
 
 The website contract and backend mapping agree on **107** codes. Download the [JSON code list](/api/keyboard-codes.json) for client-side validation: codes contains supported strings and backendRevision identifies the checked backend revision. When firmware differs, use `HidKeyboardCode` in the device's own `/openapi.yaml`. The website snapshot is not a device capability query.

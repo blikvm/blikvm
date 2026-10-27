@@ -50,6 +50,10 @@ Ordinary JSON often uses `ok` with `data` / `error`. Files, streams, WebSockets 
 
 The browser establishes sessions through `/api/v1/stream/webrtc/signaling`. Input, RPC and terminals use their respective channels without exclusive-control acquisition. Compatibility WHEP routes, WebSockets and REST requests are not interchangeable protocols.
 
+## Keyboard input
+
+Use `/api/v1/hid/events` for one key, `/api/v1/hid/shortcuts` for one simultaneous chord, and `/api/v1/hid/paste` for an ordered sequence of code groups. The paste request uses `sequence` and `delay`, not `text` / `lang`. See [Keyboard API and key codes](./keyboard-api.md) for formats, timing, batching and the complete supported code list.
+
 ## Python example
 
 [Get the Python screenshot and keyboard/mouse demo](https://github.com/blikvm/blikvm/tree/master/examples/python). It uses only the Python 3.10+ standard library, with no third-party dependencies or Python installation on the KVM. It supports screenshots, absolute/relative mouse movement, individual keys, and key combinations.

@@ -57,6 +57,49 @@ curl --fail-with-body --show-error \
 
 当前键盘报告最多携带 **6 个非修饰键**，修饰键单独计位。不要把长文本作为一个 shortcuts 数组提交。Ctrl+V 触发的是被控电脑自己的剪贴板；它不会把调用方剪贴板内容传过去。文本输入请参阅 [粘贴与文本提取](../peripheral-devices/paste-ocr.md) 以及设备 OpenAPI 中的 paste 接口。
 
+## 批量按键：依次执行多组输入
+
+`POST /api/v1/hid/paste` 可以在一次请求中发送一段按键序列，无需为每个按键分别调用单键接口。虽然路径叫 paste，**请求体接收的是 sequence，不是 text 或 lang**；需要由调用方根据被控电脑的键盘布局将文本转换为按键组。
+
+```json
+{
+  "delay": 35,
+  "sequence": [
+    ["KeyA"],
+    ["KeyB"],
+    ["ShiftLeft", "KeyC"],
+    ["Enter"]
+  ]
+}
+```
+
+以上依次轻按 A、B、Shift+C 和回车。每个内层数组是一组同时按下的键；外层数组指定执行顺序。按美式布局解释字符，最终结果仍受 Caps Lock、输入法和焦点影响。
+
+```sh
+curl --fail-with-body --show-error \
+  --header "Authorization: Bearer $BLIKVM_API_TOKEN" \
+  --header 'Content-Type: application/json' \
+  --data '{"delay":35,"sequence":[["KeyA"],["KeyB"],["ShiftLeft","KeyC"],["Enter"]]}' \
+  "$BLIKVM_URL/api/v1/hid/paste"
+```
+
+- 每组按下后保持 delay 毫秒，全部释放，再间隔 delay 毫秒执行下一组；因此每组大约耗时 `2 × delay`，另加传输与处理时间。
+- delay 必须为整数；省略时实际为 **5 ms**，小于 5 的值按 5 处理，大于 250 的值按 250 处理。需要重复按同一个键时使用多个组，例如 `[["KeyA"],["KeyA"]]`，每组之间会释放。
+- 一次最多 **1024 个非空按键组**；空白编码会修剪，空组被移除。请直接提交下方清单中的有效编码，不依赖后端忽略无效编码的行为。
+- 每组独立，修饰键不会跨组保持。例如连续 Ctrl+A、Ctrl+C 应写 `[["ControlLeft","KeyA"],["ControlLeft","KeyC"]]`。
+- 请求在序列执行期间保持打开，全部执行后才返回；它不是后台任务。大量输入应拆成多个批次，等待上一批完成后再发送下一批，并设置足够的客户端超时。例如 1024 组、delay=35 时，仅保持与间隔就约需 71.68 秒。
+- 断开连接、权限被撤销或写入失败时，可能已经执行了一部分。服务端退出时会尝试清空按键状态；重试前先查看被控电脑画面，避免整批重放造成重复输入。不要与网页或其他客户端并发发送键盘输入。
+
+### 三种接口如何选择
+
+| 需求 | 接口 | 发送方式 |
+| --- | --- | --- |
+| 单个键轻按或按住 | `/api/v1/hid/events` | 一个 key，通过 state / finish 控制 |
+| 一次组合键 | `/api/v1/hid/shortcuts` | shortcuts 中的键同时按下约 35 ms，然后全部释放；不能自定义时长 |
+| 多个键或多组组合键依次执行 | `/api/v1/hid/paste` | sequence 按组依次执行，每组内部同时按下，可配置 delay |
+
+详情和更多请求示例见 [OpenAPI](./api.mdx) 或设备自身 `/docs`。这三个接口不会直接设置被控电脑剪贴板，也不提供任意 Unicode 到输入法事件的自动转换。
+
 ## 完整支持清单
 
 本页按官网当前契约和后端映射核对，共 **107** 个编码。可下载 [JSON 编码清单](/api/keyboard-codes.json) 供集成时校验；其中 codes 数组包含所有有效编码，backendRevision 记录核对版本。设备固件不同，请优先核对设备 `/openapi.yaml` 中的 `HidKeyboardCode` 枚举。官网快照不是设备运行时能力查询。
