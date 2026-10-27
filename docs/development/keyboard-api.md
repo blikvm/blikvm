@@ -1,110 +1,26 @@
-# Keyboard API and key codes
+# Key code reference
 
-Use the **code strings** listed here when integrating keyboard control: `KeyA` for the physical A key, `Enter` for Return, and `ControlLeft` for left Ctrl.
+Keyboard endpoints use **code strings** such as `KeyA`, `Enter` and `ControlLeft`. Use this page to look up supported codes. Parameters, request examples, timing and limits are documented in OpenAPI.
 
 ## Code format
 
-- Codes follow `KeyboardEvent.code` naming and are case-sensitive. They are not legacy numeric browser `keyCode`, `KeyboardEvent.key` character values, ASCII, or numeric USB HID usage IDs. Do not send `65`, `A`, `a`, or `Ctrl`.
-- Codes identify physical keys. The target computer's layout, modifiers, lock state and input method determine characters. For uppercase A on a US layout, send `ShiftLeft` + `KeyA`.
-- `Digit1` differs from `Numpad1`; `Enter` differs from `NumpadEnter`.
-- Only the listed codes are supported. This is not the entire browser code set: `Fn`, media volume keys and F13–F24 are not supported by the current mapping. `NonUSHash` is a backend name that may require browser-side normalization. Verify international keys with the target layout.
+- Codes are case-sensitive and follow `KeyboardEvent.code` naming. Do not send numeric keyCode, ASCII or character values such as `65`, `A`, `a` or `Ctrl`.
+- Codes identify physical keys; the target layout, modifiers, lock state and input method determine characters. Main `Digit1` and keypad `Numpad1` are different keys.
+- Only the codes below are supported, not the full browser code set. `Fn`, media volume keys and F13–F24 are not listed. `NonUSHash` is a backend name; verify international keys against the target layout.
 
-Read [OpenAPI](./api.mdx) and create an API token with the appropriate keyboard/input permission. Examples assume `BLIKVM_URL` is the device HTTPS origin, `BLIKVM_API_TOKEN` is the token, and the certificate is trusted. Requests send real input to the target computer; test with focus in a text editor.
+## Choose an endpoint
 
-## Single keys: tap, hold and release
-
-Send `POST /api/v1/hid/events` with `Content-Type: application/json` and `Authorization: Bearer …`.
-
-| Action | JSON body | Behavior |
-| --- | --- | --- |
-| Tap Enter | `{"type":"keyboard","key":"Enter"}` | Omit state to press and release automatically |
-| Hold left Shift | `{"type":"keyboard","key":"ShiftLeft","state":true}` | Caller must release it |
-| Release | `{"type":"keyboard","key":"ShiftLeft","state":false}` | Clears all current keyboard keys, not just the named key; key must still be valid |
-| Press and release | `{"type":"keyboard","key":"Enter","state":true,"finish":true}` | A tap; finish applies only when state=true |
-
-```sh
-curl --fail-with-body --show-error \
-  --header "Authorization: Bearer $BLIKVM_API_TOKEN" \
-  --header 'Content-Type: application/json' \
-  --data '{"type":"keyboard","key":"Enter"}' \
-  "$BLIKVM_URL/api/v1/hid/events"
-```
-
-**Each request replaces the complete single-key state; it does not add a key.** Holding `ControlLeft` and then sending `KeyC` separately does not produce Ctrl+C. A completed tap also clears the keyboard state. Use the shortcut endpoint below for combinations and avoid concurrent input from multiple clients.
-
-`CapsLock`, `NumLock` and `ScrollLock` are taps even with `state=true`. They toggle the target lock state rather than explicitly enabling it. Num Lock also changes keypad behavior.
-
-## Combinations: submit all keys together
-
-`POST /api/v1/hid/shortcuts` accepts a `shortcuts` string array. Keys in the array are pressed **together**, then released automatically; they are not typed in sequence.
-
-| Combination | JSON body |
+| Need | OpenAPI endpoint reference |
 | --- | --- |
-| Ctrl+C | `{"shortcuts":["ControlLeft","KeyC"]}` |
-| Ctrl+V | `{"shortcuts":["ControlLeft","KeyV"]}` |
-| Ctrl+Alt+Delete | `{"shortcuts":["ControlLeft","AltLeft","Delete"]}` |
-| Alt+Tab | `{"shortcuts":["AltLeft","Tab"]}` |
-| Windows+R | `{"shortcuts":["MetaLeft","KeyR"]}` |
-| Uppercase A (US layout) | `{"shortcuts":["ShiftLeft","KeyA"]}` |
+| Tap, hold or release one key | [POST /api/v1/hid/events](/api-reference#tag/hid/operation/postHidEvent) |
+| One simultaneous key combination | [POST /api/v1/hid/shortcuts](/api-reference#tag/hid/operation/postHidShortcuts) |
+| Multiple key groups in order | [POST /api/v1/hid/paste](/api-reference#tag/hid/operation/postHidPaste) |
 
-```sh
-curl --fail-with-body --show-error \
-  --header "Authorization: Bearer $BLIKVM_API_TOKEN" \
-  --header 'Content-Type: application/json' \
-  --data '{"shortcuts":["ControlLeft","KeyC"]}' \
-  "$BLIKVM_URL/api/v1/hid/shortcuts"
-```
-
-The current report holds up to **6 non-modifier keys**, with modifier bits separate. Do not submit text as one shortcut array. Ctrl+V uses the target computer's clipboard; it does not transfer the caller's clipboard. For text input, see [Paste and OCR](../peripheral-devices/paste-ocr.md) and the paste endpoint in the device contract.
-
-## Batch input: execute groups in order
-
-`POST /api/v1/hid/paste` submits multiple key groups in one request. Despite the path name, **the body takes sequence, not text or lang**. Convert text into key groups on the client according to the target keyboard layout.
-
-```json
-{
-  "delay": 35,
-  "sequence": [
-    ["KeyA"],
-    ["KeyB"],
-    ["ShiftLeft", "KeyC"],
-    ["Enter"]
-  ]
-}
-```
-
-This taps A, B, Shift+C and Enter in order. Each inner array is one simultaneous chord; the outer array specifies execution order. Character labels assume a US layout and still depend on Caps Lock, input method and focus.
-
-```sh
-curl --fail-with-body --show-error \
-  --header "Authorization: Bearer $BLIKVM_API_TOKEN" \
-  --header 'Content-Type: application/json' \
-  --data '{"delay":35,"sequence":[["KeyA"],["KeyB"],["ShiftLeft","KeyC"],["Enter"]]}' \
-  "$BLIKVM_URL/api/v1/hid/paste"
-```
-
-- Each group is held for delay milliseconds, released completely, then followed by another delay before the next group. Each takes approximately `2 × delay` plus processing time.
-- delay must be an integer. Omitted values effectively use **5 ms**; values below 5 are clamped to 5 and values above 250 to 250. Repeat keys as separate groups, such as `[["KeyA"],["KeyA"]]`, so they are released between taps.
-- A request accepts at most **1024 non-empty groups** after whitespace trimming and removal of empty groups. Submit only supported codes; do not rely on invalid codes being silently ignored.
-- Modifiers do not carry over between groups. For Ctrl+A then Ctrl+C, use `[["ControlLeft","KeyA"],["ControlLeft","KeyC"]]`.
-- The request stays open during execution and returns after completion; it is not a background job. Split longer input into batches, wait for each batch and allow an adequate client timeout. For example, 1024 groups at delay=35 require about 71.68 seconds for holds and gaps alone.
-- A disconnect, revoked permission or HID write failure may leave input partially executed. The server attempts to clear keys on exit. Inspect the target before retrying to avoid duplicate input, and serialize input across the web UI and other clients.
-
-### Choose an endpoint
-
-| Need | Endpoint | Behavior |
-| --- | --- | --- |
-| Tap or hold one key | `/api/v1/hid/events` | One key with state / finish controls |
-| One simultaneous chord | `/api/v1/hid/shortcuts` | Press all shortcuts keys for about 35 ms, then release; no duration parameter |
-| Multiple keys or chords in order | `/api/v1/hid/paste` | Execute sequence groups in order with a configurable delay |
-
-See [OpenAPI](./api.mdx) or the device's own `/docs` for details and examples. These endpoints do not set the target clipboard or automatically convert arbitrary Unicode into IME events.
+See [OpenAPI](./api.mdx) for authentication and contract sources.
 
 ## Complete supported codes
 
-The website contract and backend mapping agree on **107** codes. Download the [JSON code list](/api/keyboard-codes.json) for client-side validation: codes contains supported strings and backendRevision identifies the checked backend revision. When firmware differs, use `HidKeyboardCode` in the device's own `/openapi.yaml`. The website snapshot is not a device capability query.
-
-Punctuation labels describe a common US layout; labels are not API arguments.
+There are **107** codes. Download the [JSON code list](/api/keyboard-codes.json) for integration validation. If firmware versions differ, use `HidKeyboardCode` in the device's own `/openapi.yaml`. Punctuation labels assume a common US layout; labels are not API arguments.
 
 ### Modifiers
 
@@ -242,7 +158,3 @@ Punctuation labels describe a common US layout; labels are not API arguments.
 | `ArrowUp` | Up arrow |
 | `IntlBackslash` | Extra ISO backslash key |
 | `ContextMenu` | Context menu |
-
-## Troubleshooting
-
-Check the USB data cable, keyboard function, account/token permissions and device contract. HTTP 400 can indicate an invalid code or body; 401/403 concern authentication or permissions, 409 means HID is disabled and 503 means HID is unavailable. Read the error body too. Success means input was submitted, not that a target application completed an action. After an interrupted hold, reconnect and send a keyboard event with a valid key and state=false to clear the keyboard state.

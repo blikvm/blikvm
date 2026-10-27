@@ -50,10 +50,6 @@ curl --fail --show-error \
 
 当前浏览器使用 `/api/v1/stream/webrtc/signaling` 建立实时会话。输入、RPC 和终端经相应通道传输，不需要先申请独占控制权。不要把兼容 WHEP 路径、WebSocket 和普通 REST 请求当作可互换协议。
 
-## 键盘输入
-
-单键使用 `/api/v1/hid/events`，一次组合键使用 `/api/v1/hid/shortcuts`，批量顺序输入使用 `/api/v1/hid/paste`。paste 请求使用 `sequence` 与 `delay`，不使用 `text` / `lang`。详见 [键盘 API 与按键编码](./keyboard-api.md)，包含请求格式、执行时序、分批规则与完整支持清单。
-
 ## Python 示例
 
 [下载并查看 Python 截图与键鼠 Demo](https://github.com/blikvm/blikvm/tree/master/examples/python)。示例只使用 Python 3.10+ 标准库，无需安装第三方依赖，也无需在 KVM 上安装 Python。支持截图、绝对/相对鼠标、单键和组合键。
@@ -66,4 +62,4 @@ curl --fail --show-error \
 
 <ApiReferenceEntry />
 
-键盘控制集成请参阅 [键盘 API 与按键编码](./keyboard-api.md)，包含完整编码清单、组合键和按下／释放示例。
+有效按键名称见 [按键编码参考](./keyboard-api.md)；接口参数与调用示例请查阅上方接口参考。

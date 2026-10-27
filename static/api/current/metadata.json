@@ -1,10 +1,12 @@
 {
-  "syncedAt": "2026-10-27T07:51:22.543Z",
+  "syncedAt": "2026-10-27T08:05:39.570Z",
   "sha256": "e8c4511fd9946351f313e1a5088675a241fcf09d127d31a0ac2489786126aa18",
   "apiVersion": "1.0.0",
   "openapiVersion": "3.0.3",
   "source": {
-    "kind": "local-file",
-    "commit": "a0381f3456c98ad34caaaebb6ebedcb413692937"
+    "kind": "remote",
+    "repository": "blikvm/web_server_go",
+    "ref": "main",
+    "path": "openapi/openapi.yaml"
   }
 }
