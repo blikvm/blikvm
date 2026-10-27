@@ -19,10 +19,13 @@ App targets: bcm2711, sun50i, rv1126b. System targets: bcm2711, sun50i,
 rv1126b-tc358743, rv1126b-lt6911uxe, rv1126b-lt7911uxc. RV App entries are shared
 across capture variants; system entries always match the specific bridge.
 
-CI writes only the index file, then explicitly dispatches the website deploy
-workflow because a GITHUB_TOKEN push cannot trigger it automatically. If
-Actions are unavailable, run the generator locally, review/merge the generated
-index, then manually deploy the website as usual. Do not publish input dumps,
+The Release workflow validates the index and dispatches the website deployment.
+Each deployment generates the index again from current published Releases before
+building the website, so no workflow pushes to the protected source branch.
+The committed JSON is a reviewed fallback snapshot; the live website index may
+be newer. To refresh that snapshot, run the generator and merge the change
+through a pull request. If Actions are unavailable, generate the index locally
+and deploy the website through the normal reviewed process. Do not publish input dumps,
 private tokens, signing keys, or unreleased build artifacts.
 
 Validation: `node --test scripts/sync-update-index.test.mjs`.
