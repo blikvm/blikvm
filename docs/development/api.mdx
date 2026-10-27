@@ -1,7 +1,7 @@
 import {ApiReferenceEntry} from '@site/src/components/ApiReference';
 import openapiMetadata from '@site/static/api/current/metadata.json';
 
-# API and OpenAPI
+# OpenAPI
 
 The current service provides `/api/v1` endpoints according to device capabilities and permissions, not a single legacy beta model. Automation should first inspect the running device's version, capabilities and contract.
 
@@ -49,6 +49,12 @@ Ordinary JSON often uses `ok` with `data` / `error`. Files, streams, WebSockets 
 ## Real-time interfaces
 
 The browser establishes sessions through `/api/v1/stream/webrtc/signaling`. Input, RPC and terminals use their respective channels without exclusive-control acquisition. Compatibility WHEP routes, WebSockets and REST requests are not interchangeable protocols.
+
+## Python example
+
+[Get the Python screenshot and keyboard/mouse demo](https://github.com/blikvm/blikvm/tree/master/examples/python). It uses only the Python 3.10+ standard library, with no third-party dependencies or Python installation on the KVM. It supports screenshots, absolute/relative mouse movement, individual keys, and key combinations.
+
+Follow the example instructions to set the device address and API token. Read status and capture a screenshot before sending input. Input examples operate the attached computer; inspect the resulting screen to verify completion.
 
 ## Browse the contract
 

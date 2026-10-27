@@ -1,7 +1,7 @@
 import {ApiReferenceEntry} from '@site/src/components/ApiReference';
 import openapiMetadata from '@site/static/api/current/metadata.json';
 
-# API 与 OpenAPI
+# OpenAPI
 
 当前服务提供 `/api/v1` 接口，适用范围由设备能力与权限决定，不限定于某个旧内测型号。自动化程序应先读取当前设备的版本、能力和接口契约。
 
@@ -49,6 +49,12 @@ curl --fail --show-error \
 ## 实时接口
 
 当前浏览器使用 `/api/v1/stream/webrtc/signaling` 建立实时会话。输入、RPC 和终端经相应通道传输，不需要先申请独占控制权。不要把兼容 WHEP 路径、WebSocket 和普通 REST 请求当作可互换协议。
+
+## Python 示例
+
+[下载并查看 Python 截图与键鼠 Demo](https://github.com/blikvm/blikvm/tree/master/examples/python)。示例只使用 Python 3.10+ 标准库，无需安装第三方依赖，也无需在 KVM 上安装 Python。支持截图、绝对/相对鼠标、单键和组合键。
+
+按示例说明设置设备地址与 API 令牌，先查询状态、获取截图，再执行键鼠操作。操作示例会实际控制被控电脑；接口成功后仍需查看画面确认结果。
 
 ## 契约浏览
 
