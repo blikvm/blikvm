@@ -18,6 +18,21 @@
 
 ## 将管理电脑摄像头提供给被控电脑
 
+### 视频说明
+
+<iframe
+  src="https://player.bilibili.com/player.html?isOutside=true&aid=117512016497527&bvid=BV1XmxT6CEhq&cid=43095425735&p=1"
+  title="BliKVM UVC 摄像头转发视频说明"
+  style={{width: '100%', aspectRatio: '16 / 9', height: 'auto', border: 0, display: 'block'}}
+  scrolling="no"
+  loading="lazy"
+  allowFullScreen
+></iframe>
+
+[在哔哩哔哩打开视频](https://www.bilibili.com/video/BV1XmxT6CEhq/)。
+
+### 操作步骤
+
 入口：**设置 → 视频与摄像头 → 浏览器摄像头转发**。
 
 1. 在[自定义 USB 功能](../peripheral-devices/usb.md)中启用 UVC 类别，检查端点预算并等待重枚举。
