@@ -114,7 +114,7 @@ export default {
     },
     {
       "type": "category",
-      "label": "目录与接口",
+      "label": "开发者",
       "items": [
         "development/architecture",
         "development/api"

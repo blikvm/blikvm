@@ -114,7 +114,7 @@ export default {
     },
     {
       "type": "category",
-      "label": "Directories and API",
+      "label": "Developer",
       "items": [
         "development/architecture",
         "development/api"
