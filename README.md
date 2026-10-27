@@ -103,6 +103,10 @@ The new BliKVM software maintains the system and App separately, so routine appl
 
 System and App version numbers may differ. Check the versions on your About page and the release compatibility notes before choosing an update package.
 
+## Developer examples
+
+[Python screenshot and keyboard/mouse demo](examples/python/): call the OpenAPI endpoints from your computer using Python 3.10+, with no third-party dependencies. Includes screenshots, coordinate clicks, relative movement, keys, and key combinations. See the example README for authentication, certificate settings, and commands.
+
 ## Hardware and purchasing
 
 BliKVM offers hardware based on Raspberry Pi CM4, Pi 4B, Allwinner H616, and Rockchip RV1126B, plus switches, ATX accessories, and capture boards.
@@ -145,7 +149,7 @@ See the [documentation](https://blikvm.com/docs/) for wiring, flashing, and mode
 
 ## About this repository
 
-`blikvm/blikvm` is BliKVM's public product and release hub. This branch contains the English and Chinese READMEs and their supporting images, with links to downloads, release notes, documentation, hardware, and community support.
+`blikvm/blikvm` is BliKVM's public product and release hub. This branch contains the English and Chinese READMEs, supporting images, and API examples, with links to downloads, release notes, documentation, hardware, and community support.
 
 Historical source code, build scripts, images, and development notes remain available in [Git history](https://github.com/blikvm/blikvm/commits/master/). They are not the build entry point for current firmware. Removing them from the current tree does not change their existing licenses.
 

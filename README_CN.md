@@ -103,6 +103,10 @@ BliKVM 支持 HTTPS、账户权限、双重验证和可撤销的 API 访问令�
 
 系统版本与 App 版本可以不同。选择更新包时，请以“关于”页面的当前版本和 Release 的兼容性说明为依据。
 
+## 开发者示例
+
+[Python 截图与键鼠 Demo](examples/python/README_CN.md)：在自己的电脑上通过 OpenAPI 接口操作设备，仅需 Python 3.10+，无需安装第三方依赖。包含截图、坐标点击、相对移动、单键和组合键；鉴权、证书和运行命令见示例说明。
+
 ## 硬件与选购
 
 BliKVM 提供基于 Raspberry Pi CM4、Pi 4B、Allwinner H616 和 Rockchip RV1126B 的硬件方案，以及切换器、ATX 和采集板等配件。
@@ -145,7 +149,7 @@ BliKVM 提供基于 Raspberry Pi CM4、Pi 4B、Allwinner H616 和 Rockchip RV112
 
 ## 本仓库的用途
 
-`blikvm/blikvm` 是 BliKVM 的公开产品与发布入口。当前分支保留中英文 README 及配图，集中提供下载、版本说明、使用文档、硬件与社区入口。
+`blikvm/blikvm` 是 BliKVM 的公开产品与发布入口。当前分支提供中英文 README、配图和 API 示例，集中提供下载、版本说明、使用文档、硬件与社区入口。
 
 历史源码、构建脚本、图片和旧版开发说明仍可通过 [Git 历史](https://github.com/blikvm/blikvm/commits/master/) 查阅，不应作为当前固件的构建入口。从当前目录移除历史文件不会改变其原有许可证。
 
