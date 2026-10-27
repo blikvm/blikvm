@@ -1267,6 +1267,13 @@ paths:
         - `key` uses browser-style `KeyboardEvent.code` values
         - when `state` is omitted, the server performs a tap (`press -> release`)
         - lock keys such as `CapsLock`, `NumLock`, and `ScrollLock` are handled as reliable taps
+        - each keyboard event replaces the entire keyboard state; it does not add a held key
+        - `state=false` releases all keyboard keys, not only `key`; a valid `key` is still required
+        - ordinary key taps and `finish=true` clear all keyboard keys after approximately 35 ms; lock keys use their dedicated tap handling
+        - `finish` only affects `state=true`; lock keys remain taps rather than held keys
+        - use `/api/v1/hid/shortcuts` for one simultaneous chord and `/api/v1/hid/paste` for an ordered sequence
+        - keyboard reports support up to six non-modifier keys, with modifier bits separate
+        - success means input was submitted, not that the target application completed an action
       operationId: postHidEvent
       security:
         - bearerAuth: []
@@ -1337,6 +1344,18 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: Input permission denied or revoked
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: HID write failed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
         '409':
           description: HID disabled or mouse mode conflict
           content:
@@ -1353,7 +1372,28 @@ paths:
   /api/v1/hid/paste:
     post:
       tags: [hid]
-      summary: Paste text into HID keyboard (ASCII subset)
+      summary: Send an ordered keyboard key-code sequence
+      description: |
+        Executes an ordered sequence of keyboard chords, not a plain-text paste.
+        Each inner array contains keys pressed simultaneously. For each group the server:
+        1. replaces the keyboard state with that group;
+        2. holds it for the effective delay;
+        3. releases all keyboard keys;
+        4. waits for the same delay before starting the next group.
+
+        At most 1024 non-empty groups are accepted after trimming whitespace and removing empty groups.
+        The integer delay is in milliseconds, defaults to an effective 5 ms, and is clamped to 5..250 ms.
+        Timing is approximate and includes HID writes and scheduling overhead.
+        Keys follow HidKeyboardCode; each report supports six non-modifier keys plus modifier bits.
+        A modifier is not preserved between groups: repeat it in every group that needs it.
+
+        The request remains open until execution finishes. Serialize requests and split longer input into
+        batches, waiting for each batch to finish. This is not an asynchronous job or a clipboard transfer.
+        The server attempts to clear keyboard state on exit. On errors or disconnects, input may have
+        partially executed; inspect the target before retrying to avoid duplicate input.
+        A successful response does not prove that the target application completed an action.
+        Legacy text/lang fields are not the request format; callers must convert text to code groups
+        according to the target keyboard layout. Arbitrary Unicode/IME conversion is not provided here.
       operationId: postHidPaste
       security:
         - bearerAuth: []
@@ -1362,37 +1402,56 @@ paths:
         content:
           application/json:
             schema:
-              type: object
-              required: [text]
-              properties:
-                text:
-                  type: string
-                lang:
-                  type: string
-                delay:
-                  type: integer
-                  format: int32
+              $ref: '#/components/schemas/HidPasteRequest'
+            examples:
+              lettersAndEnter:
+                summary: Tap A, B, Shift+C, then Enter on a US layout
+                value:
+                  delay: 35
+                  sequence: [[KeyA], [KeyB], [ShiftLeft, KeyC], [Enter]]
+              repeatedKey:
+                summary: Three separate taps of A
+                value:
+                  delay: 35
+                  sequence: [[KeyA], [KeyA], [KeyA]]
+              chordsInOrder:
+                summary: Ctrl+A followed by Ctrl+C, with a release between them
+                value:
+                  delay: 50
+                  sequence: [[ControlLeft, KeyA], [ControlLeft, KeyC]]
       responses:
         '200':
-          description: Done
+          description: Sequence finished and keyboard released; target application completion is not verified
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/OkResponse'
         '400':
-          description: Invalid request
+          description: Invalid JSON, missing or empty input, or more than 1024 non-empty sequence groups
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
         '401':
-          description: Missing or invalid token
+          description: Missing or invalid authentication
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: Input permission denied or revoked during execution
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
         '409':
           description: HID disabled
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: HID write failed; earlier input may already have been sent
           content:
             application/json:
               schema:
@@ -1407,7 +1466,15 @@ paths:
   /api/v1/hid/shortcuts:
     post:
       tags: [hid]
-      summary: Send keyboard shortcut sequence
+      summary: Tap one simultaneous keyboard chord
+      description: |
+        Presses all shortcuts keys together, holds for approximately 35 ms, then releases all keyboard keys.
+        The array is one chord, not an ordered sequence. There is no configurable hold duration.
+        Each request replaces the current keyboard state; modifiers from previous requests are not preserved.
+        Use /api/v1/hid/paste for an ordered sequence with a configurable per-group delay.
+        Use HidKeyboardCode strings, not numeric keyCode, printable characters or shortcut names such as Ctrl+C.
+        Reports support six non-modifier keys plus modifier bits. Serialize input across clients.
+        Success indicates input submission, not completion by the target application.
       operationId: postHidShortcuts
       security:
         - bearerAuth: []
@@ -1416,34 +1483,49 @@ paths:
         content:
           application/json:
             schema:
-              type: object
-              required: [shortcuts]
-              properties:
-                shortcuts:
-                  type: array
-                  items:
-                    type: string
+              $ref: '#/components/schemas/HidShortcutRequest'
+            examples:
+              copy:
+                summary: Ctrl+C
+                value:
+                  shortcuts: [ControlLeft, KeyC]
+              ctrlAltDelete:
+                summary: Ctrl+Alt+Delete
+                value:
+                  shortcuts: [ControlLeft, AltLeft, Delete]
       responses:
         '200':
-          description: Done
+          description: Chord submitted and keyboard released; target application completion is not verified
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/OkResponse'
         '400':
-          description: Invalid request
+          description: Invalid JSON, missing or empty input
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
         '401':
-          description: Missing or invalid token
+          description: Missing or invalid authentication
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: Input permission denied or revoked during execution
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
         '409':
           description: HID disabled
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: HID write failed; earlier input may already have been sent
           content:
             application/json:
               schema:
@@ -5530,11 +5612,12 @@ components:
           description: |
             Press state for keyboard and mouseButton events.
             When omitted, the server sends a tap/click (press then release).
+            For keyboard events, true replaces the current state with the single key; false clears all keyboard keys.
         finish:
           type: boolean
           description: |
             For keyboard events, release the key right after a press when `state=true`.
-            Ignored for other event types.
+            Has no effect when state is false or omitted. Ignored for other event types.
         button:
           type: string
           enum: [left, middle, right]
@@ -5559,6 +5642,43 @@ components:
           type: number
           format: double
           description: Relative Y movement or vertical wheel delta depending on the event type.
+
+    HidPasteRequest:
+      type: object
+      required: [sequence]
+      properties:
+        sequence:
+          type: array
+          minItems: 1
+          maxItems: 1024
+          description: |
+            Ordered groups of simultaneous keys. Supply 1..1024 non-empty groups.
+            Empty strings and empty groups are removed by the server before checking the group limit.
+            Each group replaces the keyboard state, then is released before the next group.
+          items:
+            type: array
+            minItems: 1
+            items:
+              $ref: '#/components/schemas/HidKeyboardCode'
+        delay:
+          type: integer
+          format: int32
+          default: 5
+          description: |
+            Hold time and post-release gap per group, in milliseconds.
+            Omitted values and values below 5 use 5; values above 250 use 250.
+            Each group takes approximately twice the effective delay plus processing time.
+
+    HidShortcutRequest:
+      type: object
+      required: [shortcuts]
+      properties:
+        shortcuts:
+          type: array
+          minItems: 1
+          description: One simultaneous chord, automatically released after approximately 35 ms.
+          items:
+            $ref: '#/components/schemas/HidKeyboardCode'
 
     HidKeyboardCode:
       type: string
