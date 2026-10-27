@@ -38,6 +38,14 @@ jobs:
       - name: Test OpenAPI synchronization
         run: node --test scripts/sync-openapi.test.mjs
 
+      - name: Test public update index
+        run: node --test scripts/sync-update-index.test.mjs
+
+      - name: Generate public update index from published Releases
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: node scripts/sync-update-index.mjs
+
       - name: Record website revision
         run: |
           node -e "require('fs').writeFileSync('static/site-version.json', JSON.stringify({repository:process.env.GITHUB_REPOSITORY,commit:require('child_process').execFileSync('git',['rev-parse','HEAD'],{encoding:'utf8'}).trim(),builtAt:new Date().toISOString()}, null, 2)+'\n')"
