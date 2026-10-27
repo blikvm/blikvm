@@ -2612,8 +2612,11 @@ paths:
                   ok: {type: boolean, enum: [true]}
                   data:
                     type: object
-                    required: [runningVersion, systemVersion, systemSlot, busy, deviceTime, capabilities, task]
+                    required: [runningVersion, systemVersion, systemSlot, appTarget, systemTarget, busy, deviceTime, capabilities, task]
                     properties:
+                      appTarget: {type: string, description: Signed application hardware family}
+                      systemTarget: {type: string, nullable: true, description: Running OS image target; null when missing or conflicting}
+                      systemTargetReason: {type: string, description: Identity failure reason; empty when resolved}
                       runningVersion: {type: string}
                       systemVersion: {type: string}
                       systemSlot: {type: string}
@@ -2633,6 +2636,32 @@ paths:
           description: Authentication required
         '500':
           description: Durable task state could not be read or persisted
+  /api/v1/updates/catalog:
+    get:
+      tags: [system]
+      summary: Read the cached public release index without downloading packages
+      operationId: getUpdateCatalog
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Public schemaVersion 1 release index, cached for ten minutes
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok: {type: boolean}
+                  data:
+                    type: object
+                    properties:
+                      schemaVersion: {type: integer, enum: [1]}
+                      generatedAt: {type: string, format: date-time}
+                      targets: {type: object, additionalProperties: true}
+        '401':
+          description: Authentication required
+        '502':
+          description: Public index unavailable or malformed
   /api/v1/updates/events:
     get:
       tags: [system]
@@ -5553,13 +5582,15 @@ components:
           enum: [true]
         data:
           type: object
-          required: [enabled, mouseMode, passThrough, jiggler]
+          required: [enabled, mouseMode, passThrough, jiggler, connection]
           properties:
             enabled:
               type: boolean
             mouseMode:
               type: string
-              enum: [dual, absolute, relative]
+              enum: [dual, absolute, relative, none]
+            connection:
+              $ref: '#/components/schemas/HidConnectionStatus'
             passThrough:
               type: object
               required: [enabled, wheelReverse]
@@ -5575,6 +5606,45 @@ components:
                 intervalSec:
                   type: integer
                   format: int32
+
+    HidFunctionConnection:
+      type: object
+      required: [state]
+      properties:
+        state:
+          type: string
+          enum: [ready, disabled, not_ready, partial, error, unknown]
+        reason:
+          type: string
+          description: Machine-readable reason; absent when ready.
+    HidConnectionStatus:
+      type: object
+      description: |
+        Passive USB/HID readiness, independent for keyboard and each mouse endpoint.
+        Ready means the USB host configured the gadget and the active endpoint is open
+        with no recorded last-write error. It does not prove host OS input delivery.
+        Dual mouse mode is partial if exactly one required mouse endpoint is ready.
+        Reading this status never sends keyboard or mouse reports.
+      required: [usbState, keyboard, mouse]
+      properties:
+        usbState:
+          type: string
+          description: Linux UDC state, unbound, or unknown if state cannot be read.
+        keyboard:
+          $ref: '#/components/schemas/HidFunctionConnection'
+        mouse:
+          allOf:
+            - $ref: '#/components/schemas/HidFunctionConnection'
+            - type: object
+              required: [mode, absolute, relative]
+              properties:
+                mode:
+                  type: string
+                  enum: [dual, absolute, relative, none]
+                absolute:
+                  $ref: '#/components/schemas/HidFunctionConnection'
+                relative:
+                  $ref: '#/components/schemas/HidFunctionConnection'
 
     HidEventRequest:
       type: object
