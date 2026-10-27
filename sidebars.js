@@ -117,7 +117,8 @@ export default {
       "label": "Developer",
       "items": [
         "development/architecture",
-        "development/api"
+        "development/api",
+        "development/keyboard-api"
       ]
     }
   ],
