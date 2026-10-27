@@ -1,0 +1,8 @@
+__pycache__/
+*.py[cod]
+captures/
+*.jpg
+*.jpeg
+*.png
+.env
+.venv/
