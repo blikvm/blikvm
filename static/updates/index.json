@@ -1,0 +1,84 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-10-27T12:16:34.312Z",
+  "targets": {
+    "bcm2711": {
+      "stable": {
+        "app": null,
+        "system": null
+      },
+      "preview": {
+        "app": {
+          "version": "3.0.0",
+          "releaseUrl": "https://github.com/blikvm/blikvm/releases/tag/untagged-878686fb7a5446c233b6"
+        },
+        "system": {
+          "version": "3.0.0",
+          "releaseUrl": "https://github.com/blikvm/blikvm/releases/tag/untagged-878686fb7a5446c233b6"
+        }
+      }
+    },
+    "sun50i": {
+      "stable": {
+        "app": null,
+        "system": null
+      },
+      "preview": {
+        "app": {
+          "version": "3.0.0",
+          "releaseUrl": "https://github.com/blikvm/blikvm/releases/tag/untagged-878686fb7a5446c233b6"
+        },
+        "system": {
+          "version": "3.0.0",
+          "releaseUrl": "https://github.com/blikvm/blikvm/releases/tag/untagged-878686fb7a5446c233b6"
+        }
+      }
+    },
+    "rv1126b": {
+      "stable": {
+        "app": null,
+        "system": null
+      },
+      "preview": {
+        "app": {
+          "version": "3.0.0",
+          "releaseUrl": "https://github.com/blikvm/blikvm/releases/tag/untagged-878686fb7a5446c233b6"
+        },
+        "system": null
+      }
+    },
+    "rv1126b-tc358743": {
+      "stable": {
+        "app": null,
+        "system": null
+      },
+      "preview": {
+        "app": null,
+        "system": {
+          "version": "3.0.0",
+          "releaseUrl": "https://github.com/blikvm/blikvm/releases/tag/untagged-878686fb7a5446c233b6"
+        }
+      }
+    },
+    "rv1126b-lt6911uxe": {
+      "stable": {
+        "app": null,
+        "system": null
+      },
+      "preview": {
+        "app": null,
+        "system": null
+      }
+    },
+    "rv1126b-lt7911uxc": {
+      "stable": {
+        "app": null,
+        "system": null
+      },
+      "preview": {
+        "app": null,
+        "system": null
+      }
+    }
+  }
+}

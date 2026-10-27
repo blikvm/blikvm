@@ -1,0 +1,38 @@
+name: Refresh public update index
+on:
+  release:
+    types: [published, edited, deleted, unpublished, released, prereleased]
+  workflow_dispatch:
+permissions:
+  contents: write
+  actions: write
+concurrency:
+  group: public-update-index
+  cancel-in-progress: false
+jobs:
+  index:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: master
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: node --test scripts/sync-update-index.test.mjs
+      - name: Refresh from published Release assets
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: node scripts/sync-update-index.mjs
+      - name: Publish index and deploy website
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if git diff --quiet -- static/updates/index.json; then exit 0; fi
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add static/updates/index.json
+          git commit -m 'release: refresh public update index'
+          git push origin HEAD:master
+          # GITHUB_TOKEN pushes do not trigger another workflow automatically.
+          gh workflow run deploy.yml --ref master -f source-ref="$(git rev-parse HEAD)"
