@@ -14,6 +14,24 @@ Detection does not guarantee codec support. For unknown devices or unsupported e
 
 ## Forward the management computer's camera
 
+### Video walkthrough
+
+<iframe
+  width="560"
+  height="315"
+  src="https://www.youtube.com/embed/ioYrpdT1-kw?si=umimFfSA_4-HLSrQ"
+  title="BliKVM UVC camera forwarding video walkthrough"
+  style={{width: '100%', aspectRatio: '16 / 9', height: 'auto', border: 0, display: 'block'}}
+  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+  referrerPolicy="strict-origin-when-cross-origin"
+  loading="lazy"
+  allowFullScreen
+></iframe>
+
+[Watch on YouTube](https://www.youtube.com/watch?v=ioYrpdT1-kw).
+
+### Setup steps
+
 Open **Settings → Video & Cameras → Browser Camera Forwarding**.
 
 1. Enable UVC in [Custom USB functions](../peripheral-devices/usb.md), check endpoint capacity and wait for re-enumeration.
