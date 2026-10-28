@@ -30,6 +30,7 @@ tags:
 paths:
   /api/v1/session/control:
     get:
+      x-permission: self
       deprecated: true
       tags: [auth]
       summary: Compatibility status for legacy clients; no acquisition required
@@ -42,6 +43,7 @@ paths:
             application/json:
               schema: { $ref: '#/components/schemas/ControlResponse' }
     post:
+      x-permission: self
       deprecated: true
       tags: [auth]
       summary: Compatibility no-op for legacy acquisition calls
@@ -57,6 +59,7 @@ paths:
         '403': { description: Missing action permission }
   /api/v1/auth/password:
     post:
+      x-permission: self
       tags: [account]
       summary: Change own password and revoke own credentials
       description: Browser session required. Success requires login again.
@@ -79,6 +82,7 @@ paths:
         '403': { description: Browser session required }
   /api/v1/auth/user/reset-2fa:
     post:
+      x-permission: accounts.manage
       tags: [account]
       summary: Reset a specific account's TOTP and revoke its credentials
       description: Requires administrator browser session, administrator password and administrator TOTP if enabled.
@@ -102,6 +106,7 @@ paths:
         '403': { description: Administrator browser session required }
   /api/v1/audit:
     get:
+      x-permission: audit.read
       tags: [account]
       summary: Read the most recent 500 security audit events
       operationId: getSecurityAudit
@@ -130,6 +135,7 @@ paths:
         '403': { description: audit.read required }
   /healthz:
     get:
+      x-permission: device.configure
       summary: Health check
       operationId: getHealthz
       responses:
@@ -141,6 +147,8 @@ paths:
                 $ref: '#/components/schemas/HealthResponse'
   /api/v1/auth/login:
     post:
+      security: []
+      x-permission: public
       tags: [auth]
       summary: Login and create a server-side browser session
       operationId: postAuthLogin
@@ -171,6 +179,8 @@ paths:
                 $ref: '#/components/schemas/ErrorResponse'
   /api/v1/auth/state:
     get:
+      security: []
+      x-permission: public
       tags: [auth]
       summary: Get global auth state (whether login is required)
       operationId: getAuthState
@@ -194,6 +204,7 @@ paths:
                         type: boolean
   /api/v1/auth/logout-all:
     post:
+      x-permission: self
       tags: [auth]
       summary: Revoke all sessions and API tokens for the current user
       operationId: postAuthLogoutAll
@@ -206,6 +217,7 @@ paths:
           description: Missing or invalid token
   /api/v1/auth/api-tokens:
     get:
+      x-permission: self
       tags: [auth]
       summary: List the current user's API tokens
       operationId: getAuthApiTokens
@@ -221,6 +233,7 @@ paths:
         '401':
           description: Missing or invalid token
     post:
+      x-permission: self
       tags: [auth]
       summary: Create an API token
       operationId: postAuthApiToken
@@ -245,6 +258,7 @@ paths:
           description: Missing or invalid token
   /api/v1/auth/api-tokens/{id}:
     delete:
+      x-permission: self
       tags: [auth]
       summary: Revoke one API token
       operationId: deleteAuthApiToken
@@ -264,6 +278,7 @@ paths:
           description: Token not found
   /api/v1/auth/me:
     get:
+      x-permission: self
       tags: [auth]
       summary: Return current auth session
       operationId: getAuthMe
@@ -284,6 +299,8 @@ paths:
                 $ref: '#/components/schemas/ErrorResponse'
   /api/v1/auth/logout:
     post:
+      security: [{ bearerAuth: [] }]
+      x-permission: self
       tags: [auth]
       summary: Logout and clear auth cookie
       operationId: postAuthLogout
@@ -296,6 +313,7 @@ paths:
                 $ref: '#/components/schemas/OkResponse'
   /api/v1/mic:
     get:
+      x-permission: audio.send
       tags: [device]
       summary: Get microphone (audio-in) registration state
       operationId: getMic
@@ -326,6 +344,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
     post:
+      x-permission: device.configure
       tags: [device]
       summary: Set microphone (audio-in) registration state
       operationId: postMic
@@ -374,6 +393,7 @@ paths:
                 $ref: '#/components/schemas/ErrorResponse'
   /api/v1/network:
     get:
+      x-permission: device.configure
       tags: [network]
       summary: Network state (ports, protocol, interfaces)
       operationId: getNetwork
@@ -392,9 +412,9 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
-
   /api/v1/hostname:
     post:
+      x-permission: device.configure
       tags: [network]
       summary: Set hostname
       operationId: postHostname
@@ -440,9 +460,9 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
-
   /api/v1/cloud:
     get:
+      x-permission: device.configure
       tags: [remote-access]
       summary: Cloud binding and connection status (local device administrator only)
       operationId: getCloudStatus
@@ -469,6 +489,7 @@ paths:
         '403': { description: Administrator required }
         '409': { description: Enable device authentication first }
     post:
+      x-permission: device.configure
       tags: [remote-access]
       summary: Bind, enable, disable or unbind cloud access
       operationId: configureCloudAccess
@@ -492,9 +513,9 @@ paths:
         '401': { description: Device login required }
         '403': { description: Administrator required }
         '409': { description: Enable device authentication first }
-
   /api/v1/remote-access/port-forwarding:
     get:
+      x-permission: device.configure
       tags: [remote-access]
       summary: Saved and active WebRTC fixed UDP port configuration (administrator only)
       security: [{ bearerAuth: [] }]
@@ -503,6 +524,7 @@ paths:
         '401': { description: Device login required }
         '403': { description: Administrator required }
     put:
+      x-permission: device.configure
       tags: [remote-access]
       summary: Save fixed UDP port configuration; restart the service to apply
       security: [{ bearerAuth: [] }]
@@ -524,9 +546,9 @@ paths:
         '401': { description: Device login required }
         '403': { description: Administrator required }
         '409': { description: Port unavailable or authentication disabled }
-
   /api/v1/remote-access/uplink:
     get:
+      x-permission: device.configure
       tags: [remote-access]
       summary: Uplink candidates and default routes
       operationId: getRemoteAccessUplink
@@ -546,6 +568,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
     post:
+      x-permission: device.configure
       tags: [remote-access]
       summary: Set preferred uplink interface
       operationId: postRemoteAccessUplink
@@ -591,9 +614,9 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
-
   /api/v1/wol:
     get:
+      x-permission: kvm.view
       tags: [wol]
       summary: List Wake-on-LAN devices
       operationId: getWol
@@ -613,6 +636,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
     delete:
+      x-permission: device.configure
       tags: [wol]
       summary: Remove Wake-on-LAN device
       operationId: deleteWol
@@ -647,9 +671,21 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
-
+    post:
+      operationId: postNativeApiV1Wol
+      summary: POST /api/v1/wol
+      x-permission: device.configure
+      security: [{ bearerAuth: [] }]
+      responses:
+        '200':
+          description: Operation result
+        '401':
+          description: Authentication required
+        '403':
+          description: Permission denied
   /api/v1/wol/send:
     post:
+      x-permission: host.power
       tags: [wol]
       summary: Send magic packet
       operationId: postWolSend
@@ -684,9 +720,9 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
-
   /api/v1/vpn:
     get:
+      x-permission: device.configure
       tags: [vpn]
       summary: Get VPN service states
       operationId: getVpn
@@ -706,6 +742,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
     post:
+      x-permission: device.configure
       tags: [vpn]
       summary: Enable/disable a VPN service unit
       operationId: postVpnToggle
@@ -742,9 +779,9 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
-
   /api/v1/vpn/wireguard/config:
     get:
+      x-permission: device.configure
       tags: [vpn]
       summary: Get WireGuard wg0 config status
       operationId: getWireguardConfig
@@ -774,6 +811,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
     post:
+      x-permission: device.configure
       tags: [vpn]
       summary: Upload WireGuard wg0 config
       operationId: postWireguardConfig
@@ -812,9 +850,9 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
-
   /api/v1/vpn/tailscale/config:
     get:
+      x-permission: device.configure
       tags: [vpn]
       summary: Get Tailscale config and runtime status
       operationId: getTailscaleConfig
@@ -834,6 +872,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
     post:
+      x-permission: device.configure
       tags: [vpn]
       summary: Save Tailscale config
       operationId: postTailscaleConfig
@@ -864,9 +903,9 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
-
   /api/v1/vpn/zerotier/config:
     get:
+      x-permission: device.configure
       tags: [vpn]
       summary: Get ZeroTier config and runtime status
       operationId: getZerotierConfig
@@ -886,6 +925,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
     post:
+      x-permission: device.configure
       tags: [vpn]
       summary: Save ZeroTier config
       operationId: postZerotierConfig
@@ -918,9 +958,9 @@ paths:
                 $ref: '#/components/schemas/ErrorResponse'
         '404':
           description: Config file not found
-
   /api/v1/prometheus/state:
     get:
+      x-permission: device.configure
       tags: [prometheus]
       summary: Get Prometheus exporter state
       operationId: getPrometheusState
@@ -939,9 +979,9 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
-
   /api/v1/prometheus:
     post:
+      x-permission: device.configure
       tags: [prometheus]
       summary: Enable/disable Prometheus exporter
       operationId: postPrometheus
@@ -987,9 +1027,9 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
-
   /api/v1/prometheus/metrics:
     get:
+      x-permission: device.configure
       tags: [prometheus]
       summary: Prometheus metrics (text)
       operationId: getPrometheusMetrics
@@ -1014,9 +1054,9 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
-
   /api/v1/display:
     get:
+      x-permission: device.configure
       tags: [display]
       summary: Get display settings
       operationId: getDisplay
@@ -1036,6 +1076,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
     post:
+      x-permission: device.configure
       tags: [display]
       summary: Update display settings
       operationId: postDisplay
@@ -1066,9 +1107,9 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
-
   /api/v1/hid/status:
     get:
+      x-permission: kvm.view
       tags: [hid]
       summary: Get HID settings/status
       operationId: getHidStatus
@@ -1087,9 +1128,9 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
-
   /api/v1/hid:
     post:
+      x-permission: device.configure
       tags: [hid]
       summary: Enable/disable HID (logical)
       operationId: postHidToggle
@@ -1132,9 +1173,9 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
-
   /api/v1/hid/mode:
     get:
+      x-permission: device.configure
       tags: [hid]
       summary: Get mouse mode
       operationId: getHidMouseMode
@@ -1166,6 +1207,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
     post:
+      x-permission: device.configure
       tags: [hid]
       summary: Set mouse mode
       operationId: postHidMouseMode
@@ -1213,9 +1255,9 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
-
   /api/v1/hid/reset:
     post:
+      x-permission: device.configure
       tags: [hid]
       summary: Reset HID gadget nodes (best-effort)
       operationId: postHidReset
@@ -1240,9 +1282,9 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
-
   /api/v1/hid/events:
     post:
+      x-permission: kvm.input
       tags: [hid]
       summary: Inject a single HID event
       description: |
@@ -1368,9 +1410,9 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
-
   /api/v1/hid/paste:
     post:
+      x-permission: kvm.input
       tags: [hid]
       summary: Send an ordered keyboard key-code sequence
       description: |
@@ -1462,9 +1504,9 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
-
   /api/v1/hid/shortcuts:
     post:
+      x-permission: kvm.input
       tags: [hid]
       summary: Tap one simultaneous keyboard chord
       description: |
@@ -1536,9 +1578,9 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
-
   /api/v1/hid/loop/status:
     get:
+      x-permission: kvm.view
       tags: [hid]
       summary: Get HID pass-through state
       operationId: getHidLoopStatus
@@ -1570,9 +1612,9 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
-
   /api/v1/hid/loop/active:
     post:
+      x-permission: device.configure
       tags: [hid]
       summary: Enable/disable HID pass-through
       operationId: postHidLoopActive
@@ -1618,9 +1660,9 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
-
   /api/v1/hid/loop/update:
     post:
+      x-permission: device.configure
       tags: [hid]
       summary: Update HID pass-through settings
       operationId: postHidLoopUpdate
@@ -1666,9 +1708,9 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
-
   /api/v1/mouse/jiggler:
     post:
+      x-permission: input.automation
       tags: [hid]
       summary: Configure mouse jiggler
       operationId: postMouseJiggler
@@ -1716,9 +1758,9 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
-
   /api/v1/msd/state:
     get:
+      x-permission: media.use
       tags: [msd]
       summary: Virtual media (MSD) state
       operationId: getMsdState
@@ -1737,9 +1779,21 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
-
+    post:
+      operationId: postNativeApiV1MsdState
+      summary: POST /api/v1/msd/state
+      x-permission: device.configure
+      security: [{ bearerAuth: [] }]
+      responses:
+        '200':
+          description: Operation result
+        '401':
+          description: Authentication required
+        '403':
+          description: Permission denied
   /api/v1/msd/service:
     post:
+      x-permission: device.configure
       tags: [msd]
       summary: Initialize/destroy MSD gadget function
       operationId: postMsdService
@@ -1771,9 +1825,9 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
-
   /api/v1/msd/images:
     get:
+      x-permission: media.use
       tags: [msd]
       summary: List MSD images
       operationId: getMsdImages
@@ -1792,9 +1846,9 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
-
   /api/v1/msd/images/{name}:
     get:
+      x-permission: device.configure
       tags: [msd]
       summary: Download MSD image
       operationId: getMsdImage
@@ -1817,6 +1871,7 @@ paths:
         '401':
           description: Missing or invalid token
     delete:
+      x-permission: device.configure
       tags: [msd]
       summary: Delete MSD image
       operationId: deleteMsdImage
@@ -1847,9 +1902,9 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
-
   /api/v1/msd/storage:
     get:
+      x-permission: device.configure
       tags: [msd]
       summary: Get MSD storage usage
       operationId: getMsdStorage
@@ -1886,9 +1941,9 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
-
   /api/v1/msd/mounted:
     get:
+      x-permission: media.use
       tags: [msd]
       summary: Get mounted MSD image
       operationId: getMsdMounted
@@ -1922,9 +1977,9 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
-
   /api/v1/msd/mount:
     post:
+      x-permission: media.use
       tags: [msd]
       summary: Mount an MSD image
       operationId: postMsdMount
@@ -1978,9 +2033,9 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
-
   /api/v1/msd/unmount:
     post:
+      x-permission: media.use
       tags: [msd]
       summary: Unmount current MSD image
       operationId: postMsdUnmount
@@ -1999,9 +2054,9 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
-
   /api/v1/msd/upload:
     post:
+      x-permission: media.upload
       tags: [msd]
       summary: Upload MSD images (multipart)
       operationId: postMsdUpload
@@ -2056,9 +2111,9 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
-
   /api/v1/stream/status:
     get:
+      x-permission: kvm.view
       tags: [stream]
       summary: Stream state and rates
       operationId: getStreamStatus
@@ -2079,6 +2134,7 @@ paths:
                 $ref: '#/components/schemas/ErrorResponse'
   /api/v1/stream/idr:
     post:
+      x-permission: kvm.view
       tags: [stream]
       summary: Force next keyframe (IDR)
       operationId: postStreamIdr
@@ -2105,6 +2161,7 @@ paths:
                 $ref: '#/components/schemas/ErrorResponse'
   /api/v1/session/ws:
     get:
+      x-permission: kvm.view
       tags: [device]
       summary: Session control channel (WebSocket)
       description: >
@@ -2120,228 +2177,99 @@ paths:
           description: Missing or invalid token
   /api/v1/stream/h264/webrtc:
     options:
-      tags: [stream]
-      summary: H.264 WHEP endpoint (OPTIONS)
-      description: Proxied to MediaMTX WHEP endpoint. Returns ICE server hints via Link headers.
       operationId: whepH264Options
+      summary: Native H264 WHEP preflight
+      x-permission: kvm.view
       security: [{ bearerAuth: [] }]
       responses:
-        '204': { description: No Content }
-        '401': { description: Missing or invalid token }
-        '502': { description: MediaMTX backend unavailable }
+        '204': { description: Supported request methods and headers }
+        '401': { description: Authentication required }
+        '403': { description: Required permission missing }
     post:
-      tags: [stream]
-      summary: H.264 WHEP endpoint (POST offer SDP)
-      description: Proxied to MediaMTX WHEP endpoint.
       operationId: whepH264Post
+      summary: Create a native H264 WHEP session
+      description: Use only codecs advertised by the capabilities endpoint. Sends video from the shared media source; audio additionally requires audio.listen. Delete the session using its returned Location URL. Trickle ICE PATCH is not supported.
+      x-permission: kvm.view
       security: [{ bearerAuth: [] }]
       requestBody:
         required: true
         content:
           application/sdp:
-            schema: { type: string }
+            schema: { type: string, minLength: 1, maxLength: 1048576 }
       responses:
-        '201': { description: Created (answer SDP in body) }
-        '401': { description: Missing or invalid token }
-        '502': { description: MediaMTX backend unavailable }
-    patch:
-      tags: [stream]
-      summary: H.264 WHEP endpoint (PATCH trickle ICE)
-      description: Proxied to MediaMTX WHEP endpoint.
-      operationId: whepH264Patch
-      security: [{ bearerAuth: [] }]
-      responses:
-        '204': { description: No Content }
-        '401': { description: Missing or invalid token }
-        '502': { description: MediaMTX backend unavailable }
+        '201':
+          description: SDP answer and session URL
+          headers:
+            Location:
+              description: URL for deleting this session
+              schema: { type: string }
+          content:
+            application/sdp:
+              schema: { type: string }
+        '400': { description: Invalid SDP offer }
+        '401': { description: Authentication required }
+        '403': { description: Required permission missing }
+        '500': { description: WebRTC codec or session setup failed }
+        '503': { description: Configured fixed UDP transport is unavailable }
     delete:
-      tags: [stream]
-      summary: H.264 WHEP endpoint (DELETE session)
-      description: Proxied to MediaMTX WHEP endpoint.
       operationId: whepH264Delete
+      summary: Legacy WHEP DELETE without a session suffix
+      description: Returns 204 without closing a session. Use the Location URL returned by POST for actual session cleanup.
+      x-permission: kvm.view
       security: [{ bearerAuth: [] }]
       responses:
-        '200': { description: OK }
-        '204': { description: No Content }
-        '401': { description: Missing or invalid token }
-        '502': { description: MediaMTX backend unavailable }
-    get:
-      tags: [stream]
-      summary: H.264 WHEP endpoint (GET passthrough)
-      description: Proxied to MediaMTX WHEP endpoint.
-      operationId: whepH264Get
-      security: [{ bearerAuth: [] }]
-      responses:
-        '200': { description: OK }
-        '401': { description: Missing or invalid token }
-        '502': { description: MediaMTX backend unavailable }
-    head:
-      tags: [stream]
-      summary: H.264 WHEP endpoint (HEAD passthrough)
-      description: Proxied to MediaMTX WHEP endpoint.
-      operationId: whepH264Head
-      security: [{ bearerAuth: [] }]
-      responses:
-        '200': { description: OK }
-        '401': { description: Missing or invalid token }
-        '502': { description: MediaMTX backend unavailable }
+        '204': { description: No session suffix; no operation performed }
+        '401': { description: Authentication required }
+        '403': { description: Required permission missing }
   /api/v1/stream/h265/webrtc:
     options:
-      tags: [stream]
-      summary: H.265 WHEP endpoint (OPTIONS)
-      description: Proxied to MediaMTX WHEP endpoint. Returns ICE server hints via Link headers.
       operationId: whepH265Options
+      summary: Native H265 WHEP preflight
+      x-permission: kvm.view
       security: [{ bearerAuth: [] }]
       responses:
-        '204': { description: No Content }
-        '401': { description: Missing or invalid token }
-        '502': { description: MediaMTX backend unavailable }
+        '204': { description: Supported request methods and headers }
+        '401': { description: Authentication required }
+        '403': { description: Required permission missing }
     post:
-      tags: [stream]
-      summary: H.265 WHEP endpoint (POST offer SDP)
-      description: Proxied to MediaMTX WHEP endpoint.
       operationId: whepH265Post
+      summary: Create a native H265 WHEP session
+      description: Use only codecs advertised by the capabilities endpoint. Sends video from the shared media source; audio additionally requires audio.listen. Delete the session using its returned Location URL. Trickle ICE PATCH is not supported.
+      x-permission: kvm.view
       security: [{ bearerAuth: [] }]
       requestBody:
         required: true
         content:
           application/sdp:
-            schema: { type: string }
+            schema: { type: string, minLength: 1, maxLength: 1048576 }
       responses:
-        '201': { description: Created (answer SDP in body) }
-        '401': { description: Missing or invalid token }
-        '502': { description: MediaMTX backend unavailable }
-    patch:
-      tags: [stream]
-      summary: H.265 WHEP endpoint (PATCH trickle ICE)
-      description: Proxied to MediaMTX WHEP endpoint.
-      operationId: whepH265Patch
-      security: [{ bearerAuth: [] }]
-      responses:
-        '204': { description: No Content }
-        '401': { description: Missing or invalid token }
-        '502': { description: MediaMTX backend unavailable }
+        '201':
+          description: SDP answer and session URL
+          headers:
+            Location:
+              description: URL for deleting this session
+              schema: { type: string }
+          content:
+            application/sdp:
+              schema: { type: string }
+        '400': { description: Invalid SDP offer }
+        '401': { description: Authentication required }
+        '403': { description: Required permission missing }
+        '500': { description: WebRTC codec or session setup failed }
+        '503': { description: Configured fixed UDP transport is unavailable }
     delete:
-      tags: [stream]
-      summary: H.265 WHEP endpoint (DELETE session)
-      description: Proxied to MediaMTX WHEP endpoint.
       operationId: whepH265Delete
+      summary: Legacy WHEP DELETE without a session suffix
+      description: Returns 204 without closing a session. Use the Location URL returned by POST for actual session cleanup.
+      x-permission: kvm.view
       security: [{ bearerAuth: [] }]
       responses:
-        '200': { description: OK }
-        '204': { description: No Content }
-        '401': { description: Missing or invalid token }
-        '502': { description: MediaMTX backend unavailable }
-    get:
-      tags: [stream]
-      summary: H.265 WHEP endpoint (GET passthrough)
-      description: Proxied to MediaMTX WHEP endpoint.
-      operationId: whepH265Get
-      security: [{ bearerAuth: [] }]
-      responses:
-        '200': { description: OK }
-        '401': { description: Missing or invalid token }
-        '502': { description: MediaMTX backend unavailable }
-    head:
-      tags: [stream]
-      summary: H.265 WHEP endpoint (HEAD passthrough)
-      description: Proxied to MediaMTX WHEP endpoint.
-      operationId: whepH265Head
-      security: [{ bearerAuth: [] }]
-      responses:
-        '200': { description: OK }
-        '401': { description: Missing or invalid token }
-        '502': { description: MediaMTX backend unavailable }
-  /api/v1/stream/audio/webrtc:
-    options:
-      tags: [stream]
-      summary: Audio WHEP endpoint (OPTIONS)
-      description: Proxied to MediaMTX WHEP endpoint. Returns ICE server hints via Link headers.
-      operationId: whepAudioOptions
-      security: [{ bearerAuth: [] }]
-      responses:
-        '204': { description: No Content }
-        '401': { description: Missing or invalid token }
-        '502': { description: MediaMTX backend unavailable }
-    post:
-      tags: [stream]
-      summary: Audio WHEP endpoint (POST offer SDP)
-      description: Proxied to MediaMTX WHEP endpoint.
-      operationId: whepAudioPost
-      security: [{ bearerAuth: [] }]
-      requestBody:
-        required: true
-        content:
-          application/sdp:
-            schema: { type: string }
-      responses:
-        '201': { description: Created (answer SDP in body) }
-        '401': { description: Missing or invalid token }
-        '502': { description: MediaMTX backend unavailable }
-    patch:
-      tags: [stream]
-      summary: Audio WHEP endpoint (PATCH trickle ICE)
-      description: Proxied to MediaMTX WHEP endpoint.
-      operationId: whepAudioPatch
-      security: [{ bearerAuth: [] }]
-      responses:
-        '204': { description: No Content }
-        '401': { description: Missing or invalid token }
-        '502': { description: MediaMTX backend unavailable }
-    delete:
-      tags: [stream]
-      summary: Audio WHEP endpoint (DELETE session)
-      description: Proxied to MediaMTX WHEP endpoint.
-      operationId: whepAudioDelete
-      security: [{ bearerAuth: [] }]
-      responses:
-        '200': { description: OK }
-        '204': { description: No Content }
-        '401': { description: Missing or invalid token }
-        '502': { description: MediaMTX backend unavailable }
-    get:
-      tags: [stream]
-      summary: Audio WHEP endpoint (GET passthrough)
-      description: Proxied to MediaMTX WHEP endpoint.
-      operationId: whepAudioGet
-      security: [{ bearerAuth: [] }]
-      responses:
-        '200': { description: OK }
-        '401': { description: Missing or invalid token }
-        '502': { description: MediaMTX backend unavailable }
-    head:
-      tags: [stream]
-      summary: Audio WHEP endpoint (HEAD passthrough)
-      description: Proxied to MediaMTX WHEP endpoint.
-      operationId: whepAudioHead
-      security: [{ bearerAuth: [] }]
-      responses:
-        '200': { description: OK }
-        '401': { description: Missing or invalid token }
-        '502': { description: MediaMTX backend unavailable }
-  /api/v1/stream/audio/test:
-    get:
-      tags: [stream]
-      summary: Standalone audio test page
-      description: Returns an HTML page that connects only to `/api/v1/stream/audio/webrtc`.
-      operationId: getStreamAudioTest
-      security:
-        - bearerAuth: []
-      responses:
-        '200':
-          description: HTML page
-          content:
-            text/html:
-              schema:
-                type: string
-        '401':
-          description: Missing or invalid token
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
+        '204': { description: No session suffix; no operation performed }
+        '401': { description: Authentication required }
+        '403': { description: Required permission missing }
   /api/v1/stream/mjpeg:
     get:
+      x-permission: kvm.view
       tags: [stream]
       summary: MJPEG stream
       operationId: getStreamMjpeg
@@ -2361,78 +2289,9 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
-
-  /api/v1/stream/usb-camera/h264/webrtc:
-    options:
-      tags: [stream]
-      summary: USB Camera H.264 WHEP endpoint (OPTIONS)
-      description: Proxied to MediaMTX WHEP endpoint.
-      operationId: whepUSBCameraOptions
-      security: [{ bearerAuth: [] }]
-      responses:
-        '200': { description: OK }
-        '401': { description: Missing or invalid token }
-        '502': { description: MediaMTX backend unavailable }
-    post:
-      tags: [stream]
-      summary: USB Camera H.264 WHEP endpoint (POST offer SDP)
-      description: Proxied to MediaMTX WHEP endpoint.
-      operationId: whepUSBCameraPost
-      security: [{ bearerAuth: [] }]
-      requestBody:
-        required: true
-        content:
-          application/sdp:
-            schema:
-              type: string
-      responses:
-        '201': { description: Created }
-        '401': { description: Missing or invalid token }
-        '502': { description: MediaMTX backend unavailable }
-    patch:
-      tags: [stream]
-      summary: USB Camera H.264 WHEP endpoint (PATCH trickle ICE)
-      description: Proxied to MediaMTX WHEP endpoint.
-      operationId: whepUSBCameraPatch
-      security: [{ bearerAuth: [] }]
-      responses:
-        '204': { description: No Content }
-        '401': { description: Missing or invalid token }
-        '502': { description: MediaMTX backend unavailable }
-    delete:
-      tags: [stream]
-      summary: USB Camera H.264 WHEP endpoint (DELETE session)
-      description: Proxied to MediaMTX WHEP endpoint.
-      operationId: whepUSBCameraDelete
-      security: [{ bearerAuth: [] }]
-      responses:
-        '200': { description: OK }
-        '204': { description: No Content }
-        '401': { description: Missing or invalid token }
-        '502': { description: MediaMTX backend unavailable }
-    get:
-      tags: [stream]
-      summary: USB Camera H.264 WHEP endpoint (GET passthrough)
-      description: Proxied to MediaMTX WHEP endpoint.
-      operationId: whepUSBCameraGet
-      security: [{ bearerAuth: [] }]
-      responses:
-        '200': { description: OK }
-        '401': { description: Missing or invalid token }
-        '502': { description: MediaMTX backend unavailable }
-    head:
-      tags: [stream]
-      summary: USB Camera H.264 WHEP endpoint (HEAD passthrough)
-      description: Proxied to MediaMTX WHEP endpoint.
-      operationId: whepUSBCameraHead
-      security: [{ bearerAuth: [] }]
-      responses:
-        '200': { description: OK }
-        '401': { description: Missing or invalid token }
-        '502': { description: MediaMTX backend unavailable }
-
   /api/v1/usb-camera:
     get:
+      x-permission: device.configure
       tags: [device]
       summary: Get USB camera config
       operationId: getUSBCamera
@@ -2452,6 +2311,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
     post:
+      x-permission: device.configure
       tags: [device]
       summary: Save USB camera config
       operationId: postUSBCamera
@@ -2482,9 +2342,9 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
-
   /api/v1/system/metrics:
     get:
+      x-permission: kvm.view
       tags: [system]
       summary: Runtime and system metrics
       operationId: getSystemMetrics
@@ -2505,6 +2365,7 @@ paths:
                 $ref: '#/components/schemas/ErrorResponse'
   /api/v1/system/restart:
     post:
+      x-permission: device.configure
       tags: [system]
       summary: Restart process
       operationId: postSystemRestart
@@ -2525,6 +2386,7 @@ paths:
                 $ref: '#/components/schemas/ErrorResponse'
   /api/v1/system/reboot:
     post:
+      x-permission: device.configure
       tags: [system]
       summary: Reboot device
       operationId: postSystemReboot
@@ -2560,6 +2422,7 @@ paths:
                 $ref: '#/components/schemas/ErrorResponse'
   /api/v1/system/shutdown:
     post:
+      x-permission: device.configure
       tags: [system]
       summary: Shutdown device
       operationId: postSystemShutdown
@@ -2595,6 +2458,7 @@ paths:
                 $ref: '#/components/schemas/ErrorResponse'
   /api/v1/updates/status:
     get:
+      x-permission: device.update
       tags: [system]
       summary: Get the current update task and running versions
       operationId: getUpdateTaskStatus
@@ -2638,6 +2502,7 @@ paths:
           description: Durable task state could not be read or persisted
   /api/v1/updates/catalog:
     get:
+      x-permission: device.configure
       tags: [system]
       summary: Read the cached public release index without downloading packages
       operationId: getUpdateCatalog
@@ -2664,6 +2529,7 @@ paths:
           description: Public index unavailable or malformed
   /api/v1/updates/events:
     get:
+      x-permission: device.update
       tags: [system]
       summary: Get up to ten recent completed update tasks
       operationId: getUpdateTaskHistory
@@ -2696,6 +2562,7 @@ paths:
           description: Update history could not be read
   /api/v1/updates/liveness:
     get:
+      x-permission: public
       tags: [system]
       summary: Observe server restart liveness without an authenticated session
       operationId: getUpdateLiveness
@@ -2715,6 +2582,7 @@ paths:
                     description: Server process incarnation identifier. Changes on server restart; it is not the operating system boot ID.
   /api/v1/updates/tasks:
     post:
+      x-permission: device.update
       tags: [system]
       summary: Start an administrator-authorized signed update task
       operationId: createUpdateTask
@@ -2772,6 +2640,7 @@ paths:
           description: Durable state could not be read or persisted
   /api/v1/system/update/status:
     get:
+      x-permission: device.update
       tags: [system]
       summary: Get A/B system update status
       operationId: getSystemUpdateStatus
@@ -2812,6 +2681,7 @@ paths:
                 $ref: '#/components/schemas/ErrorResponse'
   /api/v1/system/update/upload:
     post:
+      x-permission: device.update
       tags: [system]
       summary: Upload a signed RAUC A/B system bundle
       operationId: postSystemUpdateUpload
@@ -2862,6 +2732,7 @@ paths:
                 $ref: '#/components/schemas/ErrorResponse'
   /api/v1/system/update/stream:
     get:
+      x-permission: device.update
       tags: [system]
       summary: Install the uploaded RAUC bundle and stream logs (SSE)
       operationId: getSystemUpdateStream
@@ -2882,6 +2753,7 @@ paths:
                 $ref: '#/components/schemas/ErrorResponse'
   /api/v1/application/update/stream:
     get:
+      x-permission: device.update
       tags: [application]
       summary: Stream update logs (SSE)
       operationId: getApplicationUpdateStream
@@ -2902,6 +2774,7 @@ paths:
                 $ref: '#/components/schemas/ErrorResponse'
   /api/v1/account:
     get:
+      x-permission: self
       tags: [account]
       summary: List accounts and roles
       operationId: getAccount
@@ -2961,6 +2834,7 @@ paths:
                 $ref: '#/components/schemas/ErrorResponse'
   /api/v1/changeaccount:
     post:
+      x-permission: accounts.manage
       tags: [account]
       summary: Admin update an account (username/password/role)
       operationId: postChangeAccount
@@ -3023,6 +2897,7 @@ paths:
                 $ref: '#/components/schemas/ErrorResponse'
   /api/v1/auth/update:
     post:
+      x-permission: accounts.manage
       tags: [auth]
       summary: Alias of changeaccount (admin-only)
       operationId: postAuthUpdate
@@ -3085,6 +2960,8 @@ paths:
                 $ref: '#/components/schemas/ErrorResponse'
   /api/v1/auth/sign-out:
     post:
+      security: [{ bearerAuth: [] }]
+      x-permission: self
       tags: [auth]
       summary: Alias of logout
       operationId: postAuthSignOut
@@ -3097,6 +2974,7 @@ paths:
                 $ref: '#/components/schemas/OkResponse'
   /api/v1/auth/enable:
     post:
+      x-permission: security.manage
       tags: [auth]
       summary: Set global auth enabled/disabled
       operationId: postAuthEnable
@@ -3152,6 +3030,7 @@ paths:
                 $ref: '#/components/schemas/ErrorResponse'
   /api/v1/auth/user/create:
     post:
+      x-permission: accounts.manage
       tags: [auth]
       summary: Create user (admin-only)
       operationId: postAuthUserCreate
@@ -3200,6 +3079,7 @@ paths:
                 $ref: '#/components/schemas/ErrorResponse'
   /api/v1/auth/user/delete:
     post:
+      x-permission: accounts.manage
       tags: [auth]
       summary: Delete user (admin-only)
       operationId: postAuthUserDelete
@@ -3242,6 +3122,7 @@ paths:
                 $ref: '#/components/schemas/ErrorResponse'
   /api/v1/auth/2fa/info:
     post:
+      x-permission: self
       tags: [auth]
       summary: 2FA info / setup (TOTP)
       operationId: postAuth2FAInfo
@@ -3290,6 +3171,7 @@ paths:
                 $ref: '#/components/schemas/ErrorResponse'
   /api/v1/auth/2fa/enable:
     post:
+      x-permission: self
       tags: [auth]
       summary: Enable 2FA (confirm OTP)
       operationId: postAuth2FAEnable
@@ -3326,6 +3208,7 @@ paths:
                 $ref: '#/components/schemas/ErrorResponse'
   /api/v1/auth/2fa/disable:
     post:
+      x-permission: self
       tags: [auth]
       summary: Disable 2FA
       operationId: postAuth2FADisable
@@ -3362,6 +3245,7 @@ paths:
                 $ref: '#/components/schemas/ErrorResponse'
   /api/v1/conduct:
     get:
+      x-permission: device.configure
       tags: [system]
       summary: Code of conduct settings
       operationId: getConduct
@@ -3395,6 +3279,7 @@ paths:
                 $ref: '#/components/schemas/ErrorResponse'
   /api/v1/conduct/active:
     post:
+      x-permission: device.configure
       tags: [system]
       summary: Enable/disable code of conduct display
       operationId: postConductActive
@@ -3444,6 +3329,7 @@ paths:
                 $ref: '#/components/schemas/ErrorResponse'
   /api/v1/conduct/update:
     post:
+      x-permission: device.configure
       tags: [system]
       summary: Set code of conduct URL
       operationId: postConductUpdate
@@ -3493,6 +3379,7 @@ paths:
                 $ref: '#/components/schemas/ErrorResponse'
   /api/v1/config/reset:
     post:
+      x-permission: security.manage
       tags: [system]
       summary: Factory reset device data (administrator reauthentication, two reboots)
       description: Native /data layout only. Deletes managed settings, credentials, network/VPN profiles, virtual media, scripts and TLS/SSH keys. Keeps OS/app versions and rollback releases. Not a secure disk erase. The legacy retainCredentials option is rejected.
@@ -3538,6 +3425,7 @@ paths:
                 $ref: '#/components/schemas/ErrorResponse'
   /api/v1/hardware/fan:
     get:
+      x-permission: device.configure
       tags: [device]
       summary: Get fan settings
       operationId: getHardwareFan
@@ -3568,6 +3456,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
     post:
+      x-permission: device.configure
       tags: [device]
       summary: Set fan temperature threshold
       operationId: postHardwareFan
@@ -3615,6 +3504,7 @@ paths:
                 $ref: '#/components/schemas/ErrorResponse'
   /api/v1/healthcheck:
     get:
+      x-permission: device.configure
       tags: [device]
       summary: Get healthcheck thresholds
       operationId: getHealthcheck
@@ -3651,6 +3541,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
     post:
+      x-permission: device.configure
       tags: [device]
       summary: Set healthcheck thresholds
       operationId: postHealthcheck
@@ -3710,6 +3601,7 @@ paths:
                 $ref: '#/components/schemas/ErrorResponse'
   /api/v1/atx:
     get:
+      x-permission: kvm.view
       tags: [device]
       summary: Get ATX settings
       operationId: getATX
@@ -3740,6 +3632,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
     post:
+      x-permission: device.configure
       tags: [device]
       summary: Set ATX settings
       operationId: postATX
@@ -3787,6 +3680,7 @@ paths:
                 $ref: '#/components/schemas/ErrorResponse'
   /api/v1/atx/power:
     post:
+      x-permission: host.power
       tags: [device]
       summary: Control ATX power (not supported)
       operationId: postATXPower
@@ -3807,6 +3701,7 @@ paths:
                 $ref: '#/components/schemas/ErrorResponse'
   /api/v1/network/port:
     post:
+      x-permission: device.configure
       tags: [network]
       summary: Set HTTP/HTTPS ports (service restarts)
       operationId: postNetworkPort
@@ -3858,6 +3753,7 @@ paths:
                 $ref: '#/components/schemas/ErrorResponse'
   /api/v1/network/protocol:
     post:
+      x-permission: device.configure
       tags: [network]
       summary: Set protocol (http/https) (service restarts)
       operationId: postNetworkProtocol
@@ -3907,6 +3803,7 @@ paths:
                 $ref: '#/components/schemas/ErrorResponse'
   /api/v1/network/acl:
     get:
+      x-permission: security.manage
       tags: [network]
       summary: Get ACL settings
       operationId: getNetworkACL
@@ -3968,6 +3865,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
     post:
+      x-permission: security.manage
       tags: [network]
       summary: Add ACL entry
       operationId: postNetworkACL
@@ -4013,6 +3911,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
     delete:
+      x-permission: security.manage
       tags: [network]
       summary: Remove ACL entry
       operationId: deleteNetworkACL
@@ -4059,6 +3958,7 @@ paths:
                 $ref: '#/components/schemas/ErrorResponse'
   /api/v1/network/acl/mode:
     post:
+      x-permission: security.manage
       tags: [network]
       summary: Set ACL mode
       operationId: postNetworkACLMode
@@ -4108,6 +4008,7 @@ paths:
                 $ref: '#/components/schemas/ErrorResponse'
   /api/v1/ip/{iface}:
     get:
+      x-permission: device.configure
       tags: [network]
       summary: Get IPv4 config for an interface
       operationId: getIPConfig
@@ -4165,6 +4066,7 @@ paths:
                 $ref: '#/components/schemas/ErrorResponse'
   /api/v1/ip/{iface}/dhcp:
     post:
+      x-permission: device.configure
       tags: [network]
       summary: Switch interface to DHCP
       operationId: postIPDhcp
@@ -4191,6 +4093,7 @@ paths:
                 $ref: '#/components/schemas/ErrorResponse'
   /api/v1/ip/{iface}/static:
     post:
+      x-permission: device.configure
       tags: [network]
       summary: Switch interface to static IPv4
       operationId: postIPStatic
@@ -4239,6 +4142,7 @@ paths:
                 $ref: '#/components/schemas/ErrorResponse'
   /api/v1/serial/device:
     get:
+      x-permission: device.configure
       tags: [device]
       summary: List serial devices
       operationId: getSerialDevices
@@ -4272,6 +4176,7 @@ paths:
                 $ref: '#/components/schemas/ErrorResponse'
   /api/v1/serial:
     get:
+      x-permission: host.serial
       tags: [device]
       summary: Get serial terminal config
       operationId: getSerialConfig
@@ -4305,6 +4210,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
     post:
+      x-permission: device.configure
       tags: [device]
       summary: Save serial terminal config
       operationId: postSerialConfig
@@ -4358,6 +4264,7 @@ paths:
                 $ref: '#/components/schemas/ErrorResponse'
   /api/v1/switch:
     get:
+      x-permission: kvm.view
       tags: [device]
       summary: HDMI switch state (may be empty on devices without switch)
       operationId: getSwitch
@@ -4372,45 +4279,9 @@ paths:
                 type: object
         '401':
           description: Missing or invalid token
-    post:
-      tags: [device]
-      summary: HDMI switch actions (device-specific)
-      operationId: postSwitch
-      security:
-        - bearerAuth: []
-      responses:
-        '200':
-          description: Switch state
-          content:
-            application/json:
-              schema:
-                type: object
-        '401':
-          description: Missing or invalid token
-  /api/v1/switch/{path}:
-    post:
-      tags: [device]
-      summary: HDMI switch sub-actions (device-specific)
-      operationId: postSwitchSubpath
-      security:
-        - bearerAuth: []
-      parameters:
-        - in: path
-          name: path
-          required: true
-          schema:
-            type: string
-      responses:
-        '200':
-          description: Switch state
-          content:
-            application/json:
-              schema:
-                type: object
-        '401':
-          description: Missing or invalid token
   /api/v1/video:
     post:
+      x-permission: device.configure
       tags: [stream]
       summary: Start/stop video (logical state only)
       operationId: postVideoAction
@@ -4444,6 +4315,7 @@ paths:
                 $ref: '#/components/schemas/ErrorResponse'
   /api/v1/video/config:
     post:
+      x-permission: device.configure
       tags: [stream]
       summary: Set video encoder config (fps/bitrate/gop)
       operationId: postVideoConfig
@@ -4482,8 +4354,33 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
+    get:
+      operationId: getNativeApiV1VideoConfig
+      summary: GET /api/v1/video/config
+      x-permission: kvm.view
+      security: [{ bearerAuth: [] }]
+      responses:
+        '200':
+          description: Operation result
+        '401':
+          description: Authentication required
+        '403':
+          description: Permission denied
+    put:
+      operationId: putNativeApiV1VideoConfig
+      summary: PUT /api/v1/video/config
+      x-permission: device.configure
+      security: [{ bearerAuth: [] }]
+      responses:
+        '200':
+          description: Operation result
+        '401':
+          description: Authentication required
+        '403':
+          description: Permission denied
   /api/v1/video/resolution:
     post:
+      x-permission: device.configure
       tags: [stream]
       summary: Set video resolution preset
       operationId: postVideoResolution
@@ -4519,6 +4416,7 @@ paths:
                 $ref: '#/components/schemas/ErrorResponse'
   /api/v1/video/passthrough:
     get:
+      x-permission: device.configure
       tags: [stream]
       summary: Get HDMI passthrough setting
       operationId: getVideoPassthrough
@@ -4534,6 +4432,7 @@ paths:
         '401':
           description: Missing or invalid token
     put:
+      x-permission: device.configure
       tags: [stream]
       summary: Set HDMI passthrough setting
       operationId: putVideoPassthrough
@@ -4566,6 +4465,7 @@ paths:
           description: Missing or invalid token
   /api/v1/video/edid:
     get:
+      x-permission: device.configure
       tags: [stream]
       summary: Get EDID selection, write capability, bridge presets and latest operation
       description: >-
@@ -4588,6 +4488,7 @@ paths:
         '401':
           description: Missing or invalid token
     post:
+      x-permission: device.configure
       tags: [stream]
       summary: Apply EDID hex or an uploaded profile (administrator only)
       description: >-
@@ -4642,6 +4543,7 @@ paths:
           description: Missing or invalid token
   /api/v1/video/edid/custom:
     get:
+      x-permission: device.configure
       tags: [stream]
       summary: List custom EDID profiles
       operationId: getVideoEDIDCustom
@@ -4658,6 +4560,7 @@ paths:
           description: Missing or invalid token
   /api/v1/video/edid/upload:
     post:
+      x-permission: device.configure
       tags: [stream]
       summary: Upload custom EDID profile
       operationId: postVideoEDIDUpload
@@ -4691,6 +4594,7 @@ paths:
           description: Missing or invalid token
   /api/v1/video/edid/delete:
     post:
+      x-permission: device.configure
       tags: [stream]
       summary: Delete custom EDID profile
       operationId: postVideoEDIDDelete
@@ -4723,6 +4627,7 @@ paths:
           description: Missing or invalid token
   /api/v1/video/snapshot:
     get:
+      x-permission: kvm.view
       tags: [stream]
       summary: Snapshot image
       operationId: getVideoSnapshot
@@ -4744,6 +4649,7 @@ paths:
                 $ref: '#/components/schemas/ErrorResponse'
   /api/v1/shortcuts/{os}:
     get:
+      x-permission: device.configure
       tags: [hid]
       summary: List keyboard shortcuts for OS
       operationId: getShortcuts
@@ -4776,6 +4682,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
     post:
+      x-permission: device.configure
       tags: [hid]
       summary: Add keyboard shortcut
       operationId: postShortcuts
@@ -4825,6 +4732,7 @@ paths:
                 $ref: '#/components/schemas/ErrorResponse'
   /api/v1/shortcuts/{os}/reset:
     post:
+      x-permission: device.configure
       tags: [hid]
       summary: Reset shortcuts to defaults
       operationId: postShortcutsReset
@@ -4852,6 +4760,7 @@ paths:
                 $ref: '#/components/schemas/ErrorResponse'
   /api/v1/shortcuts/{os}/{name}:
     patch:
+      x-permission: device.configure
       tags: [hid]
       summary: Update a shortcut
       operationId: patchShortcut
@@ -4917,6 +4826,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
     delete:
+      x-permission: device.configure
       tags: [hid]
       summary: Delete a shortcut
       operationId: deleteShortcut
@@ -4953,6 +4863,1195 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
+  /api/v1/network/ipv4:
+    get:
+      x-permission: device.configure
+      operationId: getApiV1NetworkIpv4
+      summary: GET /api/v1/network/ipv4
+      description: Native backend endpoint. Requires the permission declared by x-permission when authentication is enabled.
+      security: [{ bearerAuth: [] }]
+      responses:
+        '200':
+          description: Operation result. Streaming and download endpoints return their native payload.
+        '400':
+          description: Invalid request parameters
+        '401':
+          description: Authentication required
+        '403':
+          description: Required permission missing
+  /api/v1/network/ipv4/dhcp:
+    post:
+      x-permission: device.configure
+      operationId: postApiV1NetworkIpv4Dhcp
+      summary: POST /api/v1/network/ipv4/dhcp
+      description: Native backend endpoint. Requires the permission declared by x-permission when authentication is enabled.
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema: { type: object, additionalProperties: true }
+      responses:
+        '200':
+          description: Operation result. Streaming and download endpoints return their native payload.
+        '400':
+          description: Invalid request parameters
+        '401':
+          description: Authentication required
+        '403':
+          description: Required permission missing
+  /api/v1/network/ipv4/static:
+    post:
+      x-permission: device.configure
+      operationId: postApiV1NetworkIpv4Static
+      summary: POST /api/v1/network/ipv4/static
+      description: Native backend endpoint. Requires the permission declared by x-permission when authentication is enabled.
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema: { type: object, additionalProperties: true }
+      responses:
+        '200':
+          description: Operation result. Streaming and download endpoints return their native payload.
+        '400':
+          description: Invalid request parameters
+        '401':
+          description: Authentication required
+        '403':
+          description: Required permission missing
+  /api/v1/wifi:
+    get:
+      x-permission: device.configure
+      operationId: getApiV1Wifi
+      summary: GET /api/v1/wifi
+      description: Native backend endpoint. Requires the permission declared by x-permission when authentication is enabled.
+      security: [{ bearerAuth: [] }]
+      responses:
+        '200':
+          description: Operation result. Streaming and download endpoints return their native payload.
+        '400':
+          description: Invalid request parameters
+        '401':
+          description: Authentication required
+        '403':
+          description: Required permission missing
+  /api/v1/wifi/config:
+    get:
+      x-permission: device.configure
+      operationId: getApiV1WifiConfig
+      summary: GET /api/v1/wifi/config
+      description: Native backend endpoint. Requires the permission declared by x-permission when authentication is enabled.
+      security: [{ bearerAuth: [] }]
+      responses:
+        '200':
+          description: Operation result. Streaming and download endpoints return their native payload.
+        '400':
+          description: Invalid request parameters
+        '401':
+          description: Authentication required
+        '403':
+          description: Required permission missing
+    post:
+      x-permission: device.configure
+      operationId: postApiV1WifiConfig
+      summary: POST /api/v1/wifi/config
+      description: Native backend endpoint. Requires the permission declared by x-permission when authentication is enabled.
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema: { type: object, additionalProperties: true }
+      responses:
+        '200':
+          description: Operation result. Streaming and download endpoints return their native payload.
+        '400':
+          description: Invalid request parameters
+        '401':
+          description: Authentication required
+        '403':
+          description: Required permission missing
+  /api/v1/wifi/scan:
+    get:
+      x-permission: device.configure
+      operationId: getApiV1WifiScan
+      summary: GET /api/v1/wifi/scan
+      description: Native backend endpoint. Requires the permission declared by x-permission when authentication is enabled.
+      security: [{ bearerAuth: [] }]
+      responses:
+        '200':
+          description: Operation result. Streaming and download endpoints return their native payload.
+        '400':
+          description: Invalid request parameters
+        '401':
+          description: Authentication required
+        '403':
+          description: Required permission missing
+  /api/v1/wifi/status:
+    get:
+      x-permission: device.configure
+      operationId: getApiV1WifiStatus
+      summary: GET /api/v1/wifi/status
+      description: Native backend endpoint. Requires the permission declared by x-permission when authentication is enabled.
+      security: [{ bearerAuth: [] }]
+      responses:
+        '200':
+          description: Operation result. Streaming and download endpoints return their native payload.
+        '400':
+          description: Invalid request parameters
+        '401':
+          description: Authentication required
+        '403':
+          description: Required permission missing
+  /api/v1/wifi/connect:
+    post:
+      x-permission: device.configure
+      operationId: postApiV1WifiConnect
+      summary: POST /api/v1/wifi/connect
+      description: Native backend endpoint. Requires the permission declared by x-permission when authentication is enabled.
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema: { type: object, additionalProperties: true }
+      responses:
+        '200':
+          description: Operation result. Streaming and download endpoints return their native payload.
+        '400':
+          description: Invalid request parameters
+        '401':
+          description: Authentication required
+        '403':
+          description: Required permission missing
+  /api/v1/wifi/disconnect:
+    post:
+      x-permission: device.configure
+      operationId: postApiV1WifiDisconnect
+      summary: POST /api/v1/wifi/disconnect
+      description: Native backend endpoint. Requires the permission declared by x-permission when authentication is enabled.
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema: { type: object, additionalProperties: true }
+      responses:
+        '200':
+          description: Operation result. Streaming and download endpoints return their native payload.
+        '400':
+          description: Invalid request parameters
+        '401':
+          description: Authentication required
+        '403':
+          description: Required permission missing
+  /api/v1/wifi/reconnect-preferred:
+    post:
+      x-permission: device.configure
+      operationId: postApiV1WifiReconnectPreferred
+      summary: POST /api/v1/wifi/reconnect-preferred
+      description: Native backend endpoint. Requires the permission declared by x-permission when authentication is enabled.
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema: { type: object, additionalProperties: true }
+      responses:
+        '200':
+          description: Operation result. Streaming and download endpoints return their native payload.
+        '400':
+          description: Invalid request parameters
+        '401':
+          description: Authentication required
+        '403':
+          description: Required permission missing
+  /api/v1/scripts:
+    get:
+      x-admin-account-required: true
+      x-permission: device.shell
+      operationId: getApiV1Scripts
+      summary: GET /api/v1/scripts
+      description: Native backend endpoint. Requires the permission declared by x-permission when authentication is enabled.
+      security: [{ bearerAuth: [] }]
+      responses:
+        '200':
+          description: Operation result. Streaming and download endpoints return their native payload.
+        '400':
+          description: Invalid request parameters
+        '401':
+          description: Authentication required
+        '403':
+          description: Required permission missing
+  /api/v1/scripts/upload:
+    post:
+      x-admin-account-required: true
+      x-permission: device.shell
+      operationId: postApiV1ScriptsUpload
+      summary: POST /api/v1/scripts/upload
+      description: Native backend endpoint. Requires the permission declared by x-permission when authentication is enabled.
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [file]
+              properties:
+                file:
+                  type: string
+                  format: binary
+      responses:
+        '200':
+          description: Operation result. Streaming and download endpoints return their native payload.
+        '400':
+          description: Invalid request parameters
+        '401':
+          description: Authentication required
+        '403':
+          description: Required permission missing
+  /api/v1/scripts/{name}:
+    get:
+      x-admin-account-required: true
+      x-permission: device.shell
+      operationId: getApiV1ScriptsName
+      summary: GET /api/v1/scripts/{name}
+      description: Native backend endpoint. Requires the permission declared by x-permission when authentication is enabled.
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - name: name
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: Operation result. Streaming and download endpoints return their native payload.
+        '400':
+          description: Invalid request parameters
+        '401':
+          description: Authentication required
+        '403':
+          description: Required permission missing
+    delete:
+      x-admin-account-required: true
+      x-permission: device.shell
+      operationId: deleteApiV1ScriptsName
+      summary: DELETE /api/v1/scripts/{name}
+      description: Native backend endpoint. Requires the permission declared by x-permission when authentication is enabled.
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - name: name
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: Operation result. Streaming and download endpoints return their native payload.
+        '400':
+          description: Invalid request parameters
+        '401':
+          description: Authentication required
+        '403':
+          description: Required permission missing
+  /api/v1/scripts/{name}/run:
+    post:
+      x-admin-account-required: true
+      x-permission: device.shell
+      operationId: postApiV1ScriptsNameRun
+      summary: POST /api/v1/scripts/{name}/run
+      description: Native backend endpoint. Requires the permission declared by x-permission when authentication is enabled.
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - name: name
+          in: path
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema: { type: object, additionalProperties: true }
+      responses:
+        '200':
+          description: Operation result. Streaming and download endpoints return their native payload.
+        '400':
+          description: Invalid request parameters
+        '401':
+          description: Authentication required
+        '403':
+          description: Required permission missing
+  /api/v1/scripts/{name}/runtime:
+    put:
+      x-admin-account-required: true
+      x-permission: device.shell
+      operationId: putApiV1ScriptsNameRuntime
+      summary: PUT /api/v1/scripts/{name}/runtime
+      description: Native backend endpoint. Requires the permission declared by x-permission when authentication is enabled.
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - name: name
+          in: path
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema: { type: object, additionalProperties: true }
+      responses:
+        '200':
+          description: Operation result. Streaming and download endpoints return their native payload.
+        '400':
+          description: Invalid request parameters
+        '401':
+          description: Authentication required
+        '403':
+          description: Required permission missing
+  /api/v1/scripts/{name}/status:
+    get:
+      x-admin-account-required: true
+      x-permission: device.shell
+      operationId: getApiV1ScriptsNameStatus
+      summary: GET /api/v1/scripts/{name}/status
+      description: Native backend endpoint. Requires the permission declared by x-permission when authentication is enabled.
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - name: name
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: Operation result. Streaming and download endpoints return their native payload.
+        '400':
+          description: Invalid request parameters
+        '401':
+          description: Authentication required
+        '403':
+          description: Required permission missing
+  /api/v1/scripts/{name}/logs:
+    get:
+      x-admin-account-required: true
+      x-permission: device.shell
+      operationId: getApiV1ScriptsNameLogs
+      summary: GET /api/v1/scripts/{name}/logs
+      description: Native backend endpoint. Requires the permission declared by x-permission when authentication is enabled.
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - name: name
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: Operation result. Streaming and download endpoints return their native payload.
+        '400':
+          description: Invalid request parameters
+        '401':
+          description: Authentication required
+        '403':
+          description: Required permission missing
+  /api/v1/remote-access/ddns-go/status:
+    get:
+      x-permission: device.configure
+      operationId: getApiV1RemoteAccessDdnsGoStatus
+      summary: GET /api/v1/remote-access/ddns-go/status
+      description: Native backend endpoint. Requires the permission declared by x-permission when authentication is enabled.
+      security: [{ bearerAuth: [] }]
+      responses:
+        '200':
+          description: Operation result. Streaming and download endpoints return their native payload.
+        '400':
+          description: Invalid request parameters
+        '401':
+          description: Authentication required
+        '403':
+          description: Required permission missing
+  /api/v1/stream/webrtc/signaling:
+    get:
+      x-permission: kvm.view
+      operationId: getApiV1StreamWebrtcSignaling
+      summary: GET /api/v1/stream/webrtc/signaling
+      description: Native backend endpoint. Requires the permission declared by x-permission when authentication is enabled.
+      security: [{ bearerAuth: [] }]
+      responses:
+        '101':
+          description: WebSocket upgrade for shared-peer WebRTC signaling
+        '400':
+          description: Invalid request parameters
+        '401':
+          description: Authentication required
+        '403':
+          description: Required permission missing
+  /api/v1/webrtc/diagnostics:
+    get:
+      x-permission: device.configure
+      operationId: getApiV1WebrtcDiagnostics
+      summary: GET /api/v1/webrtc/diagnostics
+      description: Native backend endpoint. Requires the permission declared by x-permission when authentication is enabled.
+      security: [{ bearerAuth: [] }]
+      responses:
+        '200':
+          description: Operation result. Streaming and download endpoints return their native payload.
+        '400':
+          description: Invalid request parameters
+        '401':
+          description: Authentication required
+        '403':
+          description: Required permission missing
+    post:
+      x-permission: device.configure
+      operationId: postApiV1WebrtcDiagnostics
+      summary: POST /api/v1/webrtc/diagnostics
+      description: Native backend endpoint. Requires the permission declared by x-permission when authentication is enabled.
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema: { type: object, additionalProperties: true }
+      responses:
+        '200':
+          description: Operation result. Streaming and download endpoints return their native payload.
+        '400':
+          description: Invalid request parameters
+        '401':
+          description: Authentication required
+        '403':
+          description: Required permission missing
+  /api/v1/application/update/status:
+    get:
+      x-permission: device.update
+      operationId: getApiV1ApplicationUpdateStatus
+      summary: GET /api/v1/application/update/status
+      description: Native backend endpoint. Requires the permission declared by x-permission when authentication is enabled.
+      security: [{ bearerAuth: [] }]
+      responses:
+        '200':
+          description: Operation result. Streaming and download endpoints return their native payload.
+        '400':
+          description: Invalid request parameters
+        '401':
+          description: Authentication required
+        '403':
+          description: Required permission missing
+  /api/v1/application/update/upload:
+    post:
+      x-permission: device.update
+      operationId: postApiV1ApplicationUpdateUpload
+      summary: POST /api/v1/application/update/upload
+      description: Native backend endpoint. Requires the permission declared by x-permission when authentication is enabled.
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [file]
+              properties:
+                file:
+                  type: string
+                  format: binary
+      responses:
+        '200':
+          description: Operation result. Streaming and download endpoints return their native payload.
+        '400':
+          description: Invalid request parameters
+        '401':
+          description: Authentication required
+        '403':
+          description: Required permission missing
+  /api/v1/atx/bios/start:
+    post:
+      x-permission: host.power.force
+      operationId: postApiV1AtxBiosStart
+      summary: POST /api/v1/atx/bios/start
+      description: Native backend endpoint. Requires the permission declared by x-permission when authentication is enabled.
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema: { type: object, additionalProperties: true }
+      responses:
+        '200':
+          description: Operation result. Streaming and download endpoints return their native payload.
+        '400':
+          description: Invalid request parameters
+        '401':
+          description: Authentication required
+        '403':
+          description: Required permission missing
+  /api/v1/atx/bios/status:
+    get:
+      x-permission: kvm.view
+      operationId: getApiV1AtxBiosStatus
+      summary: GET /api/v1/atx/bios/status
+      description: Native backend endpoint. Requires the permission declared by x-permission when authentication is enabled.
+      security: [{ bearerAuth: [] }]
+      responses:
+        '200':
+          description: Operation result. Streaming and download endpoints return their native payload.
+        '400':
+          description: Invalid request parameters
+        '401':
+          description: Authentication required
+        '403':
+          description: Required permission missing
+  /api/v1/atx/bios/stop:
+    post:
+      x-permission: host.power.force
+      operationId: postApiV1AtxBiosStop
+      summary: POST /api/v1/atx/bios/stop
+      description: Native backend endpoint. Requires the permission declared by x-permission when authentication is enabled.
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema: { type: object, additionalProperties: true }
+      responses:
+        '200':
+          description: Operation result. Streaming and download endpoints return their native payload.
+        '400':
+          description: Invalid request parameters
+        '401':
+          description: Authentication required
+        '403':
+          description: Required permission missing
+  /api/v1/capabilities:
+    get:
+      x-permission: kvm.view
+      operationId: getApiV1Capabilities
+      summary: GET /api/v1/capabilities
+      description: Native backend endpoint. Requires the permission declared by x-permission when authentication is enabled.
+      security: [{ bearerAuth: [] }]
+      responses:
+        '200':
+          description: Operation result. Streaming and download endpoints return their native payload.
+        '400':
+          description: Invalid request parameters
+        '401':
+          description: Authentication required
+        '403':
+          description: Required permission missing
+  /api/v1/diagnostics/download:
+    get:
+      x-permission: device.configure
+      operationId: getApiV1DiagnosticsDownload
+      summary: GET /api/v1/diagnostics/download
+      description: Native backend endpoint. Requires the permission declared by x-permission when authentication is enabled.
+      security: [{ bearerAuth: [] }]
+      responses:
+        '200':
+          description: Operation result. Streaming and download endpoints return their native payload.
+        '400':
+          description: Invalid request parameters
+        '401':
+          description: Authentication required
+        '403':
+          description: Required permission missing
+  /api/v1/diagnostics/log-level:
+    get:
+      x-permission: device.configure
+      operationId: getApiV1DiagnosticsLogLevel
+      summary: GET /api/v1/diagnostics/log-level
+      description: Native backend endpoint. Requires the permission declared by x-permission when authentication is enabled.
+      security: [{ bearerAuth: [] }]
+      responses:
+        '200':
+          description: Operation result. Streaming and download endpoints return their native payload.
+        '400':
+          description: Invalid request parameters
+        '401':
+          description: Authentication required
+        '403':
+          description: Required permission missing
+    post:
+      x-permission: device.configure
+      operationId: postApiV1DiagnosticsLogLevel
+      summary: POST /api/v1/diagnostics/log-level
+      description: Native backend endpoint. Requires the permission declared by x-permission when authentication is enabled.
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema: { type: object, additionalProperties: true }
+      responses:
+        '200':
+          description: Operation result. Streaming and download endpoints return their native payload.
+        '400':
+          description: Invalid request parameters
+        '401':
+          description: Authentication required
+        '403':
+          description: Required permission missing
+  /api/v1/msd/remote_import:
+    post:
+      x-permission: device.configure
+      operationId: postApiV1MsdRemoteImport
+      summary: POST /api/v1/msd/remote_import
+      description: Native backend endpoint. Requires the permission declared by x-permission when authentication is enabled.
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema: { type: object, additionalProperties: true }
+      responses:
+        '200':
+          description: Operation result. Streaming and download endpoints return their native payload.
+        '400':
+          description: Invalid request parameters
+        '401':
+          description: Authentication required
+        '403':
+          description: Required permission missing
+  /api/v1/msd/virtual_disk/delete:
+    post:
+      x-permission: device.configure
+      operationId: postApiV1MsdVirtualDiskDelete
+      summary: POST /api/v1/msd/virtual_disk/delete
+      description: Native backend endpoint. Requires the permission declared by x-permission when authentication is enabled.
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema: { type: object, additionalProperties: true }
+      responses:
+        '200':
+          description: Operation result. Streaming and download endpoints return their native payload.
+        '400':
+          description: Invalid request parameters
+        '401':
+          description: Authentication required
+        '403':
+          description: Required permission missing
+  /api/v1/msd/virtual_disk/remove:
+    post:
+      x-permission: device.configure
+      operationId: postApiV1MsdVirtualDiskRemove
+      summary: POST /api/v1/msd/virtual_disk/remove
+      description: Native backend endpoint. Requires the permission declared by x-permission when authentication is enabled.
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema: { type: object, additionalProperties: true }
+      responses:
+        '200':
+          description: Operation result. Streaming and download endpoints return their native payload.
+        '400':
+          description: Invalid request parameters
+        '401':
+          description: Authentication required
+        '403':
+          description: Required permission missing
+  /api/v1/remote-access/ddns-go/control:
+    post:
+      x-permission: device.configure
+      operationId: postApiV1RemoteAccessDdnsGoControl
+      summary: POST /api/v1/remote-access/ddns-go/control
+      description: Native backend endpoint. Requires the permission declared by x-permission when authentication is enabled.
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema: { type: object, additionalProperties: true }
+      responses:
+        '200':
+          description: Operation result. Streaming and download endpoints return their native payload.
+        '400':
+          description: Invalid request parameters
+        '401':
+          description: Authentication required
+        '403':
+          description: Required permission missing
+    put:
+      x-permission: device.configure
+      operationId: putApiV1RemoteAccessDdnsGoControl
+      summary: PUT /api/v1/remote-access/ddns-go/control
+      description: Native backend endpoint. Requires the permission declared by x-permission when authentication is enabled.
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema: { type: object, additionalProperties: true }
+      responses:
+        '200':
+          description: Operation result. Streaming and download endpoints return their native payload.
+        '400':
+          description: Invalid request parameters
+        '401':
+          description: Authentication required
+        '403':
+          description: Required permission missing
+  /api/v1/ui/branding:
+    get:
+      x-permission: public
+      operationId: getApiV1UiBranding
+      summary: GET /api/v1/ui/branding
+      description: Native backend endpoint. Requires the permission declared by x-permission when authentication is enabled.
+      security: []
+      responses:
+        '200':
+          description: Operation result. Streaming and download endpoints return their native payload.
+        '400':
+          description: Invalid request parameters
+        '401':
+          description: Authentication required
+        '403':
+          description: Required permission missing
+    post:
+      x-permission: device.configure
+      operationId: postApiV1UiBranding
+      summary: POST /api/v1/ui/branding
+      description: Native backend endpoint. Requires the permission declared by x-permission when authentication is enabled.
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema: { type: object, additionalProperties: true }
+      responses:
+        '200':
+          description: Operation result. Streaming and download endpoints return their native payload.
+        '400':
+          description: Invalid request parameters
+        '401':
+          description: Authentication required
+        '403':
+          description: Required permission missing
+  /api/v1/usb-camera/detect:
+    get:
+      x-permission: device.configure
+      operationId: getApiV1UsbCameraDetect
+      summary: GET /api/v1/usb-camera/detect
+      description: Native backend endpoint. Requires the permission declared by x-permission when authentication is enabled.
+      security: [{ bearerAuth: [] }]
+      responses:
+        '200':
+          description: Operation result. Streaming and download endpoints return their native payload.
+        '400':
+          description: Invalid request parameters
+        '401':
+          description: Authentication required
+        '403':
+          description: Required permission missing
+  /api/v1/usb/device/config:
+    get:
+      x-permission: device.configure
+      operationId: getApiV1UsbDeviceConfig
+      summary: GET /api/v1/usb/device/config
+      description: Native backend endpoint. Requires the permission declared by x-permission when authentication is enabled.
+      security: [{ bearerAuth: [] }]
+      responses:
+        '200':
+          description: Operation result. Streaming and download endpoints return their native payload.
+        '400':
+          description: Invalid request parameters
+        '401':
+          description: Authentication required
+        '403':
+          description: Required permission missing
+    post:
+      x-permission: device.configure
+      operationId: postApiV1UsbDeviceConfig
+      summary: POST /api/v1/usb/device/config
+      description: Native backend endpoint. Requires the permission declared by x-permission when authentication is enabled.
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema: { type: object, additionalProperties: true }
+      responses:
+        '200':
+          description: Operation result. Streaming and download endpoints return their native payload.
+        '400':
+          description: Invalid request parameters
+        '401':
+          description: Authentication required
+        '403':
+          description: Required permission missing
+  /api/v1/uvc/browser-camera:
+    get:
+      x-permission: camera.send
+      operationId: getApiV1UvcBrowserCamera
+      summary: GET /api/v1/uvc/browser-camera
+      description: Native backend endpoint. Requires the permission declared by x-permission when authentication is enabled.
+      security: [{ bearerAuth: [] }]
+      responses:
+        '200':
+          description: Operation result. Streaming and download endpoints return their native payload.
+        '400':
+          description: Invalid request parameters
+        '401':
+          description: Authentication required
+        '403':
+          description: Required permission missing
+    post:
+      x-permission: camera.send
+      operationId: postApiV1UvcBrowserCamera
+      summary: POST /api/v1/uvc/browser-camera
+      description: Native backend endpoint. Requires the permission declared by x-permission when authentication is enabled.
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema: { type: object, additionalProperties: true }
+      responses:
+        '200':
+          description: Operation result. Streaming and download endpoints return their native payload.
+        '400':
+          description: Invalid request parameters
+        '401':
+          description: Authentication required
+        '403':
+          description: Required permission missing
+  /api/v1/video/edid/delete-file:
+    post:
+      x-permission: device.configure
+      operationId: postApiV1VideoEdidDeleteFile
+      summary: POST /api/v1/video/edid/delete-file
+      description: Native backend endpoint. Requires the permission declared by x-permission when authentication is enabled.
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema: { type: object, additionalProperties: true }
+      responses:
+        '200':
+          description: Operation result. Streaming and download endpoints return their native payload.
+        '400':
+          description: Invalid request parameters
+        '401':
+          description: Authentication required
+        '403':
+          description: Required permission missing
+  /api/v1/video/latency:
+    get:
+      x-permission: kvm.view
+      operationId: getApiV1VideoLatency
+      summary: GET /api/v1/video/latency
+      description: Native backend endpoint. Requires the permission declared by x-permission when authentication is enabled.
+      security: [{ bearerAuth: [] }]
+      responses:
+        '200':
+          description: Operation result. Streaming and download endpoints return their native payload.
+        '400':
+          description: Invalid request parameters
+        '401':
+          description: Authentication required
+        '403':
+          description: Required permission missing
+    post:
+      x-permission: device.configure
+      operationId: postApiV1VideoLatency
+      summary: POST /api/v1/video/latency
+      description: Native backend endpoint. Requires the permission declared by x-permission when authentication is enabled.
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema: { type: object, additionalProperties: true }
+      responses:
+        '200':
+          description: Operation result. Streaming and download endpoints return their native payload.
+        '400':
+          description: Invalid request parameters
+        '401':
+          description: Authentication required
+        '403':
+          description: Required permission missing
+    put:
+      x-permission: device.configure
+      operationId: putApiV1VideoLatency
+      summary: PUT /api/v1/video/latency
+      description: Native backend endpoint. Requires the permission declared by x-permission when authentication is enabled.
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema: { type: object, additionalProperties: true }
+      responses:
+        '200':
+          description: Operation result. Streaming and download endpoints return their native payload.
+        '400':
+          description: Invalid request parameters
+        '401':
+          description: Authentication required
+        '403':
+          description: Required permission missing
+  /api/v1/video/ntp:
+    get:
+      x-permission: device.configure
+      operationId: getApiV1VideoNtp
+      summary: GET /api/v1/video/ntp
+      description: Native backend endpoint. Requires the permission declared by x-permission when authentication is enabled.
+      security: [{ bearerAuth: [] }]
+      responses:
+        '200':
+          description: Operation result. Streaming and download endpoints return their native payload.
+        '400':
+          description: Invalid request parameters
+        '401':
+          description: Authentication required
+        '403':
+          description: Required permission missing
+    put:
+      x-permission: device.configure
+      operationId: putApiV1VideoNtp
+      summary: PUT /api/v1/video/ntp
+      description: Native backend endpoint. Requires the permission declared by x-permission when authentication is enabled.
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema: { type: object, additionalProperties: true }
+      responses:
+        '200':
+          description: Operation result. Streaming and download endpoints return their native payload.
+        '400':
+          description: Invalid request parameters
+        '401':
+          description: Authentication required
+        '403':
+          description: Required permission missing
+  /api/v1/video/publisher:
+    get:
+      x-permission: kvm.view
+      operationId: getApiV1VideoPublisher
+      summary: GET /api/v1/video/publisher
+      description: Native backend endpoint. Requires the permission declared by x-permission when authentication is enabled.
+      security: [{ bearerAuth: [] }]
+      responses:
+        '200':
+          description: Operation result. Streaming and download endpoints return their native payload.
+        '400':
+          description: Invalid request parameters
+        '401':
+          description: Authentication required
+        '403':
+          description: Required permission missing
+    post:
+      x-permission: device.configure
+      operationId: postApiV1VideoPublisher
+      summary: POST /api/v1/video/publisher
+      description: Native backend endpoint. Requires the permission declared by x-permission when authentication is enabled.
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema: { type: object, additionalProperties: true }
+      responses:
+        '200':
+          description: Operation result. Streaming and download endpoints return their native payload.
+        '400':
+          description: Invalid request parameters
+        '401':
+          description: Authentication required
+        '403':
+          description: Required permission missing
+    put:
+      x-permission: device.configure
+      operationId: putApiV1VideoPublisher
+      summary: PUT /api/v1/video/publisher
+      description: Native backend endpoint. Requires the permission declared by x-permission when authentication is enabled.
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema: { type: object, additionalProperties: true }
+      responses:
+        '200':
+          description: Operation result. Streaming and download endpoints return their native payload.
+        '400':
+          description: Invalid request parameters
+        '401':
+          description: Authentication required
+        '403':
+          description: Required permission missing
+  /api/v1/video/webrtc:
+    get:
+      x-permission: device.configure
+      operationId: getApiV1VideoWebrtc
+      summary: GET /api/v1/video/webrtc
+      description: Native backend endpoint. Requires the permission declared by x-permission when authentication is enabled.
+      security: [{ bearerAuth: [] }]
+      responses:
+        '200':
+          description: Operation result. Streaming and download endpoints return their native payload.
+        '400':
+          description: Invalid request parameters
+        '401':
+          description: Authentication required
+        '403':
+          description: Required permission missing
+    post:
+      x-permission: device.configure
+      operationId: postApiV1VideoWebrtc
+      summary: POST /api/v1/video/webrtc
+      description: Native backend endpoint. Requires the permission declared by x-permission when authentication is enabled.
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema: { type: object, additionalProperties: true }
+      responses:
+        '200':
+          description: Operation result. Streaming and download endpoints return their native payload.
+        '400':
+          description: Invalid request parameters
+        '401':
+          description: Authentication required
+        '403':
+          description: Required permission missing
+    put:
+      x-permission: device.configure
+      operationId: putApiV1VideoWebrtc
+      summary: PUT /api/v1/video/webrtc
+      description: Native backend endpoint. Requires the permission declared by x-permission when authentication is enabled.
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema: { type: object, additionalProperties: true }
+      responses:
+        '200':
+          description: Operation result. Streaming and download endpoints return their native payload.
+        '400':
+          description: Invalid request parameters
+        '401':
+          description: Authentication required
+        '403':
+          description: Required permission missing
+  /api/v1/switch/{id}/activate:
+    post:
+      summary: Activate HDMI switch
+      operationId: postSwitchActivate
+      x-permission: device.configure
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer, minimum: 1 }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: true
+              properties:
+                isActive: { type: boolean }
+      responses:
+        '200': { description: Updated switch state }
+        '400': { description: Invalid switch action or configuration }
+        '401': { description: Authentication required }
+        '403': { description: Required permission missing }
+  /api/v1/switch/{id}/channel:
+    post:
+      summary: Channel HDMI switch
+      operationId: postSwitchChannel
+      x-permission: switch.select
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer, minimum: 1 }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: true
+              properties:
+                channel: { type: integer }
+      responses:
+        '200': { description: Updated switch state }
+        '400': { description: Invalid switch action or configuration }
+        '401': { description: Authentication required }
+        '403': { description: Required permission missing }
+  /api/v1/switch/{id}/update:
+    post:
+      summary: Update HDMI switch
+      operationId: postSwitchUpdate
+      x-permission: device.configure
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer, minimum: 1 }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: true
+              properties:
+                title: { type: string }
+      responses:
+        '200': { description: Updated switch state }
+        '400': { description: Invalid switch action or configuration }
+        '401': { description: Authentication required }
+        '403': { description: Required permission missing }
+  /api/v1/stream/h264/webrtc/{sessionId}:
+    delete:
+      summary: Close a H264 WHEP session
+      operationId: deleteH264WhepSession
+      description: Use the Location URL returned when the SDP offer was accepted. Session ownership is enforced.
+      x-permission: kvm.view
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - name: sessionId
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        '204': { description: Session closed or already absent }
+        '401': { description: Authentication required }
+        '403': { description: Session belongs to another principal }
+  /api/v1/stream/h265/webrtc/{sessionId}:
+    delete:
+      summary: Close a H265 WHEP session
+      operationId: deleteH265WhepSession
+      description: Use the Location URL returned when the SDP offer was accepted. Session ownership is enforced.
+      x-permission: kvm.view
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - name: sessionId
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        '204': { description: Session closed or already absent }
+        '401': { description: Authentication required }
+        '403': { description: Session belongs to another principal }
+
 components:
   securitySchemes:
     bearerAuth:
