@@ -1,0 +1,61 @@
+name: Release notes
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Existing release tag, e.g. v3.0.2 (assets must already be uploaded)'
+        required: true
+        type: string
+      apply:
+        description: 'Update the release body after validation (does not publish a draft)'
+        default: false
+        type: boolean
+  release:
+    types: [published, edited]
+  pull_request:
+    paths:
+      - 'releases/**'
+      - 'scripts/release-notes*'
+      - '.github/workflows/release-notes.yml'
+permissions:
+  contents: read
+concurrency:
+  group: release-notes-${{ github.event.release.tag_name || inputs.tag || github.ref }}
+  cancel-in-progress: false
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: node --test scripts/release-notes.test.mjs
+      - name: Check local notes or audit published body
+        if: github.event_name != 'pull_request'
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          TAG: ${{ github.event.release.tag_name || inputs.tag }}
+          EVENT: ${{ github.event_name }}
+        run: |
+          if [ "$EVENT" = release ]; then
+            node scripts/release-notes.mjs audit "$TAG"
+          else
+            node scripts/release-notes.mjs check "$TAG"
+          fi
+  update:
+    if: github.event_name == 'workflow_dispatch' && inputs.apply
+    needs: validate
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Update body only after revalidation
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          TAG: ${{ inputs.tag }}
+        run: node scripts/release-notes.mjs apply "$TAG"

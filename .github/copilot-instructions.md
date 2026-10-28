@@ -33,3 +33,7 @@
 - Locale-specific external links are usually stored inline in page components as objects keyed by locale, with English as the fallback. Follow that pattern when adding new storefront or media links.
 - The homepage contains custom locale behavior: it remembers explicit language switches in `localStorage` and auto-redirects Chinese browsers from `/` to `/zh-CN/` only when no preference has been saved. Preserve that behavior when changing locale logic.
 - Keep asset references site-absolute (`/img/...`, `/assets/...`) instead of relative filesystem paths so they work in Docusaurus pages and in the PDF export rewrite step.
+
+## Release notes
+
+For GitHub Release work, follow `releases/README.md` and start from `releases/TEMPLATE.md`. Keep English and Chinese equivalent. Use actual asset URLs, preserve release tags/assets/status unless explicitly requested, and validate via `scripts/release-notes.mjs` before updating a release body.

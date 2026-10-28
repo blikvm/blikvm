@@ -1,0 +1,12 @@
+import {test} from 'node:test';
+import assert from 'node:assert/strict';
+import fs from 'node:fs/promises';
+import {validateNotes} from './release-notes.mjs';
+const body = await fs.readFile(new URL('../releases/v3.0.1.md', import.meta.url), 'utf8');
+const urls = [...body.matchAll(/\]\((https:\/\/github\.com\/[^)]+\/releases\/download\/[^)]+)\)/g)].map(m => m[1]);
+const release = {prerelease:true, assets:urls.map(url=>({name:url.split('/').at(-1),browser_download_url:url}))};
+test('bilingual 3.0.1 structure is accepted',()=>assert.deepEqual(validateNotes(body,release),[]));
+test('wrong tag URLs are rejected',()=>assert(validateNotes(body.replaceAll('/download/v3.0.1/', '/download/v9.9.9/'),release).some(x=>x.includes('not an asset'))));
+test('missing Chinese upgrade instructions are rejected',()=>assert(validateNotes(body.replace('### 升级说明','### 删除'),release).some(x=>x.includes('升级说明'))));
+test('unfilled placeholders and mismatched status are rejected',()=>{assert(validateNotes(body+'{{TODO}}',release).length);assert(validateNotes(body,{...release,prerelease:false}).some(x=>x.includes('Status differs')));});
+test('a newly added firmware package must be listed',()=>assert(validateNotes(body,{...release,assets:[...release.assets,{name:'extra.img.xz',browser_download_url:'https://github.com/blikvm/blikvm/releases/download/v3.0.1/extra.img.xz'}]}).some(x=>x.includes('Missing download'))));
