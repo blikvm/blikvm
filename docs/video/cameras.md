@@ -19,7 +19,7 @@ Detection does not guarantee codec support. For unknown devices or unsupported e
 <iframe
   width="560"
   height="315"
-  src="https://www.youtube.com/embed/ioYrpdT1-kw?si=umimFfSA_4-HLSrQ"
+  src="https://www.youtube.com/embed/vYLsI74ty7s?si=HCH4mmb8xX92jFP0"
   title="BliKVM UVC camera forwarding video walkthrough"
   style={{width: '100%', aspectRatio: '16 / 9', height: 'auto', border: 0, display: 'block'}}
   allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
@@ -28,7 +28,7 @@ Detection does not guarantee codec support. For unknown devices or unsupported e
   allowFullScreen
 ></iframe>
 
-[Watch on YouTube](https://www.youtube.com/watch?v=ioYrpdT1-kw).
+[Watch on YouTube](https://www.youtube.com/watch?v=vYLsI74ty7s).
 
 ### Setup steps
 
