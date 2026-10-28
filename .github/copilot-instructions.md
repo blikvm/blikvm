@@ -36,4 +36,4 @@
 
 ## Release notes
 
-For GitHub Release work, follow `releases/README.md` and start from `releases/TEMPLATE.md`. Keep English and Chinese equivalent. Use actual asset URLs, preserve release tags/assets/status unless explicitly requested, and validate via `scripts/release-notes.mjs` before updating a release body.
+The canonical release template and finalization checks are maintained in `blikvm/blikvm-release` (`docs/release-notes.md`, `templates/release-notes.md`, `packaging/publish-release.sh`). This repository is the public release destination; do not duplicate the template or publisher here. See `releases/README.md` for the maintainer entry point.

@@ -1,54 +1,7 @@
-# Release 发布说明规范
+# Release maintenance
 
-适用于 `blikvm/blikvm` GitHub Releases。`TEMPLATE.md` 是后续版本的中英文正文模板，`v3.0.1.md` 保存已审核的 3.0.1 发布正文。通过下述工作流校验并同步到 GitHub Release。
+GitHub Releases in this public repository are the user-facing download and release-note destination.
 
-## 固定结构
+The canonical bilingual template, reviewed per-version text and finalization checks are maintained in the build repository **[blikvm/blikvm-release](https://github.com/blikvm/blikvm-release)**. Maintainers should follow its **[release-note guide](https://github.com/blikvm/blikvm-release/blob/main/docs/release-notes.md)** and use `packaging/publish-release.sh` after builds and asset upload.
 
-1. **版本与状态**：一行列出发布状态、System 版本和 App 版本，再用一句话说明本次价值。System/App 版本分别填写，不要求永远相同；状态以 GitHub 实际字段为准。
-2. **下载**：固定放在最前面，用“硬件 × 完整镜像／系统包／App 包”表格提供直接下载；另列 SHA256SUMS、实际存在的构建信息附件。中英文共用一张表。
-3. **主要变化**：按新增／改进／修复中实际有内容的类别写 3–6 条，说明用户能感知的变化。比较基线通常是上个发布版；首次发布写能力概要。不要把“合入最新 main”当作完整变更清单。
-4. **升级说明**：首次烧录、已有 A/B 系统、仅更新 App 三种情况；写明型号／采集芯片限制、最低系统要求、数据影响和本版迁移要求。未验证的跨版本升级路径不能推定兼容。
-5. **已知问题与验证范围**：明确影响、适用型号及已确认的规避方式；把未验证项目单列，不能混称为已确认缺陷。测试记录缺失时写“未提供记录”，不写“全部正常”。
-6. **技术记录**：折叠展示实测设备、升级方式、测试条件、源码／构建记录；主正文只保留用户决策必需的信息。
-
-## 中英文与格式
-
-- 英文在前、中文在后，栏目、升级限制、风险与验证范围必须对等，中文不能只作几行摘要。
-- Release 标题统一 `BliKVM <发布版本> — System Images and OTA Packages`；是否预发布由 GitHub 标记并在正文首行对应说明。
-- 正文不重复写一级版本标题；日期使用实际发布日期，历史包替换记录需有明确日期与原因。
-- 技术记录中的帧率必须写采样时长、硬件及解码结果；接收帧率不是端到端延迟，也不是性能保证。
-- 删除无内容的可选栏目和占位符；不得捏造已知问题、验证结果或 BUILD-INFO 附件。
-
-## 发布前核对
-
-- 从目标 Release 的真实 `assets[].browser_download_url` 生成链接，不能凭标题拼 tag。3.0.0 实际使用 untagged 标签，历史上因此出现过 404。
-- 附件未提供时在表格写“本版未提供 / Not provided”；草稿阶段使用 Assets 列表，不能把尚不可用的公开直链当作已可下载。
-- 确认目标硬件、采集芯片、System/App 版本、签名要求和内置 App 版本；完整镜像、系统包和 App 包数量可能随版本变化。
-- 对照实际发布状态清理“未发布草稿”等过期文字。3.0.0 当前元数据为已发布的预发布版，但正文仍声称未发布，需要单独修正文案。
-- 校验签名／摘要及下载入口；已有公开版本不应静默替换同名安装包。优先新版本或明确构建标识，保留变更记录及旧摘要。
-- 以本次验收记录填写测试范围，不把构建检查、短时视频接收或 USB 就绪状态扩大成完整实机验收。
-
-3.0.1 正文依据原发布说明和附件元数据重排，未新增固件或硬件测试结论。更新仅涉及正文，不修改标签、附件或发布状态。
-
-## 每次发布的固定操作
-
-1. 将 `releases/TEMPLATE.md` 复制为 `releases/vX.Y.Z.md`，按本版真实变更、兼容要求和验收记录填写中英文，删除所有占位符。
-2. 在 GitHub 创建对应版本的 Release 草稿并上传制品；下载表使用真实附件地址。标题与预发布选项应先设置正确。
-3. 将正文文件通过 PR 审核并合并到 `master`。PR 会运行结构校验器的回归测试；内容事实与双语完整性仍需人工审核。
-4. 在 **Actions → Release notes → Run workflow** 选择 `master`，填写已有标签，例如 `v3.0.2`；首次保持 `apply=false`，检查正文结构、发布状态和附件链接。
-5. 检查通过后再运行一次并设置 `apply=true`。工作流重新检查后，只更新该 Release 的正文，不会自动发布草稿，不会更改标签、附件或预发布状态。
-6. 在 GitHub 预览确认后发布草稿。调整预发布状态时，先同步正文首行与 GitHub 标记；发布／编辑事件会触发线上正文检查。
-
-本地可使用 Node.js 22 执行：
-
-```sh
-node --test scripts/release-notes.test.mjs
-node scripts/release-notes.mjs check v3.0.2
-# 使用已配置的 GITHUB_TOKEN；私有仓库或草稿需要相应读取权限。
-# 审核完成后才执行以下写入命令：
-node scripts/release-notes.mjs apply v3.0.2
-```
-
-`check` 读取仓库正文与实际附件；`audit` 检查线上正文；`apply` 在检查通过后更新正文。脚本不会烧录、升级固件或发布草稿。
-
-**执行边界：**GitHub 不会自动把 Markdown 文件当成 Release 表单模板。工作流提供规范入口与自动检查，但无法阻止用户绕过流程手动发布；发布后的检查失败也不会自动撤回版本。自动检查只能核对结构、状态、占位符和附件链接，不能证明测试结论真实或两种语言完全等价。
+This website repository does not maintain a duplicate template or release-body update workflow. The build repository may require maintainer access. Public users can read the published notes and download firmware on the [Releases page](https://github.com/blikvm/blikvm/releases).
