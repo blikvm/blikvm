@@ -1,0 +1,29 @@
+.photos {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 20px;
+  margin: 24px 0 32px;
+}
+.photos figure {
+  margin: 0;
+  padding: 20px 16px 12px;
+  background: var(--ifm-color-emphasis-100);
+  border: 1px solid var(--ifm-color-emphasis-200);
+  border-radius: 12px;
+}
+.photos img {
+  display: block;
+  width: 100%;
+  height: auto;
+  aspect-ratio: 1;
+  object-fit: contain;
+}
+.photos figcaption {
+  text-align: center;
+  margin-top: 12px;
+  font-size: 14px;
+  color: var(--ifm-color-emphasis-700);
+}
+@media (max-width: 600px) {
+  .photos { grid-template-columns: 1fr; gap: 16px; }
+}

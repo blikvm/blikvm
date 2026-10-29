@@ -18,8 +18,8 @@ export default function ProductCatalog({family}) {
     <p>{t('先了解产品用途，再进入对应手册完成安装与配置。', 'Choose a product, then follow its manual for installation and configuration. ')}<Link to={`${base}/docs/`}>{t('全部使用手册 →', 'All manuals →')}</Link></p>
     {getGroups(zh).filter(([id]) => !family || family.includes(id)).map(([id, title, desc]) => <section id={id} key={id}>
       <h2>{title}</h2><p>{desc}</p><div className={s.grid}>{getProducts(zh).filter(p => p.group === id).map(p => <article className={s.card} key={p.id}>
-        <img src={p.img} alt={p.title} loading="lazy"/><h3>{p.title}</h3><p>{p.description}</p>
-        <div className={s.actions}><Link to={`${base}/product/${p.id}`}>{t('产品详情', 'Product details')}</Link><Link to={`${base}/docs/${p.manual}`}>{t('使用手册', 'Manual')}</Link><a href={p.buy}>{t('购买 ↗', 'Buy ↗')}</a></div>
+        <img src={`${base}${p.img}`} alt={p.title} loading="lazy"/><h3>{p.title}</h3><p>{p.description}</p>
+        <div className={s.actions}><Link to={`${base}/product/${p.id}`}>{t('产品详情', 'Product details')}</Link><Link to={`${base}/docs/${p.manual}`}>{t('使用手册', 'Manual')}</Link>{p.buy && <a href={p.buy}>{t('购买 ↗', 'Buy ↗')}</a>}</div>
       </article>)}</div>
     </section>)}
   </section>;
@@ -36,7 +36,7 @@ export function ProductDetail({id}) {
     blikvm: t('用于浏览器远程访问电脑，包括 BIOS / UEFI 和操作系统维护。安装形态、供电与接口请按型号手册确认。', 'Browser access to computers, including BIOS / UEFI and OS maintenance. Check the model manual for installation, power and connectors.'),
   };
   return <Layout title={p.title + t(' 产品介绍', ' product information')}><main className={s.detail}>
-    <Link to={`${base}/products`}>{t('← 产品目录', '← Product catalog')}</Link><h1>{p.title}</h1><p>{p.description}</p><img className={s.hero} src={p.img} alt={p.title}/>
+    <Link to={`${base}/products`}>{t('← 产品目录', '← Product catalog')}</Link><h1>{p.title}</h1><p>{p.description}</p><img className={s.hero} src={`${base}${p.img}`} alt={p.title}/>
     <h2>{t('用途与选型', 'Purpose and selection')}</h2><p>{g[2]}</p><p>{notes[p.group]}</p>
     <h2>{t('安装与使用', 'Installation and use')}</h2><p>{t('接口、尺寸、接线图和操作步骤集中维护在对应使用手册中。', 'The matching manual contains connectors, dimensions, wiring diagrams and operating steps.')}</p>
     <div className={s.actions}><Link className="button button--primary" to={`${base}/docs/${p.manual}`}>{t('打开型号使用手册', 'Open model manual')}</Link><Link to={`${base}/docs/manuals/${p.group}/`}>{t('系列手册', 'Family manual')}</Link><a href={p.buy}>{t('查看购买页面 ↗', 'View purchase page ↗')}</a></div>

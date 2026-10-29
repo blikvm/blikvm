@@ -144,6 +144,9 @@ export default {
       "href": "/docs/"
     },
     "manuals/capture/index",
+    "device-guides/C778",
+    "capture/c778-raspberry-pi-5",
+    "capture/c778-rv1126b",
     "device-guides/C792",
     "device-guides/C790",
     "device-guides/C779",

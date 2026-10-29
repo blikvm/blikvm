@@ -20,7 +20,12 @@ const englishBuyUrls = [
   '1005003033156483', '1005003761450893', '1005003793429781',
 ];
 export function getGroups(zh) {return zh ? groups : englishGroups;}
-export function getProducts(zh) {return zh ? products : products.map((p, i) => ({
+export function getProducts(zh) {
+  const c778 = {id: "c778", group: "capture", title: "C778", description: zh ? "LT6911UXE · 4K60 / 1080p120 输入 · 双 CSI-2" : "LT6911UXE · 4K60 / 1080p120 input · Dual CSI-2", img: "/assets/images/c778/c778-front-cutout-v1.png", manual: "device-guides/C778"};
+  const localized = zh ? products : products.map((p, i) => ({
   ...p, title: p.id === 'atx' ? 'ATXA control board kit' : p.title,
   description: englishDescriptions[i], buy: `https://www.aliexpress.com/item/${englishBuyUrls[i]}.html`,
-}));}
+}));
+  const index = localized.findIndex(p => p.group === "capture");
+  return [...localized.slice(0, index), c778, ...localized.slice(index)];
+}
