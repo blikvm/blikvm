@@ -26,11 +26,33 @@ jobs:
         with:
           ref: ${{ inputs.source-ref || github.sha }}
 
+      - name: Checkout latest frontend main for the online demo
+        uses: actions/checkout@v4
+        with:
+          ssh-key: ${{ secrets.FRONTEND_DEMO_SSH_KEY }}
+          repository: blikvm/web_client_vanilla
+          ref: main
+          path: .demo-source
+          persist-credentials: false
+
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 18
+          node-version: 22
           cache: yarn
+
+      - name: Test demo staging
+        run: node --test scripts/sync-demo.test.mjs
+
+      - name: Build and stage the latest frontend demo
+        shell: bash
+        run: |
+          set -euo pipefail
+          export GIT_COMMIT="$(git -C .demo-source rev-parse HEAD)"
+          export BUILD_TIME="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+          (cd .demo-source && npm ci && npx tsc --noEmit && npm run build:demo)
+          node scripts/sync-demo.mjs .demo-source static/demo
+          rm -rf .demo-source
 
       - name: Install dependencies
         run: yarn install --frozen-lockfile

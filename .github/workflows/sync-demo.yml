@@ -3,6 +3,8 @@ name: Sync latest frontend demo
 on:
   workflow_dispatch:
 
+# The reusable website deployment writes only the generated gh-pages branch.
+# Source changes to protected master continue to require a pull request.
 permissions:
   contents: write
 
@@ -11,77 +13,9 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
-  sync:
-    if: github.ref == 'refs/heads/master'
-    runs-on: ubuntu-latest
-    outputs:
-      commit: ${{ steps.publish.outputs.commit }}
-    steps:
-      - name: Checkout main repository website source
-        uses: actions/checkout@v4
-        with:
-          ref: master
-
-      - name: Checkout latest frontend main
-        uses: actions/checkout@v4
-        with:
-          ssh-key: ${{ secrets.FRONTEND_DEMO_SSH_KEY }}
-          repository: blikvm/web_client_vanilla
-          ref: main
-          path: .demo-source
-          persist-credentials: false
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: 22
-          cache: npm
-          cache-dependency-path: .demo-source/package-lock.json
-
-      - name: Build and synchronize demo
-        shell: bash
-        run: |
-          set -euo pipefail
-          export GIT_COMMIT="$(git -C .demo-source rev-parse HEAD)"
-          export BUILD_TIME="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
-          (cd .demo-source && npm ci && npx tsc --noEmit && npm run build:demo)
-          test -s .demo-source/dist-demo/index.html
-          rsync -a --delete --exclude=/data/ .demo-source/dist-demo/ static/demo/
-          rm -rf static/demo/data
-          python3 - <<'PY'
-          import json, os
-          from pathlib import Path
-          version = {
-              'sourceRepository': 'https://github.com/blikvm/web_client_vanilla',
-              'sourceCommit': os.environ['GIT_COMMIT'],
-              'builtAt': os.environ['BUILD_TIME'],
-              'buildCommand': 'npm run build:demo',
-              'basePath': '/demo/',
-              'excludedPaths': ['data/'],
-          }
-          Path('static/demo/version.json').write_text(json.dumps(version, indent=2) + '\n')
-          PY
-          rm -rf .demo-source
-          echo "### Demo source: $GIT_COMMIT" >> "$GITHUB_STEP_SUMMARY"
-          echo "Built at $BUILD_TIME. Deployment follows in the next job." >> "$GITHUB_STEP_SUMMARY"
-
-      - name: Commit demo update to master
-        id: publish
-        shell: bash
-        run: |
-          set -euo pipefail
-          git config user.name 'github-actions[bot]'
-          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add static/demo
-          if ! git diff --cached --quiet; then
-            git commit -m 'chore(demo): sync latest frontend main'
-            git push origin HEAD:master
-          fi
-          echo "commit=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
-
   deploy:
-    needs: sync
+    if: github.ref == 'refs/heads/master'
     uses: ./.github/workflows/deploy.yml
     with:
-      source-ref: ${{ needs.sync.outputs.commit }}
+      source-ref: master
     secrets: inherit
