@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "generatedAt": "2026-10-27T16:00:14.634Z",
+  "generatedAt": "2026-10-30T14:54:26.889Z",
   "targets": {
     "bcm2711": {
       "stable": {
@@ -9,12 +9,12 @@
       },
       "preview": {
         "app": {
-          "version": "3.0.1",
-          "releaseUrl": "https://github.com/blikvm/blikvm/releases/tag/v3.0.1"
+          "version": "3.0.2",
+          "releaseUrl": "https://github.com/blikvm/blikvm/releases/tag/v3.0.2"
         },
         "system": {
-          "version": "3.0.1",
-          "releaseUrl": "https://github.com/blikvm/blikvm/releases/tag/v3.0.1"
+          "version": "3.0.2",
+          "releaseUrl": "https://github.com/blikvm/blikvm/releases/tag/v3.0.2"
         }
       }
     },
@@ -25,12 +25,12 @@
       },
       "preview": {
         "app": {
-          "version": "3.0.1",
-          "releaseUrl": "https://github.com/blikvm/blikvm/releases/tag/v3.0.1"
+          "version": "3.0.2",
+          "releaseUrl": "https://github.com/blikvm/blikvm/releases/tag/v3.0.2"
         },
         "system": {
-          "version": "3.0.1",
-          "releaseUrl": "https://github.com/blikvm/blikvm/releases/tag/v3.0.1"
+          "version": "3.0.2",
+          "releaseUrl": "https://github.com/blikvm/blikvm/releases/tag/v3.0.2"
         }
       }
     },
@@ -41,8 +41,8 @@
       },
       "preview": {
         "app": {
-          "version": "3.0.1",
-          "releaseUrl": "https://github.com/blikvm/blikvm/releases/tag/v3.0.1"
+          "version": "3.0.2",
+          "releaseUrl": "https://github.com/blikvm/blikvm/releases/tag/v3.0.2"
         },
         "system": null
       }
@@ -55,8 +55,8 @@
       "preview": {
         "app": null,
         "system": {
-          "version": "3.0.1",
-          "releaseUrl": "https://github.com/blikvm/blikvm/releases/tag/v3.0.1"
+          "version": "3.0.2",
+          "releaseUrl": "https://github.com/blikvm/blikvm/releases/tag/v3.0.2"
         }
       }
     },
