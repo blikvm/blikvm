@@ -166,6 +166,18 @@ Historical source code, build scripts, images, and development notes remain avai
 
 When reporting a problem, include your hardware model, system version, App version, reproduction steps, and relevant logs.
 
+## Donate / Support BliKVM
+
+If BliKVM has helped you, you can support the project in the following ways:
+
+- [Patreon](https://www.patreon.com/blikvm): ongoing sponsorship.
+- [PayPal](https://www.paypal.me/blikvm): a one-time donation.
+- Purchase BliKVM products or recommend them to others who may find them useful.
+
+Your support helps us test more hardware, improve software features and user documentation, and continue maintaining BliKVM.
+
+Thank you to everyone who supports the project, shares feedback, and offers suggestions!
+
 ## Acknowledgments and licenses
 
 Thank you to [PiKVM](https://github.com/pikvm/pikvm), [TinyPilot](https://github.com/tiny-pilot/tinypilot), and the open-source projects supporting the KVM ecosystem.

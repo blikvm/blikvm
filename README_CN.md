@@ -166,6 +166,18 @@ BliKVM 提供基于 Raspberry Pi CM4、Pi 4B、Allwinner H616 和 Rockchip RV112
 
 反馈问题时，请附上硬件型号、系统版本、App 版本、复现步骤及必要日志，方便定位。
 
+## 支持 BliKVM
+
+如果 BliKVM 对你有所帮助，欢迎通过以下方式支持项目：
+
+- [Patreon](https://www.patreon.com/blikvm)：持续赞助。
+- [PayPal](https://www.paypal.me/blikvm)：一次性捐赠。
+- 购买 BliKVM 产品，或向其他有需要的人推荐。
+
+你的支持将帮助我们测试更多硬件、完善软件功能与使用文档，并持续维护 BliKVM。
+
+感谢每一位用户的支持、反馈与建议！
+
 ## 致谢与许可证
 
 感谢 [PiKVM](https://github.com/pikvm/pikvm)、[TinyPilot](https://github.com/tiny-pilot/tinypilot) 及相关开源项目对 KVM 生态的贡献。
