@@ -1,7 +1,7 @@
 {
   "sourceRepository": "https://github.com/blikvm/web_client_vanilla",
-  "sourceCommit": "85bff9a0904a116d1f1cc23d49488bc831280f7b",
-  "builtAt": "2026-10-30T16:21:44Z",
+  "sourceCommit": "5cd74c714227d99ec20ffda20ade085f0df08c60",
+  "builtAt": "2026-10-31T02:11:30Z",
   "buildCommand": "npm run build:demo",
   "basePath": "/demo/",
   "excludedPaths": [
