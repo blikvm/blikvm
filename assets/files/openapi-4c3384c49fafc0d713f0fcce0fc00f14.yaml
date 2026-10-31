@@ -1427,11 +1427,13 @@ paths:
         The integer delay is in milliseconds, defaults to an effective 5 ms, and is clamped to 5..250 ms.
         Timing is approximate and includes HID writes and scheduling overhead.
         Keys follow HidKeyboardCode; each report supports six non-modifier keys plus modifier bits.
+        Unknown keyboard codes return HTTP 400 before any keyboard reports are written.
+        The complete normalized sequence is validated before executing its first group.
         A modifier is not preserved between groups: repeat it in every group that needs it.
 
         The request remains open until execution finishes. Serialize requests and split longer input into
         batches, waiting for each batch to finish. This is not an asynchronous job or a clipboard transfer.
-        The server attempts to clear keyboard state on exit. On errors or disconnects, input may have
+        The server attempts to clear keyboard state on exit. On runtime errors or disconnects, input may have
         partially executed; inspect the target before retrying to avoid duplicate input.
         A successful response does not prove that the target application completed an action.
         Legacy text/lang fields are not the request format; callers must convert text to code groups
@@ -1469,7 +1471,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/OkResponse'
         '400':
-          description: Invalid JSON, missing or empty input, or more than 1024 non-empty sequence groups
+          description: Invalid JSON, missing or empty input, or an unknown keyboard code, or more than 1024 non-empty sequence groups
           content:
             application/json:
               schema:
@@ -1515,6 +1517,7 @@ paths:
         Each request replaces the current keyboard state; modifiers from previous requests are not preserved.
         Use /api/v1/hid/paste for an ordered sequence with a configurable per-group delay.
         Use HidKeyboardCode strings, not numeric keyCode, printable characters or shortcut names such as Ctrl+C.
+        Unknown keyboard codes return HTTP 400 before any keyboard reports are written.
         Reports support six non-modifier keys plus modifier bits. Serialize input across clients.
         Success indicates input submission, not completion by the target application.
       operationId: postHidShortcuts
@@ -1543,7 +1546,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/OkResponse'
         '400':
-          description: Invalid JSON, missing or empty input
+          description: Invalid JSON, missing or empty input, or an unknown keyboard code
           content:
             application/json:
               schema:
@@ -2342,6 +2345,74 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
+  /api/v1/system/ssh:
+    get:
+      x-permission: security.manage
+      tags: [system]
+      summary: Read SSH service and persistent root password support
+      description: Requires a real administrator browser session. No-auth mode and API tokens are rejected. Does not return password hashes or host keys.
+      operationId: getSystemSSH
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: SSH status; supported=false with system_upgrade_required on older systems
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok: {type: boolean}
+                  data:
+                    type: object
+                    properties:
+                      supported: {type: boolean}
+                      ready: {type: boolean}
+                      running: {type: boolean}
+                      username: {type: string, enum: [root]}
+                      port: {type: integer, enum: [22]}
+                      reason: {type: string}
+        '401':
+          description: Missing or invalid session
+        '403':
+          description: Real administrator browser session required
+  /api/v1/system/ssh/password:
+    post:
+      x-permission: security.manage
+      tags: [system]
+      summary: Change the persistent root SSH password
+      description: Requires the current SSH password and a real administrator browser session. No-auth mode and API tokens are rejected. Changes only root SSH credentials. Kept across restart and A/B updates to supporting systems. At most five attempts per minute per App process. Existing SSH sessions remain open. A transport failure may occur after commit; verify the next SSH login before retrying.
+      operationId: postSystemSSHPassword
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              required: [currentPassword, newPassword]
+              properties:
+                currentPassword: {type: string, format: password, writeOnly: true, minLength: 1, maxLength: 128}
+                newPassword: {type: string, format: password, writeOnly: true, minLength: 8, maxLength: 128}
+      responses:
+        '200':
+          description: Persisted; use the new password for the next SSH login
+        '400':
+          description: Invalid JSON or invalid password; no change
+        '401':
+          description: Missing or invalid session
+        '403':
+          description: Real administrator browser session required
+        '409':
+          description: Another password writer is active
+        '422':
+          description: Current SSH password is incorrect or cannot be verified
+        '429':
+          description: Attempt limit reached; Retry-After is 60 seconds
+        '503':
+          description: System upgrade required, hashing unavailable, or persistent storage failure
   /api/v1/system/metrics:
     get:
       x-permission: kvm.view
