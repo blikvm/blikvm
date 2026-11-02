@@ -28,6 +28,44 @@ tags:
   - name: system
   - name: application
 paths:
+  /api/v1/vnc:
+    get:
+      tags: [remote-access]
+      operationId: getVNC
+      x-permission: device.configure
+      summary: Get saved VNC settings, process status and connected clients
+      security: [{ bearerAuth: [] }]
+      responses:
+        '200':
+          description: VNC status; disabled by default with no child or video subscription
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/VNCResponse' }
+    put:
+      tags: [remote-access]
+      operationId: configureVNC
+      x-permission: device.configure
+      summary: Save VNC settings and apply without restarting the web video service
+      description: VNC uses VeNCrypt X509Plain and always checks real web account credentials and permissions, even with Web UI authentication disabled. H264-capable TigerVNC is required. TLS-only, maximum two clients. No clipboard or audio transport.
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              properties:
+                enabled: { type: boolean }
+                port: { type: integer, minimum: 1024, maximum: 65535, default: 5900 }
+      responses:
+        '200':
+          description: Saved and applied; disabling closes VNC sessions only
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/VNCResponse' }
+        '400': { description: Invalid settings }
+        '409': { description: Bind, process startup or persistence failed; previous configuration restored where possible }
   /api/v1/session/control:
     get:
       x-permission: self
@@ -413,10 +451,27 @@ paths:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
   /api/v1/hostname:
+    get:
+      x-permission: device.configure
+      tags: [network]
+      summary: Get runtime hostname and persistent boot support
+      operationId: getHostname
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Current runtime name; persistent is false when a system update is required
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HostnameResponse'
+        '401':
+          description: Missing or invalid token
     post:
       x-permission: device.configure
       tags: [network]
-      summary: Set hostname
+      summary: Set runtime hostname and atomically save it for the next boot
+      description: Requires persistent startup support in the installed System. Does not modify immutable /etc files. On save failure attempts to restore the previous runtime name; a failed rollback is reported as an error, never success.
       operationId: postHostname
       security:
         - bearerAuth: []
@@ -430,36 +485,23 @@ paths:
               properties:
                 hostname:
                   type: string
+                  description: Trimmed and lowercased. Single ASCII hostname label, 1–63 characters, alphanumeric at each end.
+                  example: blikvm-office
       responses:
         '200':
-          description: Hostname updated
+          description: Runtime name verified and persistent state saved
           content:
             application/json:
               schema:
-                type: object
-                required: [ok, data]
-                properties:
-                  ok:
-                    type: boolean
-                    enum: [true]
-                  data:
-                    type: object
-                    required: [hostname]
-                    properties:
-                      hostname:
-                        type: string
+                $ref: '#/components/schemas/HostnameResponse'
         '400':
-          description: Invalid request
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
+          description: Invalid JSON or hostname label
         '401':
           description: Missing or invalid token
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
+        '409':
+          description: system_upgrade_required; persistent startup support is unavailable
+        '500':
+          description: Apply, persistence or rollback could not be confirmed; data.hostname reports the last observed runtime name when available
   /api/v1/cloud:
     get:
       x-permission: device.configure
@@ -6130,6 +6172,45 @@ components:
       scheme: bearer
       bearerFormat: BliKVM API Token
   schemas:
+    VNCResponse:
+      type: object
+      required: [ok, data]
+      properties:
+        ok: { type: boolean }
+        data:
+          type: object
+          required: [settings, clients, authentication, clientRequirement, maxClients]
+          properties:
+            settings:
+              type: object
+              required: [enabled, port, running, pid, tls, codec]
+              properties:
+                enabled: { type: boolean }
+                port: { type: integer }
+                running: { type: boolean }
+                pid: { type: integer }
+                error: { type: string }
+                tls: { type: boolean }
+                codec: { type: string, enum: [h264] }
+            clients: { type: integer }
+            authentication: { type: string }
+            clientRequirement: { type: string }
+            maxClients: { type: integer }
+    HostnameResponse:
+      type: object
+      required: [ok, data]
+      properties:
+        ok:
+          type: boolean
+        data:
+          type: object
+          required: [hostname, persistent]
+          properties:
+            hostname:
+              type: string
+            persistent:
+              type: boolean
+
     BootloaderPrerequisite:
       type: object
       required: [required, canUpdate]
