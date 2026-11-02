@@ -13,6 +13,6 @@ The current web interface uses HTTPS, with HTTP serving redirects. Open **Settin
 
 Self-signed certificates may trigger a browser warning. The administrator should check address and certificate before managing trust; unfamiliar-site warnings should not be ignored. Camera, microphone and clipboard functions generally need a secure context. Page access alone does not establish browser permission.
 
-A [reverse proxy](./internet-access/reverse-proxy.md) can provide certificates for a trusted domain. Device certificate locations are documented in [Persistent directories and logs](../development/architecture.md). There is no universal web certificate-upload wizard. Certificate renewal, key permissions and service restart depend on the installed image, rather than old `app.json` settings.
+Apps with certificate management support manual import and hot loading under **Settings → Network → HTTPS & Certificates**. See [Certificate import and optional renewal](./certificates.md) for steps and ACME reference scripts. Update a matching App if this entry is absent on an older version. A [reverse proxy](./internet-access/reverse-proxy.md) can also provide domain certificates; see [Persistent directories and logs](../development/architecture.md) for storage paths.
 
 Factory reset regenerates device TLS and SSH identities and may change the address. Verify fingerprints again. Browser trust and preferences are not automatically cleared by device reset.
