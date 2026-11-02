@@ -24,6 +24,7 @@ if [ "$1" = "$TEST_BASE/bin/lego" ] && grep -q '^# UNIT_LEGO$' "$1";then printf 
   self.exe(self.base/'bin/lego','''#!/bin/sh
 # UNIT_LEGO
 printf '%s\\n' "$*" >> "$TEST_ROOT/client-calls"
+printf '%s|%s|%s|%s\\n' "${AWS_PROFILE:-}" "${AWS_SHARED_CREDENTIALS_FILE:-}" "${AWS_ACCESS_KEY_ID:-}" "${AWS_SECRET_ACCESS_KEY:-}" > "$TEST_ROOT/aws-environment"
 [ -z "${CF_DNS_API_TOKEN_FILE:-}" ] || printf '%s\\n' "$CF_DNS_API_TOKEN_FILE" > "$TEST_ROOT/cf-path"
 [ "${FAKE_DELAY:-0}" = 0 ] || sleep "$FAKE_DELAY"
 if [ "${FAKE_LEAK:-0}" = 1 ];then echo 'TESTSECRET1234567890 TESTACCESSKEY1234 TESTCLOUDFLARETOKEN1234';fi
@@ -83,6 +84,9 @@ exit "${FAKE_ISSUER_EXIT:-0}"
   self.configured();before=(self.base/'state/manager.env').read_bytes();r=self.run_tool('test');self.assertEqual(r.returncode,0,r.stderr);self.assertFalse((self.root/'imports').exists());self.assertEqual((self.base/'state/manager.env').read_bytes(),before);args=(self.root/'client-calls').read_text();self.assertIn('letsencrypt-staging',args);self.assertIn('--renew-force',args);self.assertNotIn('--deploy-hook',args)
  def test_cloudflare_token_file_wiring_and_redaction(self):
   self.configured('cloudflare');r=self.run_tool('renew',FAKE_LEAK='1');self.assertEqual(r.returncode,0,r.stderr);self.assertIn('/profile.',(self.root/'cf-path').read_text());self.assertNotIn('TESTCLOUDFLARETOKEN1234',(self.base/'state/renewal.log').read_text())
+ def test_route53_uses_dedicated_default_profile_not_parent_credentials(self):
+  self.configured();r=self.run_tool('renew',AWS_PROFILE='unrelated',AWS_DEFAULT_PROFILE='unrelated',AWS_ACCESS_KEY_ID='PARENTKEY',AWS_SECRET_ACCESS_KEY='PARENTSECRET')
+  self.assertEqual(r.returncode,0,r.stderr);profile,path,key,secret=(self.root/'aws-environment').read_text().strip().split('|');self.assertEqual(profile,'default');self.assertIn('/profile.',path);self.assertEqual(Path(path).read_bytes(),self.cred.read_bytes());self.assertEqual(key,'');self.assertEqual(secret,'')
  def test_enable_disable_preserve_data_and_status_reads_real_manager_format(self):
   self.configured();self.assertNotEqual(self.run_tool('enable').returncode,0);self.assertEqual(self.run_tool('renew').returncode,0);self.assertEqual(self.run_tool('enable').returncode,0);self.assertIn('ENABLED=1',(self.service/'scripts-config/certificate-renewal.sh.conf').read_text())
   runtime=self.service/'scripts-runtime/certificate-renewal.sh';runtime.mkdir(parents=True);(runtime/'status').write_text('STATE=running\nPID=123\n');self.assertIn('Service state: running',self.run_tool('status').stdout)
