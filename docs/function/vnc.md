@@ -4,7 +4,7 @@ Use a compatible VNC viewer to view the controlled computer's HDMI picture and
 operate its USB keyboard and mouse. The target computer needs no VNC agent.
 
 Open **Settings → Advanced & Diagnostics → VNC Service**. This guide describes
-the layout validated with App **3.0.3-dev.15**. Check the selected release notes
+the layout validated with App **3.0.3-dev.16**. Check the selected release notes
 for availability on your model; older Apps may not have this entry.
 
 ## Enable the service
