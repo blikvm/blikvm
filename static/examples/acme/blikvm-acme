@@ -1,0 +1,328 @@
+#!/bin/sh
+# Standalone optional ACME manager. Maintained in blikvm/blikvm documentation.
+# Uses only tools supplied by the supported ARM64 images; no Python or system writes.
+set -eu
+umask 077
+VERSION=0.1.0
+LEGO_VERSION=5.6.0
+ARCHIVE_SHA=34d87a6552d69390c4a4560237045c47713a8e148d899e16db0e97040894ed1f
+BINARY_SHA=815ffd1f3ebd65bfbb9cd790bfd18f9cca91f48d8aec3a08732b3fc3b39056d7
+BASE=${BLIKVM_ACME_DIR:-/data/work/extensions/lego}
+SERVER=${BLIKVM_ACME_SERVER:-/data/app/server/kvmserver}
+SCRIPT_ROOT=${BLIKVM_ACME_SCRIPT_ROOT:-/data/work}
+INIT=${BLIKVM_ACME_INIT:-/etc/init.d/S98blikvm-scripts}
+SUPERVISOR=${BLIKVM_ACME_SUPERVISOR:-/usr/libexec/blikvm-script-supervisor}
+CONF=$BASE/config/renewal.env
+STATE=$BASE/state/manager.env
+LOG=$BASE/state/renewal.log
+SELF=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)/$(basename -- "$0")
+stty_saved= stage= cfgstage=
+cleanup() { [ -z "$stty_saved" ] || stty "$stty_saved" </dev/tty 2>/dev/null || true; [ -z "$stage" ] || rm -rf -- "$stage"; [ -z "$cfgstage" ] || rm -rf -- "$cfgstage"; }
+trap cleanup EXIT
+trap 'exit 130' INT
+trap 'exit 143' TERM
+say() { printf '%s\n' "$*"; }
+fail() { printf 'Error: %s\n' "$*" >&2; exit 1; }
+need_root() { [ "$(id -u)" = 0 ] || fail 'Run as root.'; }
+safe_path() { case "$1" in /*) ;; *) fail 'Use an absolute installation path.';; esac; case "$1" in /|*/../*|*/..|*/./*|*\'*|*\"*|*[!a-zA-Z0-9/_.-]*) fail 'Unsafe installation path.';; esac; }
+regular_private() {
+ [ -f "$1" ] && [ ! -L "$1" ] || fail 'Credential/configuration must be a regular file.'
+ [ "$(stat -c %u "$1")" = 0 ] || fail 'Credential/configuration must be owned by root.'
+ case "$(stat -c %a "$1")" in 600|400) ;; *) fail 'Credential/configuration must have mode 600 or 400.';; esac
+}
+prepare_dirs() {
+ safe_path "$BASE"; safe_path "$SCRIPT_ROOT"; [ ! -L "$BASE" ] || fail 'Installation directory cannot be a symlink.'
+ for d in "$BASE" "$BASE/bin" "$BASE/config" "$BASE/state"; do
+  [ ! -L "$d" ] || fail 'Managed directories cannot be symlinks.'
+  [ ! -e "$d" ] || [ "$(stat -c %u "$d")" = 0 ] || fail 'Managed directories must be owned by root.'
+  mkdir -p "$d"; chmod 700 "$d"
+ done
+}
+lock() { exec 9>"$BASE/state/manager.lock"; flock -n 9 || { say 'Another certificate operation is running.' >&2; exit 75; }; }
+capability() {
+ [ -x "$SERVER" ] || fail 'Certificate importer missing. Update a matching signed App first.'
+ "$SERVER" --help 2>&1 | grep -q -- '-certificate-file' || fail 'This App has no certificate-import CLI. Update a matching signed App first.'
+ "$SERVER" --subcomponent certificate-status >/dev/null || fail 'The App cannot read its certificate identity.'
+}
+read_config() {
+ [ -f "$CONF" ] || fail 'Not configured. Run configure first.'
+ regular_private "$CONF"
+ . "$CONF"
+ : "${ACME_DOMAIN:?Missing domain}" "${ACME_DNS_PROVIDER:?Missing provider}"
+ valid_domain "$ACME_DOMAIN" || fail 'Invalid configured domain.'
+ case "$ACME_DNS_PROVIDER" in route53|cloudflare) ;; *) fail 'Unsupported DNS provider.';; esac
+ [ "${ACME_ACCEPT_TOS:-0}" = 1 ] || fail 'The CA subscriber agreement has not been accepted.'
+}
+valid_domain() {
+ printf '%s\n' "$1" | awk 'length($0)>253 || $0 !~ /^[a-z0-9][a-z0-9.-]*[a-z0-9]$/ || $0 !~ /\./ {exit 1} {n=split($0,a,"."); for(i=1;i<=n;i++) if(length(a[i])>63 || a[i]=="" || a[i]~/^-|-$/) exit 1; if($0~/^[0-9.]+$/)exit 1}'
+}
+ask() {
+ label=$1; default=$2
+ printf '%s' "$label" >/dev/tty
+ [ -z "$default" ] || printf ' [%s]' "$default" >/dev/tty
+ printf ': ' >/dev/tty
+ IFS= read -r answer </dev/tty || fail 'Input cancelled.'
+ [ -n "$answer" ] || answer=$default
+}
+secret() {
+ stty_saved=$(stty -g </dev/tty); stty -echo </dev/tty
+ printf '%s: ' "$1" >/dev/tty
+ IFS= read -r answer </dev/tty || { stty "$stty_saved" </dev/tty; stty_saved=; fail 'Input cancelled.'; }
+ stty "$stty_saved" </dev/tty; stty_saved=; printf '\n' >/dev/tty
+}
+confirm() { ask "$1 (yes/no)" no; [ "$answer" = yes ]; }
+backup_config() {
+ [ ! -e "$CONF" ] || { regular_private "$CONF"; mkdir -p "$BASE/config/backups"; chmod 700 "$BASE/config/backups"; cp "$CONF" "$BASE/config/backups/renewal.$(date -u +%Y%m%dT%H%M%SZ).$$.env"; }
+ [ ! -e "$STATE" ] || { regular_private "$STATE"; mkdir -p "$BASE/config/backups"; chmod 700 "$BASE/config/backups"; cp "$STATE" "$BASE/config/backups/manager.$(date -u +%Y%m%dT%H%M%SZ).$$.env"; }
+}
+write_config() {
+ {
+  printf 'ACME_DOMAIN=%s\nACME_DNS_PROVIDER=%s\nACME_ACCOUNT_ID=blikvm\nACME_SERVER=letsencrypt\nACME_ACCEPT_TOS=1\n' "$domain" "$provider"
+  printf "ACME_DNS_RESOLVER='%s'\nAWS_REGION='%s'\nAWS_HOSTED_ZONE_ID='%s'\nACME_AWS_FILE='%s/aws.credentials'\nACME_CF_FILE='%s/cloudflare.token'\n" "$resolver" "$region" "$zone" "$cfgstage" "$cfgstage"
+ } >"$CONF.new"; chmod 600 "$CONF.new"; mv -f "$CONF.new" "$CONF"; cfgstage=
+}
+install_client() {
+ [ "$(uname -m)" = aarch64 ] || [ "$(uname -m)" = arm64 ] || fail 'This release supports ARM64 images only.'
+ if [ -f "$BASE/bin/lego" ] && [ ! -L "$BASE/bin/lego" ] && [ "$(sha256sum "$BASE/bin/lego" | awk '{print $1}')" = "$BINARY_SHA" ]; then say "Verified lego $LEGO_VERSION is already installed."; return; fi
+ if [ -e "$BASE/bin/lego" ]; then
+  confirm 'Replace the existing client, retaining a backup?' || fail 'Existing client retained.'
+ fi
+ stage=$(mktemp -d "$BASE/state/install.XXXXXX")
+ if [ -n "${archive:-}" ]; then
+  [ -f "$archive" ] && [ ! -L "$archive" ] || fail 'Offline archive must be a regular file.'; cp "$archive" "$stage/lego.tar.gz"
+ else
+  say "Downloading official lego $LEGO_VERSION for linux/arm64..."
+  command -v curl >/dev/null || fail 'curl is required; alternatively supply --archive FILE.'
+  curl --fail --location --proto '=https' --proto-redir '=https' --connect-timeout 15 --max-time 300 --retry 2 \
+   --output "$stage/lego.tar.gz" "https://github.com/go-acme/lego/releases/download/v$LEGO_VERSION/lego_v${LEGO_VERSION}_linux_arm64.tar.gz"
+ fi
+ [ "$(sha256sum "$stage/lego.tar.gz" | awk '{print $1}')" = "$ARCHIVE_SHA" ] || fail 'Archive checksum mismatch. Existing client retained.'
+ gzip -dc "$stage/lego.tar.gz" | tar -xOf - lego >"$stage/lego"
+ [ "$(sha256sum "$stage/lego" | awk '{print $1}')" = "$BINARY_SHA" ] || fail 'Client checksum mismatch. Existing client retained.'
+ [ ! -e "$BASE/bin/lego" ] || cp "$BASE/bin/lego" "$BASE/bin/lego.previous"
+ chmod 755 "$stage/lego"; mv -f "$stage/lego" "$BASE/bin/lego"; rm -rf "$stage"; stage=
+ say 'Official client checksum verified and installed.'
+}
+install_self() {
+ target=$BASE/bin/blikvm-acme
+ if [ "$SELF" != "$target" ]; then cp "$SELF" "$target.new"; chmod 700 "$target.new"; mv -f "$target.new" "$target"; fi
+ # A tiny deploy hook shares exactly the same importer as manual operations.
+ printf "#!/bin/sh\nexec '%s' deploy\n" "$target" >"$BASE/bin/deploy.sh.new"
+ chmod 700 "$BASE/bin/deploy.sh.new"; mv -f "$BASE/bin/deploy.sh.new" "$BASE/bin/deploy.sh"
+}
+import_credentials() {
+ if [ "$provider" = route53 ]; then
+  ask 'AWS region' "${AWS_REGION:-us-east-1}"; region=$answer
+  case "$region" in ''|*[!a-z0-9-]*) fail 'Invalid AWS region.';; esac
+  ask 'Hosted zone ID (blank = discover)' "${AWS_HOSTED_ZONE_ID:-}"; zone=$answer
+  case "$zone" in *[!A-Z0-9]*) fail 'Invalid zone ID.';; esac
+  ask 'AWS credentials: file / paste / keep' "$( [ -f "$old_aws" ] && printf keep || printf file )"; method=$answer
+  case "$method" in
+   keep) regular_private "$old_aws"; cp "$old_aws" "$cfgstage/aws.credentials";;
+   file)
+    ask 'Dedicated AWS credentials file path (default profile)' ''; regular_private "$answer"
+    awk '{sub(/\r$/,"")} /^\[/{active=($0=="[default]");next} active && /^[[:space:]]*(aws_access_key_id|aws_secret_access_key|aws_session_token)[[:space:]]*=/{print}' "$answer" >"$cfgstage/aws.fields"
+    grep -q 'aws_access_key_id' "$cfgstage/aws.fields" && grep -q 'aws_secret_access_key' "$cfgstage/aws.fields" || fail 'Default profile needs access key and secret key.'
+    { printf '[default]\n'; cat "$cfgstage/aws.fields"; } >"$cfgstage/aws.credentials.new"; rm -f "$cfgstage/aws.fields"
+    chmod 600 "$cfgstage/aws.credentials.new"; mv -f "$cfgstage/aws.credentials.new" "$cfgstage/aws.credentials";;
+   paste)
+    secret 'AWS access key ID'; key=$answer; secret 'AWS secret access key'; value=$answer
+    case "$key$value" in ''|*[!a-zA-Z0-9/+=]*) fail 'Invalid AWS credential characters.';; esac
+    [ -n "$key" ] && [ -n "$value" ] || fail 'Empty AWS credential.'
+    printf '[default]\naws_access_key_id=%s\naws_secret_access_key=%s\n' "$key" "$value" >"$cfgstage/aws.credentials.new"
+    unset key value answer; chmod 600 "$cfgstage/aws.credentials.new"; mv -f "$cfgstage/aws.credentials.new" "$cfgstage/aws.credentials";;
+   *) fail 'Choose file, paste or keep.';;
+  esac
+ else
+  ask 'Cloudflare token: file / paste / keep' "$( [ -f "$old_cf" ] && printf keep || printf paste )"; method=$answer
+  case "$method" in
+   keep) regular_private "$old_cf"; cp "$old_cf" "$cfgstage/cloudflare.token";;
+   file) ask 'Dedicated token file path' ''; regular_private "$answer"; cp "$answer" "$cfgstage/cloudflare.token.new";;
+   paste) secret 'Cloudflare zone-scoped DNS:Edit + Zone:Read token'; [ -n "$answer" ] || fail 'Empty token.'; case "$answer" in *[!a-zA-Z0-9_-]*) fail 'Invalid token characters.';; esac; printf '%s\n' "$answer" >"$cfgstage/cloudflare.token.new"; unset answer;;
+   *) fail 'Choose file, paste or keep.';;
+  esac
+  if [ -f "$cfgstage/cloudflare.token.new" ]; then chmod 600 "$cfgstage/cloudflare.token.new"; mv -f "$cfgstage/cloudflare.token.new" "$cfgstage/cloudflare.token"; fi
+ fi
+}
+configure() {
+ archive= prepare=0
+ while [ "$#" -gt 0 ]; do case "$1" in --archive) [ "$#" -gt 1 ] || fail 'Missing archive path.'; archive=$2;shift 2;; --prepare-only) prepare=1;shift;; *) fail 'Unknown configure option.';; esac; done
+ capability; prepare_dirs; lock
+ domain= provider=route53 region=us-east-1 zone= resolver=
+ if [ -e "$CONF" ]; then read_config; domain=$ACME_DOMAIN; provider=$ACME_DNS_PROVIDER; region=${AWS_REGION:-us-east-1}; zone=${AWS_HOSTED_ZONE_ID:-}; resolver=${ACME_DNS_RESOLVER:-}; fi
+ old_aws=${ACME_AWS_FILE:-$BASE/config/aws.credentials}; old_cf=${ACME_CF_FILE:-$BASE/config/cloudflare.token}
+ if [ -e "$SCRIPT_ROOT/scripts/certificate-renewal.sh" ]; then managed_script "$SCRIPT_ROOT/scripts/certificate-renewal.sh" || fail 'An existing legacy/custom certificate-renewal.sh is retained. Disable and move that entry in System Scripts before using configure.'; fi
+ service_conf=$SCRIPT_ROOT/scripts-config/certificate-renewal.sh.conf
+ if [ -f "$service_conf" ] && grep -q '^MODE=service$' "$service_conf" && grep -q '^ENABLED=1$' "$service_conf"; then fail 'Run disable before reconfiguring an automatic renewal service.'; fi
+ cfgstage=$(mktemp -d "$BASE/config/profile.XXXXXX"); chmod 700 "$cfgstage"
+ say 'BliKVM certificate setup. Existing ACME accounts, certificates and installed HTTPS identity are retained until a valid replacement is deployed.'
+ ask 'Certificate DNS hostname (one ordinary hostname)' "$domain"; domain=$(printf '%s' "$answer" | tr 'A-Z' 'a-z'); valid_domain "$domain" || fail 'Use a DNS hostname, not an IP address or wildcard.'
+ ask 'DNS provider: route53 / cloudflare' "$provider"; provider=$answer
+ case "$provider" in route53|cloudflare) ;; *) fail 'Supported providers: route53, cloudflare.';; esac
+ say 'Use dedicated DNS credentials restricted to your test/domain zone. Credentials are never passed in process arguments.'
+ import_credentials
+ ask 'Recursive DNS resolver (optional, host:port)' "$resolver"; resolver=$answer
+ case "$resolver" in *[!a-zA-Z0-9.:_-]*) fail 'Invalid resolver.';; esac
+ say "Read and accept the current Let's Encrypt subscriber agreement at https://letsencrypt.org/repository/ before continuing."
+ confirm 'Accept the CA subscriber agreement for this configuration?' || fail 'Agreement not accepted; no certificate requested.'
+ install_client; backup_config; write_config; install_self
+ # A successful check of an old domain/profile cannot authorize the new one.
+ LAST_CHECK= LAST_SUCCESS= LAST_RENEWAL= NEXT_CHECK= LAST_RESULT=prepared LAST_ERROR= FAILURES=0
+ write_state
+ say "Configuration saved under $BASE (root-only)."
+ if [ "$prepare" = 1 ]; then say 'Prepared only; no certificate requested and no service enabled. Run test or renew when ready.'; return; fi
+ # Release setup lock before the installed manager begins its normal operation.
+ flock -u 9
+ "$BASE/bin/blikvm-acme" renew || fail 'Initial issuance/deployment failed. Existing HTTPS certificate retained; inspect status/log and rerun renew after fixing the cause.'
+ if confirm 'Enable automatic checks at startup?'; then "$BASE/bin/blikvm-acme" enable; fi
+ "$BASE/bin/blikvm-acme" status
+}
+redact_log() {
+ awk -v aws="${ACME_AWS_FILE:-$BASE/config/aws.credentials}" -v cf="${ACME_CF_FILE:-$BASE/config/cloudflare.token}" '
+ function add(s){gsub(/^[ \t]+|[ \t\r]+$/,"",s);if(length(s)>3)keys[++n]=s}
+ BEGIN {while((getline l < aws)>0)if(l~/^[ \t]*aws_(access_key_id|secret_access_key|session_token)[ \t]*=/){sub(/^[^=]*=/,"",l);add(l)};close(aws);while((getline l < cf)>0)add(l);close(cf)}
+ {line=$0;for(i=1;i<=n;i++){out="";while((at=index(line,keys[i]))>0){out=out substr(line,1,at-1) "[REDACTED]";line=substr(line,at+length(keys[i]))};line=out line};print line}' "$1"
+}
+run_lego() (
+ mode=$1
+ unset AWS_ACCESS_KEY_ID AWS_SECRET_ACCESS_KEY AWS_SESSION_TOKEN AWS_PROFILE AWS_ROLE_ARN AWS_WEB_IDENTITY_TOKEN_FILE CF_API_KEY CF_API_EMAIL CF_DNS_API_TOKEN CF_ZONE_API_TOKEN CLOUDFLARE_API_KEY CLOUDFLARE_EMAIL CLOUDFLARE_DNS_API_TOKEN CLOUDFLARE_ZONE_API_TOKEN CF_API_KEY_FILE CF_API_EMAIL_FILE CLOUDFLARE_API_KEY_FILE CLOUDFLARE_EMAIL_FILE CLOUDFLARE_DNS_API_TOKEN_FILE CLOUDFLARE_ZONE_API_TOKEN_FILE
+ if [ "$ACME_DNS_PROVIDER" = route53 ]; then
+  regular_private "${ACME_AWS_FILE:-$BASE/config/aws.credentials}"
+  export AWS_SHARED_CREDENTIALS_FILE="${ACME_AWS_FILE:-$BASE/config/aws.credentials}" AWS_REGION="${AWS_REGION:-us-east-1}" AWS_EC2_METADATA_DISABLED=true
+  if [ -n "${AWS_HOSTED_ZONE_ID:-}" ]; then export AWS_HOSTED_ZONE_ID; else unset AWS_HOSTED_ZONE_ID; fi
+ else
+  regular_private "${ACME_CF_FILE:-$BASE/config/cloudflare.token}"
+  export CF_DNS_API_TOKEN_FILE="${ACME_CF_FILE:-$BASE/config/cloudflare.token}" CF_ZONE_API_TOKEN_FILE="${ACME_CF_FILE:-$BASE/config/cloudflare.token}"
+ fi
+ export BLIKVM_ACME_DIR="$BASE" BLIKVM_ACME_SERVER="$SERVER"
+ ca=letsencrypt; [ "$mode" != test ] || ca=letsencrypt-staging
+ mkdir -p "$BASE/state/$mode"
+ set -- run --server "$ca" --account-id "${ACME_ACCOUNT_ID:-blikvm}" --domains "$ACME_DOMAIN" --dns "$ACME_DNS_PROVIDER" --path "$BASE/state/$mode" --accept-tos --http-timeout 30 --cert.timeout 120
+ if [ -n "${ACME_DNS_RESOLVER:-}" ]; then set -- "$@" --dns.resolvers "$ACME_DNS_RESOLVER"; fi
+ if [ "$mode" = test ]; then set -- "$@" --renew-force --no-random-sleep; else set -- "$@" --deploy-hook "$BASE/bin/deploy.sh"; fi
+ "$BASE/bin/lego" --log.format text "$@"
+)
+get_cert() { "$SERVER" --subcomponent certificate-status; }
+field() { sed -n 's/.*"'"$1"'":"\([^"]*\)".*/\1/p'; }
+deploy() {
+ read_config
+ "$SERVER" --subcomponent certificate-import --certificate-file "$BASE/state/production/certificates/$ACME_DOMAIN.crt" --private-key-file "$BASE/state/production/certificates/$ACME_DOMAIN.key"
+}
+read_state() {
+ LAST_CHECK= LAST_SUCCESS= LAST_RENEWAL= NEXT_CHECK= LAST_RESULT=unconfigured LAST_ERROR= FAILURES=0
+ if [ -f "$STATE" ]; then regular_private "$STATE"; . "$STATE"; fi
+}
+write_state() {
+ { printf 'LAST_CHECK=%s\nLAST_SUCCESS=%s\nLAST_RENEWAL=%s\nNEXT_CHECK=%s\nLAST_RESULT=%s\nLAST_ERROR=%s\nFAILURES=%s\n' "$LAST_CHECK" "$LAST_SUCCESS" "$LAST_RENEWAL" "$NEXT_CHECK" "$LAST_RESULT" "$LAST_ERROR" "$FAILURES"; } >"$STATE.new"
+ chmod 600 "$STATE.new"; mv -f "$STATE.new" "$STATE"
+}
+renew() {
+ capability; prepare_dirs; lock; read_config; read_state
+ [ -x "$BASE/bin/lego" ] && [ "$(sha256sum "$BASE/bin/lego" | awk '{print $1}')" = "$BINARY_SHA" ] || fail 'Client missing or checksum changed. Rerun configure.'
+ before=$(get_cert | field fingerprint); LAST_CHECK=$(date -u +%s); LAST_RESULT=checking; LAST_ERROR=; write_state
+ raw=$(mktemp "$BASE/state/check.XXXXXX"); rc=0
+ run_lego production >"$raw" 2>&1 || rc=$?
+ redact_log "$raw" >"$LOG.new"; chmod 600 "$LOG.new"; mv -f "$LOG.new" "$LOG"; rm -f "$raw"
+ if [ "$rc" = 0 ]; then
+  raw=$(mktemp "$BASE/state/deploy.XXXXXX")
+  deploy >"$raw" 2>&1 || rc=$?
+  redact_log "$raw" >>"$LOG"; rm -f "$raw"
+  [ "$rc" = 0 ] || LAST_ERROR=deployment_failed
+ else LAST_ERROR=issuer_failed
+ fi
+ now=$(date -u +%s)
+ if [ "$rc" = 0 ]; then
+  LAST_RESULT=ok; LAST_SUCCESS=$now; FAILURES=0; NEXT_CHECK=$((now+43200))
+  after=$(get_cert | field fingerprint); [ "$before" = "$after" ] || LAST_RENEWAL=$now
+  say 'Certificate check and deployment completed.'
+ else
+  LAST_RESULT=failed; FAILURES=$((FAILURES+1)); delay=3600; [ "$FAILURES" -gt 1 ] || delay=300; [ "$FAILURES" -ne 2 ] || delay=900; NEXT_CHECK=$((now+delay))
+  say 'Certificate check failed. Existing HTTPS identity retained. Run status or log for details.' >&2
+ fi
+ write_state; return "$rc"
+}
+test_issuance() {
+ capability; prepare_dirs; lock; read_config
+ [ -x "$BASE/bin/lego" ] && [ "$(sha256sum "$BASE/bin/lego" | awk '{print $1}')" = "$BINARY_SHA" ] || fail 'Client missing or checksum changed. Rerun configure.'
+ before=$(get_cert | field fingerprint); raw=$(mktemp "$BASE/state/test.XXXXXX");rc=0
+ run_lego test >"$raw" 2>&1 || rc=$?
+ redact_log "$raw" >"$BASE/state/test.log"; rm -f "$raw"
+ after=$(get_cert | field fingerprint); [ "$before" = "$after" ] || fail 'Installed identity unexpectedly changed during staging test.'
+ [ "$rc" = 0 ] || { say 'Staging challenge failed; inspect the protected test.log.' >&2; return "$rc"; }
+ say 'Staging challenge passed. The staging certificate was not installed.'
+}
+managed_script() { grep -q '^# Managed by blikvm-acme ' "$1"; }
+service_config() {
+ safe_path "$SCRIPT_ROOT"; mkdir -p "$SCRIPT_ROOT/scripts" "$SCRIPT_ROOT/scripts-config"
+ target=$SCRIPT_ROOT/scripts/certificate-renewal.sh
+ if [ -e "$target" ]; then [ ! -L "$target" ] && managed_script "$target" || fail 'An existing certificate-renewal.sh is not owned by this tool; it was retained.'; fi
+ printf "#!/bin/sh\n# Managed by blikvm-acme %s %s\nexport BLIKVM_ACME_DIR='%s'\nexport BLIKVM_ACME_SERVER='%s'\nexec '%s' worker\n" "$VERSION" "$(sha256sum "$BASE/bin/blikvm-acme" | awk '{print $1}')" "$BASE" "$SERVER" "$BASE/bin/blikvm-acme" >"$target.new"
+ chmod 700 "$target.new"; mv -f "$target.new" "$target"
+}
+enable() {
+ capability; prepare_dirs; lock; read_config;read_state
+ [ -n "$LAST_SUCCESS" ] || fail 'Run renew successfully before enabling automatic checks.'
+ [ -x "$INIT" ] || fail 'Common startup executor missing. Update a compatible system first.'
+ [ -x "$SUPERVISOR" ] || fail 'Common service supervisor missing. Update a compatible system first.'
+ protocol=$("$SUPERVISOR" version | sed -n 's/.*"protocol"[[:space:]]*:[[:space:]]*\([0-9][0-9]*\).*/\1/p')
+ case "$protocol" in ''|*[!0-9]*) fail 'Cannot verify common service supervisor capability.';; esac
+ [ "$protocol" -ge 2 ] || fail 'Service mode requires supervisor protocol 2 or newer.'
+ service_config
+ conf=$SCRIPT_ROOT/scripts-config/certificate-renewal.sh.conf
+ printf 'MODE=service\nENABLED=1\nRESTART_POLICY=on-failure\nRESTART_DELAY_SEC=5\n' >"$conf.new";chmod 600 "$conf.new";mv -f "$conf.new" "$conf"
+ # The newly started daemon must not inherit this operation's flock descriptor.
+ "$INIT" start 9>&-
+ say 'Automatic renewal enabled through the common script manager.'
+}
+disable() {
+ prepare_dirs;lock
+ target=$SCRIPT_ROOT/scripts/certificate-renewal.sh
+ if [ -e "$target" ]; then [ ! -L "$target" ] && managed_script "$target" || fail 'Existing startup script is not owned by this tool; it was retained.'; fi
+ conf=$SCRIPT_ROOT/scripts-config/certificate-renewal.sh.conf
+ if [ -f "$conf" ]; then
+  printf 'MODE=manual\nENABLED=0\nRESTART_POLICY=on-failure\nRESTART_DELAY_SEC=5\n' >"$conf.new";chmod 600 "$conf.new";mv -f "$conf.new" "$conf"
+ fi
+ say 'Automatic renewal disabled. Current certificate, account and configuration retained.'
+}
+stamp() { if [ -z "$1" ]; then printf 'never'; else date -u -d "@$1" '+%Y-%m-%d %H:%M:%S UTC' 2>/dev/null || printf '%s (Unix UTC)' "$1"; fi; }
+status() {
+ read_state
+ if [ -f "$CONF" ]; then read_config;domain=$ACME_DOMAIN;provider=$ACME_DNS_PROVIDER;else domain=unconfigured;provider=unconfigured;fi
+ configured=no;running=unknown
+ conf=$SCRIPT_ROOT/scripts-config/certificate-renewal.sh.conf
+ if [ -f "$conf" ] && grep -q '^MODE=service$' "$conf" && grep -q '^ENABLED=1$' "$conf";then configured=yes;fi
+ if [ -f "$SCRIPT_ROOT/scripts-runtime/certificate-renewal.sh/status" ]; then
+  running=$(sed -n 's/^STATE=//p' "$SCRIPT_ROOT/scripts-runtime/certificate-renewal.sh/status")
+ fi
+ say "BliKVM ACME $VERSION"
+ say "Domain: $domain";say "Provider: $provider";say "Automatic checks enabled: $configured";say "Service state: ${running:-unknown}"
+ say "Last result: $LAST_RESULT";say "Last error: ${LAST_ERROR:-none}"
+ say "Last check: $(stamp "$LAST_CHECK")";say "Last successful check: $(stamp "$LAST_SUCCESS")";say "Last certificate change: $(stamp "$LAST_RENEWAL")";say "Next scheduled check: $(stamp "$NEXT_CHECK")"
+ if [ -x "$SERVER" ] && "$SERVER" --help 2>&1 | grep -q -- '-certificate-file';then get_cert;else say 'App certificate CLI unavailable; update a matching App.';fi
+ say "Protected log: $LOG"
+}
+worker() {
+ [ "$SELF" = "$BASE/bin/blikvm-acme" ] || fail 'Run the installed worker.'
+ while :; do
+  read_state; now=$(date -u +%s)
+  if [ -z "$NEXT_CHECK" ] || [ "$NEXT_CHECK" -le "$now" ]; then "$SELF" renew || true;fi
+  sleep 30 & child=$!;trap 'kill "$child" 2>/dev/null || true;exit 0' TERM INT;wait "$child" || true
+ done
+}
+usage() { cat <<EOF
+BliKVM ACME $VERSION (optional extension)
+  configure [--archive FILE] [--prepare-only]  Guided install/configuration
+  test                                      Staging DNS challenge; never deploys
+  renew                                     Normal production check and deployment
+  status                                    Public status; never prints credentials
+  log                                       Show redacted last production log
+  enable / disable                          Manage common script startup
+All data stays under /data/work/extensions/lego; system filesystem is untouched.
+EOF
+}
+command=${1:-help};[ "$#" = 0 ] || shift
+case "$command" in help|--help|-h) usage;exit;; version|--version) say "$VERSION";exit;; esac
+need_root
+for utility in awk sed grep stat date flock sha256sum; do command -v "$utility" >/dev/null || fail "Required system tool missing: $utility";done
+safe_path "$BASE";safe_path "$SCRIPT_ROOT";safe_path "$SERVER";safe_path "$SUPERVISOR"
+case "$command" in configure) configure "$@";; test) test_issuance;; renew) renew;; deploy) deploy;; status) status;; log) [ ! -f "$LOG" ] || { regular_private "$LOG";cat "$LOG"; };; enable) enable;; disable) disable;; worker) worker;; *) usage;exit 2;; esac

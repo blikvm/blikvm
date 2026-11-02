@@ -17,3 +17,5 @@ jobs:
           python3 scripts/build-acme-examples.py --check
           for file in static/examples/acme/*.sh; do sh -n "$file"; done
           python3 scripts/test-acme-recipes.py
+          sh -n static/examples/acme/blikvm-acme
+          sudo env ACME_MANAGER_SOURCE="$PWD/static/examples/acme/blikvm-acme" python3 scripts/test-acme-manager.py
