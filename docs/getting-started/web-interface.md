@@ -35,7 +35,9 @@ Open the gear icon, choose a group and enter a function. Use the back arrow to r
 | Accounts & Security | Accounts, passwords, 2FA and IP rules. |
 | Interface Preferences | Browser interface preferences. |
 | KVM Switch | Select or configure a supported external switch. |
-| Advanced & Diagnostics | Advanced settings and diagnostics. |
+| Advanced & Diagnostics | VNC service, scripts, terminal tools and diagnostics. |
+
+For native VNC clients, open **Advanced & Diagnostics → VNC Service**; see the [VNC guide](../function/vnc.md) for H.264 compatibility and TLS login.
 
 Some actions require an administrator. Operators can receive individual feature permissions; viewers have no keyboard or mouse control. See [Accounts and security](./auth.mdx).
 
