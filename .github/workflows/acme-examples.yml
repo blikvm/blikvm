@@ -1,0 +1,21 @@
+name: Certificate reference scripts
+on:
+  pull_request:
+    paths: ['static/examples/acme/**', 'scripts/*acme*', 'docs/network/certificates.md', 'i18n/zh-CN/docusaurus-plugin-content-docs/current/network/certificates.md', '.github/workflows/acme-examples.yml']
+  push:
+    branches: [master]
+    paths: ['static/examples/acme/**', 'scripts/*acme*', 'docs/network/certificates.md', 'i18n/zh-CN/docusaurus-plugin-content-docs/current/network/certificates.md', '.github/workflows/acme-examples.yml']
+permissions:
+  contents: read
+jobs:
+  references:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: Validate reference download and offline renewal behavior
+        run: |
+          python3 scripts/build-acme-examples.py --check
+          for file in static/examples/acme/*.sh; do sh -n "$file"; done
+          python3 scripts/test-acme-recipes.py
+          sh -n static/examples/acme/blikvm-acme
+          sudo env ACME_MANAGER_SOURCE="$PWD/static/examples/acme/blikvm-acme" python3 scripts/test-acme-manager.py

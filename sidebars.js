@@ -66,6 +66,7 @@ export default {
         "network/static-ip",
         "network/wifi",
         "network/https",
+        "network/certificates",
         "network/security",
         {
           "type": "category",

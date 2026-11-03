@@ -359,3 +359,5 @@ To restart or disable NetBird, use the same script-management commands above wit
 - **The process is running but the VPN is not connected:** Inspect the VPN's own status, network, account authorization and software logs. The executor does not treat process liveness as a successful application connection.
 - **A stopped process starts again:** Confirm `MODE=manual` and `ENABLED=0`, and rule out another independent startup method. Use one startup manager per resident process.
 - **Configuration disappears after reboot:** Check that the program's configuration, identity and databases are stored in its extension directory. Do not store data that must survive a reboot under `/run/`.
+
+For standalone HTTPS renewal reference scripts and configuration, see [Certificate import and optional renewal](../network/certificates.md).
