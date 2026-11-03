@@ -450,6 +450,59 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
+  /api/v1/time:
+    get:
+      x-permission: device.configure
+      tags: [network]
+      summary: Read NTP policy, timezone and clock synchronization status
+      operationId: getTimeSettings
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Clock policy and status; data includes servers, timezone, zones, synchronized, source, utc, local and tracking
+        '409':
+          description: Installed System requires an upgrade to support persistent time policy
+        '503':
+          description: Clock service or saved policy unavailable
+    post:
+      x-permission: device.configure
+      tags: [network]
+      summary: Apply persistent NTP sources and IANA timezone
+      description: Requires Pi/V4 System clock-policy support. Empty servers selects the default pool; UTC and empty servers restore defaults. Restart failures restore the previous policy. A saved configuration is not proof of NTP synchronization.
+      operationId: postTimeSettings
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              required: [servers, timezone]
+              properties:
+                servers:
+                  type: array
+                  maxItems: 4
+                  uniqueItems: true
+                  items:
+                    type: string
+                    maxLength: 253
+                  description: Hostnames or IPv4/IPv6 addresses; no URL, port or configuration directives
+                timezone:
+                  type: string
+                  example: Asia/Shanghai
+                  description: UTC or a timezone returned by GET
+      responses:
+        '200':
+          description: Applied policy and current synchronization status
+        '400':
+          description: Invalid addresses, timezone or JSON
+        '409':
+          description: System upgrade required or video analysis NTP currently owns the clock
+        '503':
+          description: Apply failed; refresh status to inspect current policy
   /api/v1/hostname:
     get:
       x-permission: device.configure
@@ -6165,6 +6218,117 @@ paths:
         '401': { description: Authentication required }
         '403': { description: Session belongs to another principal }
 
+  /api/v1/network/certificate:
+    get:
+      x-permission: security.manage
+      tags: [network]
+      summary: Read active certificate metadata
+      description: Requires an authenticated administrator browser session; no-auth administration and API tokens are rejected. Private keys are never returned. Existing TLS connections remain open.
+      operationId: getNetworkCertificate
+      security: [{ bearerAuth: [] }]
+      responses:
+        '200':
+          description: Certificate metadata or validation result; never includes private key material
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok: { type: boolean }
+                  data: { type: object, additionalProperties: true }
+        '400': { description: Invalid certificate pair, upload or request }
+        '401': { description: Missing authentication }
+        '403': { description: Real administrator browser session required }
+        '409': { description: Validation token expired or activation failed }
+        '503': { description: Certificate storage unavailable; active identity preserved }
+  /api/v1/network/certificate/validate:
+    post:
+      x-permission: security.manage
+      tags: [network]
+      summary: Validate a certificate chain and private key without activation
+      description: Requires an authenticated administrator browser session; no-auth administration and API tokens are rejected. Private keys are never returned. Existing TLS connections remain open.
+      operationId: validateNetworkCertificate
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [certificate, privateKey]
+              properties:
+                certificate: { type: string, format: binary, description: PEM certificate chain; at most 262144 bytes }
+                privateKey: { type: string, format: binary, description: Matching PEM private key; at most 262144 bytes }
+      responses:
+        '200':
+          description: Certificate metadata or validation result; never includes private key material
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok: { type: boolean }
+                  data: { type: object, additionalProperties: true }
+        '400': { description: Invalid certificate pair, upload or request }
+        '401': { description: Missing authentication }
+        '403': { description: Real administrator browser session required }
+        '409': { description: Validation token expired or activation failed }
+        '503': { description: Certificate storage unavailable; active identity preserved }
+  /api/v1/network/certificate/apply:
+    post:
+      x-permission: security.manage
+      tags: [network]
+      summary: Activate the previously validated pair without restarting the server
+      description: Requires an authenticated administrator browser session; no-auth administration and API tokens are rejected. Private keys are never returned. Existing TLS connections remain open.
+      operationId: applyNetworkCertificate
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [token]
+              properties:
+                token: { type: string, description: Single-use token expiring ten minutes after validation }
+      responses:
+        '200':
+          description: Certificate metadata or validation result; never includes private key material
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok: { type: boolean }
+                  data: { type: object, additionalProperties: true }
+        '400': { description: Invalid certificate pair, upload or request }
+        '401': { description: Missing authentication }
+        '403': { description: Real administrator browser session required }
+        '409': { description: Validation token expired or activation failed }
+        '503': { description: Certificate storage unavailable; active identity preserved }
+  /api/v1/network/certificate/reset:
+    post:
+      x-permission: security.manage
+      tags: [network]
+      summary: Restore a generated self-signed certificate
+      description: Requires an authenticated administrator browser session; no-auth administration and API tokens are rejected. Private keys are never returned. Existing TLS connections remain open.
+      operationId: resetNetworkCertificate
+      security: [{ bearerAuth: [] }]
+      responses:
+        '200':
+          description: Certificate metadata or validation result; never includes private key material
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok: { type: boolean }
+                  data: { type: object, additionalProperties: true }
+        '400': { description: Invalid certificate pair, upload or request }
+        '401': { description: Missing authentication }
+        '403': { description: Real administrator browser session required }
+        '409': { description: Validation token expired or activation failed }
+        '503': { description: Certificate storage unavailable; active identity preserved }
 components:
   securitySchemes:
     bearerAuth:
