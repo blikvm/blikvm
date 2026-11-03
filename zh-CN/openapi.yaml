@@ -2273,98 +2273,6 @@ paths:
           description: Switching Protocols
         '401':
           description: Missing or invalid token
-  /api/v1/stream/h264/webrtc:
-    options:
-      operationId: whepH264Options
-      summary: Native H264 WHEP preflight
-      x-permission: kvm.view
-      security: [{ bearerAuth: [] }]
-      responses:
-        '204': { description: Supported request methods and headers }
-        '401': { description: Authentication required }
-        '403': { description: Required permission missing }
-    post:
-      operationId: whepH264Post
-      summary: Create a native H264 WHEP session
-      description: Use only codecs advertised by the capabilities endpoint. Sends video from the shared media source; audio additionally requires audio.listen. Delete the session using its returned Location URL. Trickle ICE PATCH is not supported.
-      x-permission: kvm.view
-      security: [{ bearerAuth: [] }]
-      requestBody:
-        required: true
-        content:
-          application/sdp:
-            schema: { type: string, minLength: 1, maxLength: 1048576 }
-      responses:
-        '201':
-          description: SDP answer and session URL
-          headers:
-            Location:
-              description: URL for deleting this session
-              schema: { type: string }
-          content:
-            application/sdp:
-              schema: { type: string }
-        '400': { description: Invalid SDP offer }
-        '401': { description: Authentication required }
-        '403': { description: Required permission missing }
-        '500': { description: WebRTC codec or session setup failed }
-        '503': { description: Configured fixed UDP transport is unavailable }
-    delete:
-      operationId: whepH264Delete
-      summary: Legacy WHEP DELETE without a session suffix
-      description: Returns 204 without closing a session. Use the Location URL returned by POST for actual session cleanup.
-      x-permission: kvm.view
-      security: [{ bearerAuth: [] }]
-      responses:
-        '204': { description: No session suffix; no operation performed }
-        '401': { description: Authentication required }
-        '403': { description: Required permission missing }
-  /api/v1/stream/h265/webrtc:
-    options:
-      operationId: whepH265Options
-      summary: Native H265 WHEP preflight
-      x-permission: kvm.view
-      security: [{ bearerAuth: [] }]
-      responses:
-        '204': { description: Supported request methods and headers }
-        '401': { description: Authentication required }
-        '403': { description: Required permission missing }
-    post:
-      operationId: whepH265Post
-      summary: Create a native H265 WHEP session
-      description: Use only codecs advertised by the capabilities endpoint. Sends video from the shared media source; audio additionally requires audio.listen. Delete the session using its returned Location URL. Trickle ICE PATCH is not supported.
-      x-permission: kvm.view
-      security: [{ bearerAuth: [] }]
-      requestBody:
-        required: true
-        content:
-          application/sdp:
-            schema: { type: string, minLength: 1, maxLength: 1048576 }
-      responses:
-        '201':
-          description: SDP answer and session URL
-          headers:
-            Location:
-              description: URL for deleting this session
-              schema: { type: string }
-          content:
-            application/sdp:
-              schema: { type: string }
-        '400': { description: Invalid SDP offer }
-        '401': { description: Authentication required }
-        '403': { description: Required permission missing }
-        '500': { description: WebRTC codec or session setup failed }
-        '503': { description: Configured fixed UDP transport is unavailable }
-    delete:
-      operationId: whepH265Delete
-      summary: Legacy WHEP DELETE without a session suffix
-      description: Returns 204 without closing a session. Use the Location URL returned by POST for actual session cleanup.
-      x-permission: kvm.view
-      security: [{ bearerAuth: [] }]
-      responses:
-        '204': { description: No session suffix; no operation performed }
-        '401': { description: Authentication required }
-        '403': { description: Required permission missing }
   /api/v1/stream/mjpeg:
     get:
       x-permission: kvm.view
@@ -5437,21 +5345,76 @@ paths:
         '403':
           description: Required permission missing
   /api/v1/stream/webrtc/signaling:
+    options:
+      tags: [stream]
+      x-permission: kvm.view
+      operationId: getWebrtcSignalingIceServers
+      summary: Discover ICE servers for the WebRTC receiver
+      description: Authenticated discovery for the same signaling endpoint. Pass the returned STUN/TURN servers to RTCPeerConnection before creating an offer.
+      security: [{ bearerAuth: [] }, { browserSession: [] }]
+      responses:
+        '204':
+          description: ICE configuration in Link headers; no response body
+          headers:
+            Link:
+              description: One or more ice-server links, including TURN username and credential attributes when configured. May be absent if no servers are configured.
+              schema: { type: string }
+              example: '<stun:stun.example.com:3478>; rel="ice-server"'
+        '401': { description: Authentication required }
+        '403': { description: Required permission missing }
     get:
+      tags: [stream]
       x-permission: kvm.view
       operationId: getApiV1StreamWebrtcSignaling
-      summary: GET /api/v1/stream/webrtc/signaling
-      description: Native backend endpoint. Requires the permission declared by x-permission when authentication is enabled.
-      security: [{ bearerAuth: [] }]
+      summary: Establish a WebRTC receiver using WebSocket signaling
+      description: |
+        Shared entry point for the built-in client and external receivers. Upgrade
+        to WebSocket (wss on HTTPS). The WebSocket carries UTF-8 signaling text;
+        media is received through WebRTC tracks, not the WebSocket response body.
+        Swagger's HTTP Try it out does not create a WebRTC receiver.
+
+        Authenticate with a same-origin blikvm_session cookie, or a Bearer API
+        token in the handshake header for non-browser clients. Browser WebSocket
+        cannot set Authorization headers. Never put credentials in the URL.
+        kvm.view permits video; audio additionally requires audio.listen; input
+        DataChannels require kvm.input. Video-only clients need no DataChannel.
+
+        Create a receive-only video transceiver and optionally an audio
+        transceiver, set a local SDP offer, then send:
+        {"type":"offer","data":{"sdp":"<SDP offer>","codec":"h264"}}
+        The first offer's data.codec selects h264 or h265. Choose from the
+        capabilities endpoint. Missing/unknown values normalize to h264; this
+        does not guarantee fallback for incompatible SDP. A URL codec query is
+        not used to select the backend codec. Use a new connection to change it.
+
+        The server sends {"type":"device-metadata","data":{}} on open, and
+        {"type":"answer","data":{"sdp":"<SDP answer>"}} for an offer.
+        Exchange trickle ICE messages in both directions:
+        {"type":"new-ice-candidate","data":{"candidate":"candidate:...","sdpMid":"0","sdpMLineIndex":0}}
+        The alias type "candidate" is accepted. Buffer remote candidates until
+        the remote SDP has been applied; candidates may arrive before the answer.
+        Apply the answer, drain buffered ICE and consume the main-video track
+        (stream blikvm-main); usb-camera/stream blikvm-usb is a separate track.
+
+        Send plain text ping about every 20 seconds and ignore plain text pong.
+        JSON {"type":"ping"} is also accepted. WebSocket control ping/pong must
+        be handled; the idle read deadline is 60 seconds. Keep signaling open for
+        the lifetime of the media session. Errors use
+        {"type":"error","data":"<message>"} and may close the connection.
+        To stop, send {"type":"close"} (alias "disconnect"), then close both
+        WebSocket and PeerConnection. Credential revocation/expiry also cancels
+        the session. Reconnect with a fresh peer and offer; do not replay input.
+      security: [{ bearerAuth: [] }, { browserSession: [] }]
       responses:
         '101':
-          description: WebSocket upgrade for shared-peer WebRTC signaling
+          description: WebSocket upgraded; exchange SDP and ICE as described above
         '400':
-          description: Invalid request parameters
+          description: Invalid WebSocket upgrade request
         '401':
           description: Authentication required
         '403':
           description: Required permission missing
+
   /api/v1/webrtc/diagnostics:
     get:
       x-permission: device.configure
@@ -6185,39 +6148,6 @@ paths:
         '400': { description: Invalid switch action or configuration }
         '401': { description: Authentication required }
         '403': { description: Required permission missing }
-  /api/v1/stream/h264/webrtc/{sessionId}:
-    delete:
-      summary: Close a H264 WHEP session
-      operationId: deleteH264WhepSession
-      description: Use the Location URL returned when the SDP offer was accepted. Session ownership is enforced.
-      x-permission: kvm.view
-      security: [{ bearerAuth: [] }]
-      parameters:
-        - name: sessionId
-          in: path
-          required: true
-          schema: { type: string }
-      responses:
-        '204': { description: Session closed or already absent }
-        '401': { description: Authentication required }
-        '403': { description: Session belongs to another principal }
-  /api/v1/stream/h265/webrtc/{sessionId}:
-    delete:
-      summary: Close a H265 WHEP session
-      operationId: deleteH265WhepSession
-      description: Use the Location URL returned when the SDP offer was accepted. Session ownership is enforced.
-      x-permission: kvm.view
-      security: [{ bearerAuth: [] }]
-      parameters:
-        - name: sessionId
-          in: path
-          required: true
-          schema: { type: string }
-      responses:
-        '204': { description: Session closed or already absent }
-        '401': { description: Authentication required }
-        '403': { description: Session belongs to another principal }
-
   /api/v1/network/certificate:
     get:
       x-permission: security.manage
@@ -6331,6 +6261,11 @@ paths:
         '503': { description: Certificate storage unavailable; active identity preserved }
 components:
   securitySchemes:
+    browserSession:
+      type: apiKey
+      in: cookie
+      name: blikvm_session
+      description: Opaque HttpOnly browser session established by login on the device origin.
     bearerAuth:
       type: http
       scheme: bearer
