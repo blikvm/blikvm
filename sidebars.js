@@ -99,6 +99,7 @@ export default {
         "function/serial-terminal",
         "function/ssh",
         "function/scripts",
+        "function/vnc",
         "function/expand-filesystem",
         "function/diagnostics",
         "function/factory-reset",
