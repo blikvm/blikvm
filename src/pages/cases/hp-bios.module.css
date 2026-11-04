@@ -1,0 +1,14 @@
+.page {max-width:1200px;margin:auto;padding:36px 24px 72px;}
+.eyebrow {color:var(--ifm-color-primary);font-size:13px;letter-spacing:.12em;font-weight:700;}
+.page h1 {font-size:clamp(28px,4vw,46px);line-height:1.25;max-width:950px;}
+.lead {font-size:22px;color:var(--ifm-color-emphasis-700);}
+.page header {max-width:960px;margin-bottom:32px;}
+.page figure {margin:0 0 46px;}
+.page figure img {display:block;width:100%;border:1px solid var(--ifm-color-emphasis-200);border-radius:12px;box-shadow:0 12px 38px #152b4414;}
+.page figcaption {font-size:14px;color:var(--ifm-color-emphasis-700);margin-top:12px;}
+.page section {margin:36px 0;}
+.grid {display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:20px;}
+.grid article {padding:22px;border:1px solid var(--ifm-color-emphasis-200);border-radius:12px;}
+.grid h3 {font-size:19px;}
+.grid p {margin:0;}
+@media(max-width:760px){.grid {grid-template-columns:1fr;}.page{padding:24px 18px 48px;}}
