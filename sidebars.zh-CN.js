@@ -120,6 +120,7 @@ export default {
       "items": [
         "development/architecture",
         "development/api",
+        "development/webrtc-demo",
         "development/keyboard-api"
       ]
     }
