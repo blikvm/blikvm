@@ -30,5 +30,9 @@
   "item.label.Demo": {
     "message": "在线体验",
     "description": "Navbar item with label Demo"
+  },
+  "item.label.My devices": {
+    "message": "我的设备",
+    "description": "Navbar item with label My devices"
   }
 }

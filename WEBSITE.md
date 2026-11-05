@@ -54,6 +54,24 @@ commit in `/demo/version.json`. The tracked demo remains a fallback snapshot;
 Actions do not commit or push generated Demo files to protected `master`.
 Source/workflow changes still go through pull requests.
 
+### Local device discovery
+
+The **My devices** page is built with Docusaurus at `/discover/` and
+`/zh-CN/discover/` on the existing site. The browser requests
+`http://blikvm-discover.local/api/v1/discovery` after the user selects
+**Start discovery**. It sends no cookies or referrer and uses the
+response only in the current page. Opening a device navigates directly to
+its own HTTPS address.
+
+The discovery-enabled device serving the fixed name must return a JSON
+object with `version: 1` and a `devices` array. Each entry includes a
+stable `id`, its individual `hostname` ending in `.local`, and optional
+`name`, `model` and IPv4 `ip` fields. The read-only endpoint must answer
+HTTP without redirecting and allow the exact HTTPS origins
+`https://blikvm.com` and `https://www.blikvm.com` through CORS. Allow
+the matching request origin and set `Vary: Origin`. Verify real device
+discovery from the production origin before promoting the page.
+
 Demo staging removes stale bundles and excludes `data/`. Missing entry assets,
 an incorrect `/demo/` base, escaping paths, symbolic links or invalid provenance
 fail before the previous snapshot is replaced. Run staging regression checks
