@@ -746,3 +746,20 @@
 }
 
 .chineseHome .buttons { flex-wrap: wrap; }
+
+.featuredCase {display:grid;grid-template-columns:minmax(0,1.35fr) minmax(0,1fr);max-width:1500px;margin:20px auto 32px;overflow:hidden;background:var(--ifm-background-surface-color);border:1px solid var(--ifm-color-emphasis-200);border-radius:20px;text-align:left;color:var(--ifm-font-color-base);box-shadow:0 8px 30px #163b2110;transition:box-shadow .2s,transform .2s;}
+.featuredCase:hover {color:var(--ifm-font-color-base);text-decoration:none;box-shadow:0 14px 40px #163b2120;transform:translateY(-3px);}
+.featuredCase:focus-visible {outline:3px solid var(--ifm-color-primary);outline-offset:5px;}
+.featuredCaseImage {display:flex;align-items:center;padding:24px;background:linear-gradient(135deg,#edf4ed,#f5f8f5);min-width:0;}
+.featuredCaseImage img {display:block;width:100%;height:auto;border:1px solid #dbe3dc;border-radius:9px;box-shadow:0 8px 24px #19342018;}
+.featuredCaseBody {display:flex;flex-direction:column;align-items:flex-start;justify-content:center;padding:36px;gap:16px;min-width:0;}
+.featuredCaseBadge {font-size:12px;font-weight:700;letter-spacing:.08em;color:var(--ifm-color-primary-darkest);background:#edf4e5;border-radius:5px;padding:5px 10px;}
+.featuredCaseBody h3 {font-size:clamp(22px,2.2vw,32px);line-height:1.35;margin:0;}
+.featuredCaseBody p {font-size:16px;line-height:1.8;color:var(--ifm-color-emphasis-700);margin:0;}
+.featuredCaseTags {display:flex;gap:8px;flex-wrap:wrap;}
+.featuredCaseTags span {border:1px solid var(--ifm-color-emphasis-200);border-radius:20px;font-size:12px;padding:3px 10px;color:var(--ifm-color-emphasis-700);}
+.featuredCaseCta {color:var(--ifm-color-primary-darkest);font-weight:700;margin-top:4px;}
+[data-theme='dark'] .featuredCaseImage {background:#202d26;}
+[data-theme='dark'] .featuredCaseCta {color:#b4db85;}
+@media(max-width:900px){.featuredCase{grid-template-columns:1fr;}.featuredCaseImage{padding:20px;}.featuredCaseBody{padding:24px;gap:12px;}}
+@media(max-width:600px){.useCasesSection{padding:28px 18px;}.featuredCaseBody{padding:22px;}.useCasesGrid{grid-template-columns:1fr;}}
