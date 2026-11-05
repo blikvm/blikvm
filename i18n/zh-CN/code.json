@@ -401,7 +401,6 @@
     "message": "健康监控",
     "description": "The feature of BliKVM that it supports health monitoring"
   },
-  
   "download.description": {
     "message": "你可以从这里找到安装在SD卡或eMMC上的BliKVM OS Image文件"
   },
@@ -449,5 +448,17 @@
   },
   "homepage.OnlineDemo": {
     "message": "在线体验"
+  },
+  "homepage.hpCaseBadge": {
+    "message": "社区用户实践"
+  },
+  "homepage.hpCaseTitle": {
+    "message": "基于 BliKVM 的 HP 电脑 BIOS 自动化测试"
+  },
+  "homepage.hpCaseSummary": {
+    "message": "看看用户如何通过自建 KVM-Orch 控制台，将远程画面、BIOS 测试用例、执行日志与截图证据整合到同一个工作流程中。"
+  },
+  "homepage.hpCaseCta": {
+    "message": "查看完整案例"
   }
 }

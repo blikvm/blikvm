@@ -2,6 +2,8 @@ import ChineseProductCatalog from '@site/src/components/ChineseProductCatalog';
 import clsx from 'clsx';
 import useDocusaurusContext from '@docusaurus/useDocusaurusContext';
 import Layout from '@theme/Layout';
+import Link from '@docusaurus/Link';
+import useBaseUrl from '@docusaurus/useBaseUrl';
 
 import styles from './index.module.css';
 import Translate from '@docusaurus/Translate';
@@ -62,6 +64,8 @@ function LazyVideo({ src, title }) {
 
 export default function Home() {
   const { siteConfig, i18n: { currentLocale } } = useDocusaurusContext();
+  const hpCaseImage = useBaseUrl('/assets/images/cases/hp-bios-kvm-orch.png');
+  const hpCaseUrl = useBaseUrl('/cases/hp-bios');
 
   useEffect(() => {
     if (typeof window === 'undefined') return;
@@ -488,8 +492,18 @@ export default function Home() {
         <ChineseProductCatalog />
       </main>
 
-      <section className={styles.useCasesSection}>
-        <span className={styles.useCasesBadge}>Use Cases</span>
+      <section id="use-cases" className={styles.useCasesSection}>
+        <span className={styles.useCasesBadge}><Translate id="homepage.UseCase">Use Cases</Translate></span>
+        <Link to={hpCaseUrl} className={styles.featuredCase}>
+          <div className={styles.featuredCaseImage}><img src={hpCaseImage} alt={currentLocale === 'zh-CN' ? 'KVM-Orch HP BIOS 测试控制台' : 'KVM-Orch HP BIOS test console'} loading="lazy" width="1586" height="993" /></div>
+          <div className={styles.featuredCaseBody}>
+            <span className={styles.featuredCaseBadge}><Translate id="homepage.hpCaseBadge">Community case study</Translate></span>
+            <h3><Translate id="homepage.hpCaseTitle">HP PC BIOS testing with BliKVM</Translate></h3>
+            <p><Translate id="homepage.hpCaseSummary">See how a user-built KVM-Orch console brings remote video, BIOS test cases, execution logs and screenshot evidence into one workflow.</Translate></p>
+            <div className={styles.featuredCaseTags}><span>BIOS</span><span>WebRTC</span><span>OCR</span></div>
+            <span className={styles.featuredCaseCta}><Translate id="homepage.hpCaseCta">Explore the case study</Translate><span aria-hidden="true"> ↗</span></span>
+          </div>
+        </Link>
         <div className={styles.useCasesGrid}>
           <div className={styles.useCaseItem}>
             <img src="/img/icon/office.svg" alt="Office IT Management" className={styles.useCaseIcon} />

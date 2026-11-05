@@ -89,8 +89,8 @@ const config = {
   themeConfig:
     /** @type {import('@docusaurus/preset-classic').ThemeConfig} */
     ({
-      // Replace with your project's social card
-      image: 'img/blikvm-social-card.png',
+      // Default link-preview image for pages without their own social card.
+      image: 'img/blikvm-family-social-card-v1.png',
       algolia: {
         // Algolia DocSearch (recommended by Docusaurus)
         // Configure via environment variables to avoid committing secrets.
