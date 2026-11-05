@@ -1895,6 +1895,19 @@ paths:
       tags: [msd]
       summary: Initialize/destroy MSD gadget function
       operationId: postMsdService
+      description: Creates a physically reserved FAT32 image. Capacity must fit available storage minus max(2 GiB, 10 percent of the filesystem). Existing images are never resized or reformatted; legacy images require backup and explicit deletion. A USB-owned or locally mounted image cannot be deleted.
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                sizeGB:
+                  type: integer
+                  minimum: 0
+                  maximum: 4096
+                  description: Capacity in GiB. Zero or omitted selects the current safe maximum. Read disk.capacityMax before initialization.
       security:
         - bearerAuth: []
       parameters:
@@ -1958,6 +1971,12 @@ paths:
           required: true
           schema:
             type: string
+        - in: query
+          name: kind
+          description: Select image files, files inside the virtual drive, or read-only legacy upload cache. Flash access requires USB disconnection; legacy cache cannot be deleted individually.
+          schema:
+            type: string
+            enum: [image, file, legacy]
       responses:
         '200':
           description: Image file
@@ -1981,6 +2000,12 @@ paths:
           required: true
           schema:
             type: string
+        - in: query
+          name: kind
+          description: Select image files, files inside the virtual drive, or read-only legacy upload cache. Flash access requires USB disconnection; legacy cache cannot be deleted individually.
+          schema:
+            type: string
+            enum: [image, file, legacy]
       responses:
         '200':
           description: Deleted
@@ -2158,6 +2183,13 @@ paths:
       tags: [msd]
       summary: Upload MSD images (multipart)
       operationId: postMsdUpload
+      description: kind=file streams files directly into the disconnected FAT32 image, staging replacements inside that image. No external mirror is created. Legacy images are read-only; FAT32 files must be smaller than 4 GiB. Shared KVM storage retains the system reserve for image uploads.
+      parameters:
+        - in: query
+          name: kind
+          schema:
+            type: string
+            enum: [image, file]
       security:
         - bearerAuth: []
       requestBody:
@@ -2379,6 +2411,88 @@ paths:
           description: Missing or invalid session
         '403':
           description: Real administrator browser session required
+  /api/v1/system/ssh/keys:
+    get:
+      tags: [system]
+      operationId: getSSHTrustedKeys
+      summary: List trusted root SSH public keys
+      description: Requires a real administrator browser session with web authentication enabled. API tokens and no-auth administration are rejected. Reports system upgrade required when the immutable authorized_keys entry is absent. Returns names, types and SHA256 fingerprints; never private keys. Password authentication remains available.
+      x-permission: security.manage
+      security: [{ bearerAuth: [] }]
+      responses:
+        '200':
+          description: Root key-store readiness and key metadata
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok: { type: boolean }
+                  data:
+                    type: object
+                    properties:
+                      supported: { type: boolean }
+                      ready: { type: boolean }
+                      username: { type: string, enum: [root] }
+                      reason: { type: string }
+                      keys:
+                        type: array
+                        items: { $ref: '#/components/schemas/SSHTrustedKey' }
+        '401': { description: Authentication required }
+        '403': { description: Real administrator browser session required }
+    post:
+      tags: [system]
+      operationId: addSSHTrustedKey
+      summary: Authorize one public key for root SSH login
+      description: Administrator browser session only. Accepts one ordinary ED25519, ECDSA or RSA (at least 2048 bits) public key, without authorized_keys options or certificates. Maximum 32 keys. Persists atomically to /data/vault/ssh/authorized_keys for restart and A/B upgrades. Adding a key grants its private-key holder full root SSH access. Private keys are never accepted.
+      x-permission: security.manage
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              required: [name, publicKey]
+              properties:
+                name: { type: string, minLength: 1, maxLength: 64 }
+                publicKey: { type: string, maxLength: 16384 }
+      responses:
+        '201':
+          description: Public key saved
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok: { type: boolean }
+                  data: { $ref: '#/components/schemas/SSHTrustedKey' }
+        '400': { description: Invalid name, public key, weak RSA or unsupported type }
+        '401': { description: Authentication required }
+        '403': { description: Real administrator browser session required }
+        '409': { description: Duplicate key, key limit reached or store busy }
+        '503': { description: System upgrade required or persistent key store unavailable }
+  /api/v1/system/ssh/keys/{keyId}:
+    delete:
+      tags: [system]
+      operationId: removeSSHTrustedKey
+      summary: Remove a root SSH public key
+      description: Administrator browser session only. Idempotently removes entries matching the key ID. Blocks new authentication with this key; existing SSH sessions remain connected. Other authorized keys and password access are retained.
+      x-permission: security.manage
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - name: keyId
+          in: path
+          required: true
+          schema: { type: string, pattern: '^[0-9a-f]{64}$' }
+      responses:
+        '200': { description: Key removed or already absent }
+        '400': { description: Invalid key ID }
+        '401': { description: Authentication required }
+        '403': { description: Real administrator browser session required }
+        '409': { description: Store busy }
+        '503': { description: System upgrade required or persistent key store unavailable }
   /api/v1/system/ssh/password:
     post:
       x-permission: security.manage
@@ -6271,6 +6385,14 @@ components:
       scheme: bearer
       bearerFormat: BliKVM API Token
   schemas:
+    SSHTrustedKey:
+      type: object
+      required: [id, name, algorithm, fingerprint]
+      properties:
+        id: { type: string, pattern: '^[0-9a-f]{64}$' }
+        name: { type: string }
+        algorithm: { type: string }
+        fingerprint: { type: string, description: OpenSSH SHA256 fingerprint }
     VNCResponse:
       type: object
       required: [ok, data]
@@ -7264,6 +7386,23 @@ components:
                 readOnly:
                   type: boolean
 
+            disk:
+              type: object
+              properties:
+                name: {type: string}
+                size: {type: integer, format: int64}
+                storageMode: {type: string, enum: [single-image-v2]}
+                capacityMax: {type: integer, format: int64, description: Safe maximum capacity for a new image in bytes.}
+                systemReserve: {type: integer, format: int64}
+                legacy: {type: boolean}
+                hasLegacyCache: {type: boolean}
+                allocated: {type: boolean}
+                filesLocked: {type: boolean}
+                usbConnected: {type: boolean}
+                localBusy: {type: boolean}
+                usbFunctionEnabled: {type: boolean}
+                fileAccess: {type: string, enum: [disconnected-only]}
+
     MsdImagesResponse:
       type: object
       required: [ok, data]
@@ -7275,6 +7414,8 @@ components:
           type: object
           required: [items]
           properties:
+            flashError: {type: string}
+            flashBusy: {type: boolean}
             items:
               type: array
               items:
@@ -7286,6 +7427,9 @@ components:
                   size:
                     type: integer
                     format: int64
+                  kind:
+                    type: string
+                    enum: [image, file, legacyFile, downloading, uploading]
 
     USBCameraConfig:
       type: object
