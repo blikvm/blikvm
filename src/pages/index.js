@@ -64,7 +64,7 @@ function LazyVideo({ src, title }) {
 
 export default function Home() {
   const { siteConfig, i18n: { currentLocale } } = useDocusaurusContext();
-  const familyImage = useBaseUrl('/img/blikvm-family-social-card-v1.png');
+  const familyImage = useBaseUrl('/img/blikvm-family-homepage.png');
   const hpCaseImage = useBaseUrl('/assets/images/cases/hp-bios-kvm-orch.png');
   const hpCaseUrl = useBaseUrl('/cases/hp-bios');
 
@@ -392,8 +392,8 @@ export default function Home() {
               src={familyImage}
               alt={currentLocale === 'zh-CN' ? 'BliKVM v1 CM4、v2 PCIe、v3 HAT 和 v4 Allwinner' : 'BliKVM v1 CM4, v2 PCIe, v3 HAT, and v4 Allwinner'}
               className={styles.image}
-              width={1734}
-              height={907}
+              width={1098}
+              height={332}
               decoding="async"
               fetchPriority="high"
             />
