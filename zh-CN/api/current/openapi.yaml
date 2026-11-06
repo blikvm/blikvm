@@ -503,6 +503,82 @@ paths:
           description: System upgrade required or video analysis NTP currently owns the clock
         '503':
           description: Apply failed; refresh status to inspect current policy
+  /api/v1/network/discovery:
+    get:
+      x-permission: device.configure
+      tags: [network]
+      summary: Read local discovery settings and the advertised device hostname
+      operationId: getLocalDiscovery
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Local discovery status
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LocalDiscoveryResponse'
+        '401':
+          description: Missing or invalid token
+        '403':
+          description: Missing device configuration permission
+    post:
+      x-permission: device.configure
+      tags: [network]
+      summary: Enable or disable local discovery
+      description: Disabled by default. Saves the setting and starts or stops mDNS without restarting video. A device on the eligible LAN may also answer GET http://blikvm-discover.local/api/v1/discovery as the elected directory.
+      operationId: postLocalDiscovery
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [enabled]
+              additionalProperties: false
+              properties:
+                enabled:
+                  type: boolean
+      responses:
+        '200':
+          description: Local discovery setting saved
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LocalDiscoveryResponse'
+        '400':
+          description: Expected one JSON object with an enabled boolean
+        '401':
+          description: Missing or invalid token
+        '403':
+          description: Missing device configuration permission
+        '500':
+          description: Discovery settings could not be saved
+  /api/v1/network/discovery/ca:
+    get:
+      x-permission: device.configure
+      tags: [network]
+      summary: Download the public CA certificate for this device’s local HTTPS address
+      description: Requires an administrator browser session and enabled local discovery.
+      operationId: getLocalDiscoveryCA
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Public CA certificate in PEM format
+          content:
+            application/x-pem-file:
+              schema:
+                type: string
+                format: binary
+        '401':
+          description: Missing or invalid session
+        '403':
+          description: Administrator session required
+        '404':
+          description: Local discovery or HTTPS unavailable
   /api/v1/hostname:
     get:
       x-permission: device.configure
@@ -6400,6 +6476,29 @@ components:
             authentication: { type: string }
             clientRequirement: { type: string }
             maxClients: { type: integer }
+    LocalDiscoveryResponse:
+      type: object
+      required: [ok, data]
+      properties:
+        ok:
+          type: boolean
+          example: true
+        data:
+          type: object
+          required: [enabled, active]
+          properties:
+            enabled:
+              type: boolean
+            active:
+              type: boolean
+              description: mDNS is running on an eligible LAN interface.
+            hostname:
+              type: string
+              description: Address derived from the current system hostname, present when local discovery has a valid name.
+              example: rack-1.local
+            conflict:
+              type: boolean
+              description: Another responder is using this name on the selected local network.
     HostnameResponse:
       type: object
       required: [ok, data]
