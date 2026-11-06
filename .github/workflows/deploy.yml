@@ -60,6 +60,9 @@ jobs:
       - name: Test OpenAPI synchronization
         run: node --test scripts/sync-openapi.test.mjs
 
+      - name: Test local device discovery
+        run: node --test src/components/DeviceDiscovery/discovery.test.mjs
+
       - name: Test public update index
         run: node --test scripts/sync-update-index.test.mjs
 
