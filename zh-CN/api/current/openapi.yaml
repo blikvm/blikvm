@@ -2289,22 +2289,32 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
-  /api/v1/session/ws:
+  /api/v1/session/status:
     get:
       x-permission: kvm.view
       tags: [device]
-      summary: Session control channel (WebSocket)
+      summary: Get the read-only KVM session state
       description: >
-        Upgrades to WebSocket. Used by the UI to push system/video status and to send
-        keyboard/mouse/touch events. Requires bearer token (Authorization header or token query parameter).
-      operationId: wsSession
-      security:
-        - bearerAuth: []
+        Returns the complete system, health, video, USB HID, lock-key and ATX
+        snapshot. Used for initial loading and read-only recovery. During a
+        connected session, subscribe to /session/status on the reliable ordered
+        WebRTC rpc DataChannel; stateChanged notifications use the same response
+        envelope. Snapshots are sampled once per second and sent on change.
+        Keyboard and mouse input use WebRTC HID DataChannels exclusively.
+        The former /api/v1/session/ws endpoint has been removed and returns 404.
+      operationId: getSessionStatus
+      security: [{ bearerAuth: [] }, { browserSession: [] }]
       responses:
-        '101':
-          description: Switching Protocols
+        '200':
+          description: Current session state; Cache-Control no-store
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SessionStatusResponse'
         '401':
-          description: Missing or invalid token
+          description: Missing, expired or revoked credentials
+        '403':
+          description: Requires kvm.view permission
   /api/v1/stream/mjpeg:
     get:
       x-permission: kvm.view
@@ -4602,55 +4612,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
-  /api/v1/video/passthrough:
-    get:
-      x-permission: device.configure
-      tags: [stream]
-      summary: Get HDMI passthrough setting
-      operationId: getVideoPassthrough
-      security:
-        - bearerAuth: []
-      responses:
-        '200':
-          description: Passthrough state
-          content:
-            application/json:
-              schema:
-                type: object
-        '401':
-          description: Missing or invalid token
-    put:
-      x-permission: device.configure
-      tags: [stream]
-      summary: Set HDMI passthrough setting
-      operationId: putVideoPassthrough
-      security:
-        - bearerAuth: []
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              required: [enable]
-              properties:
-                enable:
-                  type: boolean
-      responses:
-        '200':
-          description: Passthrough state
-          content:
-            application/json:
-              schema:
-                type: object
-        '400':
-          description: Invalid request
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-        '401':
-          description: Missing or invalid token
   /api/v1/video/edid:
     get:
       x-permission: device.configure
@@ -5451,7 +5412,20 @@ paths:
       security: [{ bearerAuth: [] }]
       responses:
         '200':
-          description: Operation result. Streaming and download endpoints return their native payload.
+          description: Dynamic DNS service status
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [ok, available, enabled, url]
+                properties:
+                  ok: { type: boolean }
+                  available: { type: boolean }
+                  enabled: { type: boolean }
+                  url: { type: string }
+                  version:
+                    type: string
+                    description: Installed ddns-go version. An empty value means it could not be read.
         '400':
           description: Invalid request parameters
         '401':
@@ -5518,6 +5492,15 @@ paths:
         To stop, send {"type":"close"} (alias "disconnect"), then close both
         WebSocket and PeerConnection. Credential revocation/expiry also cancels
         the session. Reconnect with a fresh peer and offer; do not replay input.
+      parameters:
+        - in: query
+          name: controlOnly
+          required: false
+          schema: { type: boolean, default: false }
+          description: >
+            Negotiate HID, RPC state and terminal DataChannels without media
+            tracks or encoder subscriptions. Used for MJPEG or paused video.
+            The same authentication and per-channel permissions apply.
       security: [{ bearerAuth: [] }, { browserSession: [] }]
       responses:
         '101':
@@ -6882,6 +6865,9 @@ components:
       type: object
       required: [state, config, webrtcPublicHost]
       properties:
+        version:
+          type: string
+          description: Installed wireguard-tools version. An empty value means it could not be read.
         state:
           type: string
         config:
@@ -6929,6 +6915,9 @@ components:
       type: object
       required: [enabled, state, ip, config]
       properties:
+        version:
+          type: string
+          description: Installed Tailscale version. An empty value means it could not be read.
         enabled:
           type: boolean
         state:
@@ -6970,6 +6959,9 @@ components:
       type: object
       required: [enabled, state, ip, config]
       properties:
+        version:
+          type: string
+          description: Installed ZeroTier version. An empty value means it could not be read.
         enabled:
           type: boolean
         state:
@@ -7476,3 +7468,56 @@ components:
           type: integer
           format: int32
           description: Bitrate in kbps
+
+    SessionStatusResponse:
+      type: object
+      required: [ok, data]
+      properties:
+        ok: { type: boolean, enum: [true] }
+        data:
+          $ref: '#/components/schemas/SessionStatus'
+    SessionStatus:
+      type: object
+      required: [system, systemInfo, healthCheck, hidStatus, keyboardStatus, mouseStatus, atxStatus, videoStatus]
+      properties:
+        system:
+          type: object
+          description: Board, OS, memory/storage totals, timezone and interface address summary. Detailed DHCP profiles use the Network API.
+          additionalProperties: true
+        systemInfo:
+          type: object
+          properties:
+            bootHealth: { type: object, additionalProperties: true }
+            cpuLoad: { type: number }
+            cpuUsagePercent: { type: number, nullable: true }
+            uptimeSeconds: { type: number }
+            temperature: { type: number }
+            clientsConnected: { type: integer, description: Number of open WebRTC RPC channels. }
+            memActual: { type: integer, format: int64, description: Available memory in bytes. }
+            storageActual: { type: integer, format: int64, description: Available root filesystem bytes. }
+        healthCheck: { type: object, additionalProperties: true }
+        hidStatus: { type: object, additionalProperties: true }
+        keyboardStatus:
+          type: object
+          properties:
+            onlineStatus: { type: boolean }
+            CapsLockLed: { type: boolean }
+            NumLockLed: { type: boolean }
+            ScrollLockLed: { type: boolean }
+        mouseStatus: { type: boolean }
+        atxStatus:
+          type: object
+          properties:
+            isActive: { type: boolean }
+            ledPwr: { type: boolean }
+            ledHDD: { type: boolean }
+        videoStatus:
+          type: object
+          properties:
+            isActive: { type: boolean }
+            sourceOnline: { type: boolean }
+            width: { type: integer }
+            height: { type: integer }
+            capturedFps: { type: number }
+            publisher: { type: string }
+            latency: { type: object, additionalProperties: true }
