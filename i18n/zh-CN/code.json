@@ -460,5 +460,20 @@
   },
   "homepage.hpCaseCta": {
     "message": "查看完整案例"
+  },
+  "homepage.demoPreview.badge": {
+    "message": "在线体验"
+  },
+  "homepage.demoPreview.title": {
+    "message": "在浏览器中控制你的电脑"
+  },
+  "homepage.demoPreview.description": {
+    "message": "打开 BliKVM 控制台，体验远程画面、键盘操作与虚拟介质。"
+  },
+  "homepage.demoPreview.cta": {
+    "message": "体验 BliKVM 控制台"
+  },
+  "homepage.demoPreview.caption": {
+    "message": "通过模拟桌面体验 BliKVM 控制台，无需连接硬件。"
   }
 }
