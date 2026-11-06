@@ -1,9 +1,11 @@
-import ChineseProductCatalog from '@site/src/components/ChineseProductCatalog';
+import {getProducts} from '@site/src/components/ChineseProductCatalog/data';
+import useSiteLanguage from '@site/src/components/useSiteLanguage';
 import clsx from 'clsx';
 import useDocusaurusContext from '@docusaurus/useDocusaurusContext';
 import Layout from '@theme/Layout';
 import Link from '@docusaurus/Link';
 import useBaseUrl from '@docusaurus/useBaseUrl';
+import demoPreview from '@site/images/blikvm-readme-hero.png';
 
 import styles from './index.module.css';
 import Translate from '@docusaurus/Translate';
@@ -11,6 +13,8 @@ import Translate from '@docusaurus/Translate';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 
 function LazyVideo({ src, title }) {
+  const youtubeId = src.match(/^https:\/\/www\.youtube\.com\/embed\/([\w-]{11})$/)?.[1];
+  const poster = youtubeId ? `https://i.ytimg.com/vi/${youtubeId}/hqdefault.jpg` : undefined;
   const [isVisible, setIsVisible] = useState(false);
   const [isLoaded, setIsLoaded] = useState(false);
   const ref = useRef(null);
@@ -41,6 +45,7 @@ function LazyVideo({ src, title }) {
         ref={ref}
         type="button"
         className={styles.videoPlaceholder}
+        style={poster ? {backgroundImage: `url("${poster}"), var(--video-placeholder-background)`} : undefined}
         onClick={handleClick}
         aria-label={`Load ${title}`}
       >
@@ -64,6 +69,7 @@ function LazyVideo({ src, title }) {
 
 export default function Home() {
   const { siteConfig, i18n: { currentLocale } } = useDocusaurusContext();
+  const {zh, base, t} = useSiteLanguage();
   const familyImage = useBaseUrl('/img/blikvm-family-homepage.png');
   const hpCaseImage = useBaseUrl('/assets/images/cases/hp-bios-kvm-orch.png');
   const hpCaseUrl = useBaseUrl('/cases/hp-bios');
@@ -134,194 +140,29 @@ export default function Home() {
   const currentStoreLink = storeLinks[currentLocale] || storeLinks['en'];
 
 
-  // 产品购买链接配置
-  const productBuyLinks = {
-    // BliKVM 产品链接
-    'v4': {
-      'en': "https://www.aliexpress.com/item/1005005859415746.html",
-      'zh-CN': "https://item.taobao.com/item.htm?id=730202747005&skuId=5232532439357&spm=a21xtw.29178619.0.0"
-    },
-    'v3': {
-      'en': "https://www.aliexpress.com/item/1005004377930400.html",
-      'zh-CN': "https://item.taobao.com/item.htm?id=676852578588&spm=a21xtw.29178619.0.0"
-    },
-    'v2': {
-      'en': "https://www.aliexpress.com/item/1005004572837650.html",
-      'zh-CN': "https://item.taobao.com/item.htm?id=679753758084&spm=a21xtw.29178619.0.0"
-    },
-    'v1': {
-      'en': "https://aliexpress.com/item/1005003262886521.html",
-      'zh-CN': "https://item.taobao.com/item.htm?id=668763563893&spm=a21xtw.29178619.0.0"
-    },
-    // BliSwitch 产品链接
-    'bliswitch-v2': {
-      'en': "https://www.aliexpress.com/item/1005008024603865.html",
-      'zh-CN': "https://item.taobao.com/item.htm?id=844629346441&skuId=5624793497687&spm=a21xtw.29178619.0.0"
-    },
-    'bliswitch-v1': {
-      'en': "https://aliexpress.com/item/1005005149590635.html",
-      'zh-CN': "https://item.taobao.com/item.htm?id=698047414626&skuId=5116323395530&spm=a21xtw.29178619.0.0"
-    },
-    // Peripheral 产品链接
-    'C792': {
-      'en': "https://aliexpress.com/item/1005009325895459.html",
-      'zh-CN': "https://item.taobao.com/item.htm?id=940263795279&skuId=6006324019050&spm=a21xtw.29178619.0.0"
-    },
-    'C790': {
-      'en': "https://www.aliexpress.com/item/1005002861310912.html",
-      'zh-CN': "https://item.taobao.com/item.htm?id=592007124730&spm=a21xtw.29178619.0.0"
-    },
-    'C779': {
-      'en': "https://www.aliexpress.com/item/1005003033156483.html",
-      'zh-CN': "https://item.taobao.com/item.htm?id=592007124730&skuId=4551174557715&spm=a21xtw.29178619.0.0"
-    },
-    'splitter': {
-      'en': "https://aliexpress.com/item/1005003793429781.html",
-      'zh-CN': "https://item.taobao.com/item.htm?id=674651463244&spm=a21xtw.29178619.0.0"
-    }
+  const intro = t(
+    '从进 BIOS 排障到挂载镜像重装系统，打开浏览器就能操作，被控电脑无需安装客户端。BliKVM 支持签名更新和网页诊断。支持 A/B 更新的设备会保留原系统供回退，新系统通过启动健康检查后才确认升级。搭配 BliSwitch 可管理 4 台或 8 台电脑，也可通过 OpenAPI 接入自动化测试。',
+    'Troubleshoot BIOS or mount an installer from your browser without installing software on the target. BliKVM supports signed updates and web diagnostics. On devices with A/B updates, the previous system remains available for rollback, and the new version is committed only after boot health checks pass. Add BliSwitch to manage four or eight computers, or use OpenAPI to automate tests.',
+  );
+  const catalog = getProducts(zh);
+  const models = catalog.filter(({group}) => group === 'blikvm');
+  const switches = ['bliswitch-v1', 'bliswitch-v2'].map((id) => catalog.find((product) => product.id === id));
+  const switchUses = {
+    'bliswitch-v1': t('4 台电脑共享 HDMI 和 USB 键鼠', 'HDMI and USB switching for 4 computers'),
+    'bliswitch-v2': t('8 台电脑共享 HDMI 和 USB，接好 ATX 后可逐台开机或复位', 'HDMI and USB switching for 8 computers, with per-host power and reset when wired for ATX'),
   };
-
-  // 获取当前语言的产品购买链接
-  const getCurrentBuyLink = (productId) => {
-    if (productBuyLinks[productId] && productBuyLinks[productId][currentLocale]) {
-      return productBuyLinks[productId][currentLocale];
-    }
-    return productBuyLinks[productId]?.['en'] || '';
+  const modelUses = {
+    'blikvm-v4': t('想直接部署，选独立一体机。', 'Choose a self-contained unit for a standalone setup.'),
+    'blikvm-v3': t('已有树莓派 4B，选 HAT 扩展板。', 'Add a HAT to a Raspberry Pi 4B you already own.'),
+    'blikvm-v2': t('需要装进机箱，选 PCIe 形态。', 'Choose the PCIe form factor for installation inside a PC.'),
+    'blikvm-v1': t('用 Raspberry Pi CM4 搭建独立 KVM。', 'Build a standalone KVM around a Raspberry Pi CM4.'),
   };
-
-  // BliKVM 产品
-  const blikvmProducts = [
-    {
-      id: "v4",
-      img: "/img/product/blikvm-v4-transp.webp",
-      title: "BliKVM v4",
-      description: "All-in-One Solution",
-      width: 1920,
-      height: 1440,
-      dots: [false, false, false],
-      href: "/docs/device-guides/BliKVM-v4-guide",
-      buy: getCurrentBuyLink("v4"),
-    },
-    {
-      id: "v3",
-      img: "/img/product/blikvm-v3-transp.webp",
-      title: "BliKVM v3",
-      description: "Based on Raspberry Pi 4B",
-      width: 1920,
-      height: 1440,
-      dots: [false, false, false],
-      href: "/docs/device-guides/BliKVM-v3-guide",
-      buy: getCurrentBuyLink("v3")
-    },
-    {
-      id: "v2",
-      img: "/img/product/blikvm-v2-transp.webp",
-      title: "BliKVM v2",
-      description: "PCIe Add-in Card",
-      width: 1920,
-      height: 1440,
-      dots: [false, false, false],
-      href: "/docs/device-guides/BliKVM-v2-guide",
-      buy: getCurrentBuyLink("v2")
-    },
-    {
-      id: "v1",
-      img: "/img/product/blikvm-v1-transp.webp",
-      title: "BliKVM v1",
-      description: "Original Design, Plug-and-Play",
-      width: 1920,
-      height: 1440,
-      dots: [false, false, false],
-      href: "/docs/device-guides/BliKVM-v1-guide",
-      buy: getCurrentBuyLink("v1")
-    },
+  const tasks = [
+    {title: t('远程排障', 'Troubleshoot remotely'), description: t('从开机画面进入 BIOS，即使系统无法启动也能查看画面、操作键鼠。', 'View the boot screen and use the keyboard and mouse in BIOS even when the operating system is unavailable.'), to: '/docs/getting-started/web-interface', label: t('了解控制台', 'Explore the console')},
+    {title: t('装机与恢复', 'Install and recover'), description: t('把安装或救援镜像挂载成虚拟介质；接入 ATX 后，还可以远程控制电源和复位。', 'Mount an installer or rescue image as virtual media, and add ATX control for remote power and reset.'), to: '/docs/getting-started/first-steps', label: t('查看使用指南', 'Read the user guide')},
+    {title: t('自动化集成', 'Build automations'), description: t('通过 OpenAPI 把 KVM 操作接入测试流程，例如发送按键、验证 BIOS 设置。', 'Use OpenAPI to integrate KVM actions into test workflows, such as sending keystrokes for BIOS verification.'), to: '/docs/development/api', label: t('查看 API 文档', 'Read the API guide')},
+    {title: t('摄像头与麦克风', 'Camera and microphone'), description: t('使用 UVC 摄像头转发、模拟 USB 麦克风或第二路摄像头，扩展远程音视频场景。', 'Extend remote audio and video with UVC camera forwarding, USB microphone emulation, or a second camera input.'), to: '/docs/video/cameras', label: t('查看摄像头指南', 'Read the camera guide')},
   ];
-
-  // BliSwitch 产品
-  const bliswitchProducts = [
-    {
-      id: "bliswitch-v2",
-      img: "/img/product/bliswitch-v2-transp.webp",
-      title: "BliSwitch v2",
-      description: "8 IN 1 OUT & ATX Control",
-      width: 1920,
-      height: 1440,
-      dots: [false, false, false],
-      href: "/docs/device-guides/BliSwitch-v2-guide",
-      buy: getCurrentBuyLink("bliswitch-v2")
-    },
-    {
-      id: "bliswitch-v1",
-      img: "/img/product/bliswitch-v1-transp.webp",
-      title: "BliSwitch v1",
-      description: "4 IN 1 OUT & Portable",
-      width: 1920,
-      height: 1440,
-      dots: [false, false, false],
-      href: "/docs/device-guides/BliSwitch-v1-guide",
-      buy: getCurrentBuyLink("bliswitch-v1")
-    },
-  ];
-
-  // Peripheral 产品
-  const peripheralProducts = [
-       {
-      id: "C792",
-      img: "/img/product/C792-transp.webp",
-      title: "C792",
-      description: "Video/Audio Capture & Video Passthrough",
-      width: 1920,
-      height: 1080,
-      dots: [false, false, false],
-      href: "/docs/device-guides/C792",
-      buy: getCurrentBuyLink("C792")
-    },
-    {
-      id: "C790",
-      img: "/img/product/C790-transp.webp",
-      title: "C790",
-      description: "Video Capture & Audio Capture",
-      width: 1920,
-      height: 1080,
-      dots: [false, false, false],
-      href: "/docs/accessories/hdmi-csi-i2s#c790",
-      buy: getCurrentBuyLink("C790")
-    },
-    {
-      id: "C779",
-      img: "/img/product/C779-transp.webp",
-      title: "C779",
-      description: "Video Capture",
-      width: 1920,
-      height: 1080,
-      dots: [false, false, false],
-      href: "/docs/accessories/hdmi-csi-i2s#c779",
-      buy: getCurrentBuyLink("C779")
-    },
-    {
-      id: "splitter",
-      img: "/img/product/splitter-transp.webp",
-      title: "Splitter",
-      description: "USB-C Power Supply For Pi",
-      width: 1920,
-      height: 1440,
-      dots: [false, false, false],
-      href: "/docs/accessories/usb-splitter-guide",
-      buy: getCurrentBuyLink("splitter")
-    },
-  ];
-
-  // 轮播索引和切换逻辑
-  const [startIdxKVM, setStartIdxKVM] = useState(0);
-  const [startIdxSwitch, setStartIdxSwitch] = useState(0);
-  const [startIdxPeripheral, setStartIdxPeripheral] = useState(0);
-
-  const canPrevKVM = startIdxKVM > 0;
-  const canNextKVM = startIdxKVM + 3 < blikvmProducts.length;
-  const canPrevSwitch = startIdxSwitch > 0;
-  const canNextSwitch = startIdxSwitch + 3 < bliswitchProducts.length;
-  const canPrevPeripheral = startIdxPeripheral > 0;
-  const canNextPeripheral = startIdxPeripheral + 3 < peripheralProducts.length;
 
   // 视频链接配置，根据不同语言提供不同的视频
   const videoLinks = {
@@ -350,148 +191,155 @@ export default function Home() {
     <Layout
       wrapperClassName={styles.chineseHome}
       title={`Welcome to ${siteConfig.title}`}
-      description="BliKVM - KVM Over IP">
+      description={intro}>
 
 
-      <header className={styles.hero}>
-        <div className={styles.container}>
-          {/* 左侧内容 */}
-          <div className={styles.left}>
-            <h1 className={styles.title}>BliKVM</h1>
-            <h2 className={styles.subtitle}>KVM Over IP</h2>
-            <p className={styles.description}>
-              <Translate id="homepage.BlikvmIntro">
-              BliKVM is the best solution for remote server management.
-              </Translate>
-              <br />
-              <Translate id="homepage.BlikvmIntro2">
-              It supports multiple platforms and ensures secure and reliable access.
-              </Translate>
-            </p>
-            <div className={styles.buttons}>
-              {(
-                <a className={clsx(styles.button, styles.webButton)} href="https://blikvm.com/demo/" target="_blank" rel="noopener noreferrer">
-                  {currentLocale === 'zh-CN' ? '在线体验' : 'Try the demo'}
-                </a>
-              )}
-              <a className={clsx(styles.button, styles.iosButton)} href={currentLocale === 'zh-CN' ? '/zh-CN/docs/' : '/docs/'}>
-                <Translate id="homepage.Document">
-                  DOCUMENTATION
-                </Translate>
-              </a>
-              <a className={clsx(styles.button, styles.androidButton)} href={currentStoreLink}>
-                <Translate id="homepage.Store">
-                  STORE
-                </Translate>
-              </a>
+      <header className={styles.homeHero}>
+        <div className={styles.homeHeroInner}>
+          <div>
+            <span className={styles.demoEyebrow}>BliKVM · KVM OVER IP</span>
+            <h1>{t('电脑进不了系统，也能远程控制', 'Control your computer, even when it won’t boot')}</h1>
+            <p>{intro}</p>
+            <div className={styles.heroActions}>
+              <a href="#demo-preview" className={styles.heroPrimary}>{t('在线体验', 'Try the demo')} <span aria-hidden="true">↓</span></a>
+              <a href="#products" className={styles.heroSecondary}>{t('选择型号', 'Choose a model')}</a>
+              <Link to={`${base}/docs/`}>{t('查看文档', 'Documentation')}</Link>
             </div>
           </div>
-          {/* 右侧图片 */}
-          <div className={styles.right}>
-            <img
-              src={familyImage}
-              alt={currentLocale === 'zh-CN' ? 'BliKVM v1 CM4、v2 PCIe、v3 HAT 和 v4 Allwinner' : 'BliKVM v1 CM4, v2 PCIe, v3 HAT, and v4 Allwinner'}
-              className={styles.image}
-              width={1098}
-              height={332}
-              decoding="async"
-              fetchPriority="high"
-            />
-          </div>
+          <img src={familyImage} alt={t('BliKVM v1 CM4、v2 PCIe、v3 HAT 和 v4 Allwinner', 'BliKVM v1 CM4, v2 PCIe, v3 HAT, and v4 Allwinner')} width={1098} height={332} decoding="async" fetchPriority="high" />
         </div>
       </header>
 
-      <section className={styles.featuresSection} >
-        <div className={styles.featuresHeader}>
-          <span className={styles.featuresBadge}>BliKVM Features</span>
-          <h2 className={styles.featuresTitle}>
-            <Translate id="homepage.BlikvmFeature1">
-              Meet All Your Needs
-            </Translate>
-            </h2>
-          <p className={styles.featuresDescription}>
-            <Translate id="homepage.BlikvmFeature2">
-              We provide powerful features for your server and will continue to improve them.
-            </Translate>
-          </p>
+      <section id="demo-preview" className={styles.demoShowcase} aria-labelledby="demo-preview-heading">
+        <div className={styles.demoShowcaseInner}>
+          <span className={styles.demoEyebrow}><Translate id="homepage.demoPreview.badge">INTERACTIVE DEMO</Translate></span>
+          <h2 id="demo-preview-heading"><Translate id="homepage.demoPreview.title">Your computer, in your browser</Translate></h2>
+          <p className={styles.demoIntro}><Translate id="homepage.demoPreview.description">Explore remote video, keyboard control, and virtual media in the BliKVM console.</Translate></p>
+          <figure className={styles.demoFigure}>
+            <div className={styles.demoScreen}>
+              <img src={demoPreview} alt={currentLocale === 'zh-CN' ? 'BliKVM 在线演示的远程桌面、虚拟介质和键盘' : 'BliKVM demo with a remote desktop, virtual media, and keyboard'} width={2400} height={1860} loading="lazy" decoding="async" />
+              <div className={styles.demoAction}>
+                <a className={styles.demoLaunch} href="https://blikvm.com/demo/">
+                  <span aria-hidden="true">▶</span>
+                  <Translate id="homepage.demoPreview.cta">Try the BliKVM Console</Translate>
+                </a>
+              </div>
+            </div>
+            <figcaption><Translate id="homepage.demoPreview.caption">Try the BliKVM interface with a simulated desktop. No hardware needed.</Translate></figcaption>
+          </figure>
         </div>
-        <div className={styles.featuresGrid}>
-          <div className={styles.featureItem}>
-            <span className={styles.featureIcon}>🛡️</span>
-            <p><Translate id="feature.NonInvasive">Non-Invasive Remote Control</Translate></p>
+      </section>
+
+      <section className={styles.homeBand} aria-labelledby="wiring-heading">
+        <div className={styles.homeInner}>
+          <div className={styles.homeSectionHeading}>
+            <span className={styles.demoEyebrow}>{t('工作原理', 'HOW IT WORKS')}</span>
+            <h2 id="wiring-heading">{t('从接线到远程控制', 'From cables to remote control')}</h2>
+            <p>{t('以 BliKVM v4 为例：画面走 HDMI，键鼠走 USB，浏览器通过网络访问 BliKVM。', 'BliKVM v4 example: HDMI carries video, USB carries keyboard and mouse input, and your browser connects over the network.')}</p>
           </div>
-          <div className={styles.featureItem}>
-            <div className = {styles.featureImageIcon}>
-              <img src="/img/icon/api.svg" alt="API" className={styles.featureIcon} />
-            </div>
-            <p><Translate id="feature.OpenApi">Open APIs</Translate></p>
-          </div>
-          {(
-            <>
-              <div className={styles.featureItem}>
-                <span className={styles.featureIcon} aria-hidden="true">🎙️</span>
-                <p>{currentLocale === 'zh-CN' ? '模拟 USB 麦克风' : 'USB microphone emulation'}</p>
+          <figure className={styles.wiring}>
+            <div className={styles.wiringFlow}>
+              <div className={styles.wiringNode}>
+                <svg viewBox="0 0 64 48" aria-hidden="true" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><rect x="5" y="4" width="54" height="32" rx="4"/><path d="M32 36v8m-10 0h20M5 29h54"/></svg>
+                <strong>{t('被控电脑', 'Target computer')}</strong>
+                <small>{t('无需安装客户端', 'No software on the target')}</small>
               </div>
-              <div className={styles.featureItem}>
-                <span className={styles.featureIcon} aria-hidden="true">📷</span>
-                <p>{currentLocale === 'zh-CN' ? '模拟 UVC 摄像头' : 'UVC camera emulation'}</p>
+              <div className={styles.wiringConnection}>
+                <span>HDMI / USB</span><span className={styles.wireLine} aria-hidden="true" />
               </div>
-              <div className={styles.featureItem}>
-                <span className={styles.featureIcon} aria-hidden="true">📹</span>
-                <p>{currentLocale === 'zh-CN' ? '第二路摄像头接入' : 'Second camera input'}</p>
+              <div className={clsx(styles.wiringNode, styles.wiringDevice)}>
+                <img src={`${base}/img/product/blikvm-v4-transp.webp`} alt="" loading="lazy" />
+                <strong>BliKVM v4</strong>
+                <small>{t('使用独立供电', 'Separately powered')}</small>
               </div>
-            </>
-          )}
-          <div className={styles.featureItem}>
-            <span className={styles.featureIcon}>🎥</span>
-            <p><Translate id="feature.VideoCapture">Video Capture</Translate></p>
-          </div>
-          <div className={styles.featureItem}>
-            <span className={styles.featureIcon}>⌨️🖱️</span>
-            <p><Translate id="feature.KeyboardMouseForwarding">Keyboard/Mouse Forwarding</Translate></p>
-          </div>
-          <div className={styles.featureItem}>
-            <span className={styles.featureIcon}>💿</span>
-            <p><Translate id="feature.RemoteOSReinstallation">Remote OS Reinstallation</Translate></p>
-          </div>
-          <div className={styles.featureItem}>
-            <div className = {styles.featureImageIcon}>
-              <img src="/img/icon/discord.svg" alt="Discord" className={styles.featureIcon} />
+              <div className={styles.wiringConnection}>
+                <span>{t('网络', 'Network')}</span><span className={styles.wireLine} aria-hidden="true" />
+              </div>
+              <div className={styles.wiringNode}>
+                <svg viewBox="0 0 64 48" aria-hidden="true" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><rect x="5" y="5" width="54" height="38" rx="5"/><path d="M5 15h54m-46-5h1m5 0h1m5 0h1m3 13-6 6 6 6m7-12 6 6-6 6"/></svg>
+                <strong>{t('你的浏览器', 'Your browser')}</strong>
+                <small>{t('查看画面、操作键鼠', 'View video and send input')}</small>
+              </div>
             </div>
-            <p><Translate id="feature.ActiveCommunity">Active Community</Translate></p>
-          </div>
-          <div className={styles.featureItem}>
-            <div className = {styles.featureImageIcon}>
-              <img src="/img/icon/power_on.svg" alt="Power" className={styles.featureIcon} />
-            </div>
-            <p><Translate id="feature.RemotePowerOnOff">Remote Power On/Off</Translate></p>
-          </div>
-          <div className={styles.featureItem}>
-            <div className = {styles.featureImageIcon}>
-              <img src="/img/icon/browser.svg" alt="Browser" className={styles.featureIcon} />
-            </div>
-            <p><Translate id="feature.AccessViaWebUI">Access via Web UI</Translate></p>
-          </div>
-          <div className={styles.featureItem}>
-            <div className = {styles.featureImageIcon}>
-              <img src="/img/icon/language.svg" alt="Language" className={styles.featureIcon} />
-            </div>
-            <p><Translate id="feature.MultiLanguageSwitching">Multi-Language Switching</Translate></p>
-          </div>
-          <div className={styles.featureItem}>
-            <span className={styles.featureIcon}>🌐</span>
-            <p><Translate id="feature.WakeOnLan">Wake-on-LAN</Translate></p>
-          </div>
-          <div className={styles.featureItem}>
-            <span className={styles.featureIcon}>📊</span>
-            <p><Translate id="feature.HealthMonitoring">Health Monitoring</Translate></p>
+            <figcaption>{t('需要远程开机或复位时，可按设备手册选接 ATX 电源控制。', 'For remote power and reset, connect optional ATX control as described in your device guide.')}</figcaption>
+          </figure>
+          <div className={styles.homeLinks}>
+            <Link to={`${base}/docs/getting-started/first-steps`}>{t('查看快速入门 →', 'Read the quick start →')}</Link>
+            <Link to={`${base}/docs/device-guides/BliKVM-v4-guide`}>{t('查看 v4 接线指南 →', 'See the v4 wiring guide →')}</Link>
           </div>
         </div>
       </section>
 
-      <main id="products" className={styles.productsSection}>
-        <ChineseProductCatalog />
-      </main>
+      <section id="products" className={clsx(styles.homeBand, styles.homeTint)} aria-labelledby="models-heading">
+        <div className={styles.homeInner}>
+          <div className={styles.homeSectionHeading}>
+            <span className={styles.demoEyebrow}>{t('硬件选型', 'CHOOSE YOUR HARDWARE')}</span>
+            <h2 id="models-heading">{t('哪款 BliKVM 适合你？', 'Which BliKVM is right for you?')}</h2>
+            <p>{t('按你已有的硬件和安装方式选择。', 'Start with the hardware you have and how you want to install it.')}</p>
+          </div>
+          <div className={styles.modelGrid}>
+            {models.map((model) => (
+              <article className={styles.modelCard} key={model.id}>
+                <div className={styles.modelImage}><img src={`${base}${model.img}`} alt="" loading="lazy" /></div>
+                <div className={styles.modelBody}>
+                  <h3>{model.title}</h3>
+                  <strong>{model.description}</strong>
+                  <p>{modelUses[model.id]}</p>
+                  <div className={styles.modelLinks}>
+                    <Link to={`${base}/product/${model.id}`}>{t('产品详情', 'Details')}</Link>
+                    <Link to={`${base}/docs/${model.manual}`}>{t('安装手册', 'Manual')}</Link>
+                    {model.buy && <a href={model.buy}>{t('购买 ↗', 'Buy ↗')}</a>}
+                  </div>
+                </div>
+              </article>
+            ))}
+          </div>
+          <div className={styles.homeLinks}>
+            <Link to={`${base}/products`}>{t('查看全部产品与配件 →', 'See all products and accessories →')}</Link>
+          </div>
+        </div>
+      </section>
+
+      <section className={styles.homeBand} aria-labelledby="tasks-heading">
+        <div className={styles.homeInner}>
+          <div className={styles.homeSectionHeading}>
+            <span className={styles.demoEyebrow}>{t('功能与场景', 'WHAT YOU CAN DO')}</span>
+            <h2 id="tasks-heading">{t('你可以用 BliKVM 做什么？', 'What can you do with BliKVM?')}</h2>
+          </div>
+          <section id="multi-host" className={styles.switchShowcase} aria-labelledby="multi-host-heading">
+            <div className={styles.switchIntro}>
+              <span className={styles.demoEyebrow}>{t('一控多', 'MULTI-HOST CONTROL')}</span>
+              <h3 id="multi-host-heading">{t('一台 BliKVM，管理多台电脑', 'One BliKVM, multiple computers')}</h3>
+              <p>{t(
+                '把多台电脑接到 BliSwitch，在同一个浏览器控制台选择要操作的电脑。实验台、机柜或多台主机可以共用一台 BliKVM。',
+                'Connect your computers to a BliSwitch and select the one to control from the same browser console. Share one BliKVM across a test bench, rack, or group of PCs.',
+              )}</p>
+              <Link to={`${base}/product/bliswitch-compare`}>{t('比较两款 BliSwitch →', 'Compare BliSwitch models →')}</Link>
+            </div>
+            <div className={styles.switchModels}>
+              {switches.map((model) => (
+                <Link className={styles.switchModel} to={`${base}/product/${model.id}`} key={model.id}>
+                  <img src={`${base}${model.img}`} alt="" loading="lazy" />
+                  <div>
+                    <strong>{model.title}</strong>
+                    <span>{switchUses[model.id]}</span>
+                  </div>
+                </Link>
+              ))}
+            </div>
+          </section>
+          <div className={styles.taskGrid}>
+            {tasks.map(({title, description, to, label}) => (
+              <article className={styles.taskCard} key={to}>
+                <h3>{title}</h3><p>{description}</p><Link to={`${base}${to}`}>{label} →</Link>
+              </article>
+            ))}
+          </div>
+          <div className={styles.homeLinks}>
+            <Link to={`${base}/features`}>{t('查看完整功能清单 →', 'See the full feature list →')}</Link>
+          </div>
+        </div>
+      </section>
 
       <section id="use-cases" className={styles.useCasesSection}>
         <span className={styles.useCasesBadge}><Translate id="homepage.UseCase">Use Cases</Translate></span>
@@ -505,83 +353,9 @@ export default function Home() {
             <span className={styles.featuredCaseCta}><Translate id="homepage.hpCaseCta">Explore the case study</Translate><span aria-hidden="true"> ↗</span></span>
           </div>
         </Link>
-        <div className={styles.useCasesGrid}>
-          <div className={styles.useCaseItem}>
-            <img src="/img/icon/office.svg" alt="Office IT Management" className={styles.useCaseIcon} />
-            <div className={styles.useCaseContent}>
-              <h3>
-                <Translate id="homepage.UseCaseTitle1">
-                Office IT Management
-                </Translate>
-              </h3>
-              <p>
-                <Translate id="homepage.UseCase1">
-                BliKVM helps office staff efficiently resolve all IT issues with remote operations on computers and printers in his office and can enable remote work from home.
-                </Translate>
-              </p>
-            </div>
-          </div>
-          <div className={styles.useCaseItem}>
-            <img src="/img/icon/data-center.svg" alt="Datacenter Remote Management" className={styles.useCaseIcon} />
-            <div className={styles.useCaseContent}>
-              <h3>
-                <Translate id="homepage.UseCaseTitle2">
-                Datacenter Remote Management
-                </Translate>
-              </h3>
-              <p>
-                <Translate id="homepage.UseCase2">
-                BliKVM helps data center engineers remotely resolve the data center access issue for thousands of users by checking server statuses, adjusting configurations, and rerouting traffic within an hour.
-                </Translate>
-              </p>
-            </div>
-          </div>
-          {/* <div className={styles.useCaseItem}>
-            <img src="/img/remote-helpdesk-icon.png" alt="Remote Helpdesk" className={styles.useCaseIcon} />
-            <div className={styles.useCaseContent}>
-              <h3>Remote Helpdesk</h3>
-              <p>
-                Provide a self-service TinyPilot station at a remote office and allow your IT Support team to troubleshoot from afar.
-              </p>
-            </div>
-          </div>
-          <div className={styles.useCaseItem}>
-            <img src="/img/server-access-icon.png" alt="On-Demand Server Access" className={styles.useCaseIcon} />
-            <div className={styles.useCaseContent}>
-              <h3>On-Demand Server Access</h3>
-              <p>
-                Plug a TinyPilot in and start troubleshooting within minutes when you need quick remote access in a server room.
-              </p>
-            </div>
-          </div> */}
-          <div className={styles.useCaseItem}>
-            <img src="/img/icon/manufacturer.svg" alt="Manufacturing" className={styles.useCaseIcon} />
-            <div className={styles.useCaseContent}>
-              <h3>
-                <Translate id="homepage.UseCaseTitle3">
-                Manufacturing Management
-                </Translate>
-              </h3>
-              <p>
-                <Translate id="homepage.UseCase3">
-                BliKVM helps factory operators achieve large-scale and automated production by controlling most special equipment with USB and video ports or integrating into automated processes via API.
-                </Translate>
-              </p>
-            </div>
-          </div>
-          {/* <div className={styles.useCaseItem}>
-            <img src="/img/broadcast-icon.png" alt="Broadcast Control Room" className={styles.useCaseIcon} />
-            <div className={styles.useCaseContent}>
-              <h3>Broadcast Control Room</h3>
-              <p>
-                TinyPilot provides a way for many team members to view and control a single computer used for audio or video broadcasting.
-              </p>
-            </div>
-          </div> */}
-        </div>
       </section>
 
-      <section className={styles.videoSection}>
+      <section id="reviews" className={styles.videoSection}>
         <div className={styles.videoHeader}>
           <span className={styles.trustBadge}>
             <Translate id="homepage.videoTrustBadge">
