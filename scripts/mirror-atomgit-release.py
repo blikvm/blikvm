@@ -101,15 +101,22 @@ def upload(token, tag, path):
         headers = {key: value for key, value in grant["headers"].items()
                    if key.lower() in {"content-type", "x-obs-acl", "x-obs-callback",
                                       "x-obs-meta-project-id"}}
-        headers["Content-Length"] = str(path.stat().st_size)
-        with path.open("rb") as stream:
-            request = Request(url, data=stream, headers=headers, method="PUT")
-            with urlopen(request, timeout=120) as response:
-                if response.status not in (200, 201, 204):
-                    raise MirrorError(f"Unexpected upload response for {path.name}")
-    except HTTPError as exc:
-        raise MirrorError(f"Upload of {path.name} failed with HTTP {exc.code}") from None
-    except (URLError, OSError, KeyError, TypeError, ValueError):
+        # Keep the signed URL and callback headers out of the process arguments and logs.
+        config = [f"url = {json.dumps(url)}"]
+        config.extend(f"header = {json.dumps(f'{key}: {value}')}" for key, value in headers.items())
+        transfer = subprocess.run(
+            ["curl", "--disable", "--config", "-", "--silent", "--show-error", "--fail",
+             "--connect-timeout", "20", "--speed-time", "45", "--speed-limit", "65536",
+             "--max-time", "900", "--upload-file", str(path), "--output", os.devnull,
+             "--write-out", "%{http_code} %{size_upload}"],
+            input="\n".join(config) + "\n", capture_output=True, text=True, check=False,
+        )
+        status, _, sent = transfer.stdout.partition(" ")
+        if transfer.returncode or status not in {"200", "201", "204"}:
+            status = status if re.fullmatch(r"[0-9]{3}", status) else "unknown"
+            sent = sent if sent.isdecimal() else "unknown"
+            raise MirrorError(f"Upload of {path.name} failed (curl {transfer.returncode}, HTTP {status}, {sent} bytes sent)")
+    except (OSError, KeyError, TypeError, ValueError):
         raise MirrorError(f"Upload of {path.name} failed") from None
 
 

@@ -11,12 +11,13 @@ on:
 permissions:
   contents: read
 concurrency:
-  group: atomgit-firmware-mirror
+  group: atomgit-firmware-mirror-${{ github.event.release.tag_name || inputs.tag }}
   cancel-in-progress: false
 jobs:
   mirror:
     if: github.repository == 'blikvm/blikvm'
-    runs-on: ubuntu-latest
+    # Set ATOMGIT_RUNNER to the label of a trusted runner with good AtomGit connectivity.
+    runs-on: ${{ vars.ATOMGIT_RUNNER || 'ubuntu-latest' }}
     timeout-minutes: 90
     steps:
       - uses: actions/checkout@v4
