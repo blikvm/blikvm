@@ -1453,6 +1453,27 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
+  /api/v1/hid/gamepad:
+    get:
+      x-permission: kvm.input
+      operationId: getApiV1HidGamepad
+      summary: Read the USB gamepad mode or open an authenticated input stream
+      description: |
+        A same-origin WebSocket upgrade opens an exclusive gamepad input session.
+        The server acknowledges with the current mode as a text message.
+        Send 9-byte binary frames containing little-endian buttons (14 bits),
+        hat (0–7, neutral 8), LX, LY, RX, RY, and two unsigned trigger values.
+        Closing the connection or reconfiguring USB releases the gamepad.
+      security: [{ bearerAuth: [] }]
+      responses:
+        '101':
+          description: WebSocket input stream
+        '200':
+          description: Current mode (empty, hid, or switch)
+        '401':
+          description: Authentication required
+        '403':
+          description: Required permission missing
   /api/v1/hid/events:
     post:
       x-permission: kvm.input
@@ -1895,15 +1916,25 @@ paths:
         content:
           application/json:
             schema:
-              type: object
-              required: [interval]
-              properties:
-                interval:
-                  type: integer
-                  format: int32
+              oneOf:
+                - type: object
+                  required: [interval]
+                  additionalProperties: false
+                  properties:
+                    interval:
+                      type: integer
+                      minimum: 0
+                      maximum: 3600
+                      description: Legacy API. Zero disables the jiggler; a positive value saves a fixed idle interval.
+                - type: object
+                  required: [config]
+                  additionalProperties: false
+                  properties:
+                    config:
+                      $ref: '#/components/schemas/MouseJigglerConfig'
       responses:
         '200':
-          description: Updated
+          description: Device configuration persisted.
           content:
             application/json:
               schema:
@@ -1914,12 +1945,7 @@ paths:
                     type: boolean
                     enum: [true]
                   data:
-                    type: object
-                    required: [intervalSec]
-                    properties:
-                      intervalSec:
-                        type: integer
-                        format: int32
+                    $ref: '#/components/schemas/MouseJigglerStatus'
         '400':
           description: Invalid request
           content:
@@ -5954,7 +5980,7 @@ paths:
       x-permission: device.configure
       operationId: getApiV1UsbDeviceConfig
       summary: GET /api/v1/usb/device/config
-      description: Native backend endpoint. Requires the permission declared by x-permission when authentication is enabled.
+      description: Returns the configured USB functions, identifiers, endpoint budget and gamepadMode.
       security: [{ bearerAuth: [] }]
       responses:
         '200':
@@ -5969,13 +5995,19 @@ paths:
       x-permission: device.configure
       operationId: postApiV1UsbDeviceConfig
       summary: POST /api/v1/usb/device/config
-      description: Native backend endpoint. Requires the permission declared by x-permission when authentication is enabled.
+      description: Switch mode temporarily suppresses the other USB functions and preserves their configured settings.
       security: [{ bearerAuth: [] }]
       requestBody:
         required: false
         content:
           application/json:
-            schema: { type: object, additionalProperties: true }
+            schema:
+              type: object
+              additionalProperties: true
+              properties:
+                gamepadMode:
+                  type: string
+                  enum: ['', hid, switch]
       responses:
         '200':
           description: Operation result. Streaming and download endpoints return their native payload.
@@ -7163,12 +7195,61 @@ components:
                 wheelReverse:
                   type: boolean
             jiggler:
-              type: object
-              required: [intervalSec]
-              properties:
-                intervalSec:
-                  type: integer
-                  format: int32
+              $ref: '#/components/schemas/MouseJigglerStatus'
+
+    MouseJigglerConfig:
+      type: object
+      additionalProperties: false
+      required: [mode]
+      description: |
+        Device-wide and persistent. Presets choose the idle interval and random delay.
+        Custom mode requires an interval, a schedule and, for timed schedules, a time window and timezone.
+      properties:
+        mode:
+          type: string
+          enum: [off, frequent, standard, light, custom]
+        intervalSec:
+          type: integer
+          minimum: 0
+          maximum: 3600
+        jitterPercent:
+          type: integer
+          minimum: 0
+          maximum: 100
+        schedule:
+          type: string
+          enum: [always, daily, weekdays]
+        timezone:
+          type: string
+          description: IANA timezone or device to follow the device's timezone.
+        start:
+          type: string
+          description: Local time in HH:MM format, inclusive.
+        end:
+          type: string
+          description: Local time in HH:MM format, exclusive. Earlier times end on the following day.
+
+    MouseJigglerStatus:
+      type: object
+      required: [mode, intervalSec, jitterPercent, schedule]
+      properties:
+        mode:
+          $ref: '#/components/schemas/MouseJigglerConfig/properties/mode'
+        intervalSec:
+          $ref: '#/components/schemas/MouseJigglerConfig/properties/intervalSec'
+        jitterPercent:
+          $ref: '#/components/schemas/MouseJigglerConfig/properties/jitterPercent'
+        schedule:
+          $ref: '#/components/schemas/MouseJigglerConfig/properties/schedule'
+        timezone:
+          $ref: '#/components/schemas/MouseJigglerConfig/properties/timezone'
+        start:
+          $ref: '#/components/schemas/MouseJigglerConfig/properties/start'
+        end:
+          $ref: '#/components/schemas/MouseJigglerConfig/properties/end'
+        unavailableReason:
+          type: string
+          enum: [hid_disabled, relative_mouse_required, mouse_unavailable]
 
     HidFunctionConnection:
       type: object
