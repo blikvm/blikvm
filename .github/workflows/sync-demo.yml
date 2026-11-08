@@ -2,6 +2,13 @@ name: Sync latest frontend demo
 
 on:
   workflow_dispatch:
+    inputs:
+      only-if-updated:
+        description: Only deploy if frontend main differs from the live demo
+        type: boolean
+        default: false
+  schedule:
+    - cron: '7,17,27,37,47,57 * * * *'
 
 # The reusable website deployment writes only the generated gh-pages branch.
 # Source changes to protected master continue to require a pull request.
@@ -13,8 +20,53 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
-  deploy:
+  check:
     if: github.ref == 'refs/heads/master'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    env:
+      CHECK_SOURCE: ${{ github.event_name == 'schedule' || inputs.only-if-updated }}
+    outputs:
+      needed: ${{ steps.compare.outputs.needed }}
+    steps:
+      - name: Read frontend main revision
+        if: env.CHECK_SOURCE == 'true'
+        uses: actions/checkout@v4
+        with:
+          ssh-key: ${{ secrets.FRONTEND_DEMO_SSH_KEY }}
+          repository: blikvm/web_client_vanilla
+          ref: main
+          sparse-checkout: .github
+          sparse-checkout-cone-mode: false
+          persist-credentials: false
+
+      - name: Compare with the live demo
+        id: compare
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [[ "$CHECK_SOURCE" != true ]]; then
+            echo "needed=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          frontend=$(git rev-parse HEAD)
+          live=$(curl --fail --silent --show-error --retry 2 --max-time 20 \
+            -H 'Cache-Control: no-cache' \
+            "https://blikvm.com/demo/version.json?check=$GITHUB_RUN_ID-$GITHUB_RUN_ATTEMPT" |
+            jq -er '.sourceCommit | select(type == "string" and test("^[0-9a-f]{40}$"))')
+          printf 'Frontend main: %s\nLive demo: %s\n' "$frontend" "$live"
+
+          if [[ "$frontend" == "$live" ]]; then
+            echo "needed=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "needed=true" >> "$GITHUB_OUTPUT"
+          fi
+
+  deploy:
+    needs: check
+    if: needs.check.outputs.needed == 'true'
     uses: ./.github/workflows/deploy.yml
     with:
       source-ref: master
