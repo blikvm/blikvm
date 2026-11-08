@@ -3276,22 +3276,38 @@ paths:
     post:
       x-permission: security.manage
       tags: [auth]
-      summary: Set global auth enabled/disabled
+      summary: Change whether the device requires sign-in
+      description: >
+        While sign-in is required, this operation uses the current administrator's browser
+        session. While sign-in is off, send the username of an enabled administrator.
+        Both modes require that administrator's password and their one-time code if 2FA is enabled.
       operationId: postAuthEnable
       security:
         - bearerAuth: []
+        - {}
       requestBody:
         required: true
         content:
           application/json:
             schema:
               type: object
-              required: [auth]
+              required: [auth, password]
               properties:
                 auth:
                   type: boolean
                 enabled:
                   type: boolean
+                  description: Legacy alias for auth
+                username:
+                  type: string
+                  description: Administrator username required when sign-in is off
+                password:
+                  type: string
+                  format: password
+                code:
+                  type: string
+                  pattern: '^[0-9]{6}$'
+                  description: Required for an administrator with two-factor authentication
       responses:
         '200':
           description: Auth state updated
@@ -3317,7 +3333,19 @@ paths:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
         '403':
-          description: Admin required
+          description: Administrator session, credentials or 2FA verification required
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ErrorResponse'
+                  - type: object
+                    properties:
+                      code:
+                        type: string
+                        enum: [invalid_credentials, totp_required, totp_invalid]
+        '500':
+          description: Could not verify credentials or save the setting
           content:
             application/json:
               schema:
