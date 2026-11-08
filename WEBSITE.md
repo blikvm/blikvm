@@ -47,7 +47,11 @@ Required Actions secrets: `OPENAPI_SOURCE_TOKEN`, `SERVER_HOST`, `SERVER_USER`,
 `SERVER_SSH_KEY`, and `FRONTEND_DEMO_SSH_KEY` for demo synchronization. These
 are encrypted repository settings, never files in Git.
 
-To update the demo, run **Sync latest frontend demo** on `master`. It builds
+Every 10 minutes, **Sync latest frontend demo** checks whether frontend `main`
+differs from the live `/demo/version.json`. It deploys only when the commits
+differ, using the existing frontend read key. You can also run it manually on
+`master` to force a refresh or select **Only deploy if frontend main differs
+from the live demo**. It builds
 `blikvm/web_client_vanilla` through the same reusable website workflow. It
 replaces `static/demo/` in the runner workspace and records the exact source
 commit in `/demo/version.json`. The tracked demo remains a fallback snapshot;
@@ -76,9 +80,7 @@ Demo staging removes stale bundles and excludes `data/`. Missing entry assets,
 an incorrect `/demo/` base, escaping paths, symbolic links or invalid provenance
 fail before the previous snapshot is replaced. Run staging regression checks
 with `node --test scripts/sync-demo.test.mjs`. Check the completed workflow,
-`https://blikvm.com/demo/` and `/demo/version.json` after deployment. A frontend
-merge becomes live on the next manual Demo run or ordinary website deployment;
-no scheduled deployments or device firmware/App updates are added.
+`https://blikvm.com/demo/` and `/demo/version.json` after deployment.
 
 Website source was migrated from `blikvm/BliKVM-Website` at commit
 037e760d9cc7863e560d7337dac503fd124aabe2. The old repository is a private backup;
@@ -89,12 +91,13 @@ all future website and documentation changes belong here.
 官网和中英文文档统一在本仓库维护，现有官网地址不变。中文文档位于
 `i18n/zh-CN/`，英文文档位于 `docs/`；修改时同步正文、导航及图片。
 使用 Node.js 22 和 Yarn 1。推送 `master` 后自动部署；更新 Demo 可运行本仓库的
-**Sync latest frontend demo** 并选择 `master`。两种入口复用同一部署流程，都会
+**Sync latest frontend demo** 并选择 `master`。工作流每 10 分钟比较前端 `main` 与
+线上 `/demo/version.json`，提交有变化时才部署。手动运行默认强制刷新，也可以选择仅在
+提交有变化时部署。定时、手动和常规官网部署复用同一流程，都会
 构建最新前端 `main`，在运行器中更新 Demo，然后发布官网，避免文档部署覆盖成旧 Demo。
 工作流不向受保护的 `master` 推送打包结果，源码与工作流修改仍通过 PR 合并；仓库中的
 `static/demo/` 是后备快照。`/demo/version.json` 与工作流摘要记录实际前端提交及构建时间。
 同步保留 `data/` 排除规则，移除旧资源；缺失入口资源、错误基路径、越界路径、符号链接或
 无效版本记录会阻止替换和部署。可用 `node --test scripts/sync-demo.test.mjs` 运行回归检查。
-前端合并后需手动运行一次或等待下一次官网部署；没有增加定时部署，也不更新设备固件／App。
 固件镜像继续发布到 Releases。
 原 `BliKVM-Website` 仓库仅作为私有备份，不再承担生产部署。
