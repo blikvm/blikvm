@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { buildIndex, compareVersions, parseVersion, fetchReleases } from './sync-update-index.mjs';
+import { createHash } from 'node:crypto';
+import { buildIndex, compareVersions, parseVersion, fetchReleases, enrichIndex } from './sync-update-index.mjs';
 const asset = name => ({ name, size: 100, state: 'uploaded' });
 const release = (id, assets, extra = {}) => ({ id, html_url: `https://github.com/blikvm/blikvm/releases/tag/untagged-${id}`, published_at: '2026-10-23T00:00:00Z', draft: false, prerelease: false, assets: assets.map(asset), ...extra });
 test('real packaging names separate tracks and platforms; images and legacy packages are ignored', () => {
@@ -34,4 +35,24 @@ test('GitHub API failure cannot become an empty or latest index',async()=>{
 test('fetch every page rather than publish an incomplete index',async()=>{
  const calls=[];const releases=await fetchReleases(async url=>{calls.push(url);return {ok:true,json:async()=>calls.length===1?Array.from({length:100},(_,i)=>({id:i})):[{id:100}]};},'');
  assert.equal(releases.length,101);assert.equal(calls.length,2);
+});
+
+test('adds only matching AtomGit assets and build metadata without changing schema 1', async () => {
+ const name='blikvm-v1-v2-v3-app-3.0.4.tar.gz', sys='blikvm-v1-v2-v3-system-3.0.4.raucb';
+ const files={ [name]:{size:100,sha256:'a'.repeat(64)}, [sys]:{size:100,sha256:'b'.repeat(64)} };
+ const info=Buffer.from(JSON.stringify({platforms:[{files,minimumOS:'3.0.4',appVersion:'3.0.4',integratedAppMatchesStandalone:true}]}));
+ const entries=[{...asset(name),digest:'sha256:'+files[name].sha256},{...asset(sys),digest:'sha256:'+files[sys].sha256},
+   {...asset('SHA256SUMS'),digest:'sha256:'+'c'.repeat(64)},
+   {...asset('BUILD-INFO.json'),id:77,size:info.length,digest:'sha256:'+createHash('sha256').update(info).digest('hex')}];
+ const releases=[release(1,[],{html_url:'https://github.com/blikvm/blikvm/releases/tag/v3.0.4',assets:entries})];
+ const fetchImpl=async url => url.startsWith('https://api.github.com') ? new Response(info) : Response.json({
+   tag_name:'v3.0.4',assets:[{...entries[0],type:'attach'},{...entries[1],type:'attach',size:99},{...entries[2],type:'attach'}],
+ });
+ const index=await enrichIndex(buildIndex(releases),releases,fetchImpl,'');
+ assert.equal(index.schemaVersion,1);
+ assert.deepEqual(index.targets.bcm2711.stable.app.artifact,{name,size:100,sha256:files[name].sha256,atomgit:true,minOSVersion:'3.0.4'});
+ assert.deepEqual(index.targets.bcm2711.stable.system.artifact,{name:sys,size:100,sha256:files[sys].sha256,bundledAppVersion:'3.0.4'});
+ const noMirror=await enrichIndex(buildIndex(releases),releases,async()=>new Response(null,{status:503}),'');
+ assert.equal(noMirror.targets.bcm2711.stable.app.artifact.atomgit,undefined);
+ assert.equal(noMirror.targets.bcm2711.stable.app.releaseUrl,releases[0].html_url);
 });

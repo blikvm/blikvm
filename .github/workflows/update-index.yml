@@ -2,6 +2,9 @@ name: Refresh public update index
 on:
   release:
     types: [published, edited, deleted, unpublished, released, prereleased]
+  workflow_run:
+    workflows: [Mirror firmware to AtomGit]
+    types: [completed]
   workflow_dispatch:
 permissions:
   contents: read
@@ -11,6 +14,7 @@ concurrency:
   cancel-in-progress: false
 jobs:
   index:
+    if: github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
