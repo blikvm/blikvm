@@ -65,7 +65,7 @@ Simultaneous combinations depend on USB controller resources and firmware suppor
 ### Maintenance tools within reach
 
 - **Power management:** Use an ATX connection to control power and restart, or Wake-on-LAN to wake compatible systems.
-- **[VNC service](docs/function/vnc.md):** Use a compatible H.264 TigerVNC viewer with your web account on supported App versions. Configure it under Advanced & Diagnostics.
+- **[VNC service](docs/function/vnc.md):** Connect with your web account using DeskVNC on macOS or an H.264-enabled TigerVNC build. See the guide for tested versions and configure the service under Advanced & Diagnostics.
 - **Terminal and serial console:** Manage the KVM itself in your browser, or troubleshoot equipment through a configured serial connection.
 - **Automation:** Combine keyboard macros, custom scripts, and APIs to integrate repetitive tasks into your workflow.
 - **Monitoring and diagnostics:** Inspect status, network addresses, logs, and diagnostics, with Prometheus integration for monitoring.

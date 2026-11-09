@@ -15,17 +15,33 @@ for availability on your model; older Apps may not have this entry.
 4. Connect using the device's address and your **web account**. VNC is disabled by
    default; saving this setting does not restart the App or the web video stream.
 
-VNC shares the existing hardware-encoded H.264 video with the web viewer. It
-creates no VNC video subscription while disabled or enabled without connected
-viewers. A stalled VNC connection has its own timeout and can be disconnected
-without stopping the web stream. Turning VNC off closes its connections.
+VNC and the web viewer share one hardware H.264 encoder. When both are open,
+BliKVM sends the encoded video separately to each viewer, which adds network
+traffic. BliKVM subscribes to video for VNC only while a VNC viewer is connected.
+A stalled VNC connection can time out independently of the web stream. Turning
+VNC off closes its connections.
 
-## Compatible viewer and connection settings
+## Compatible VNC clients {#compatible-viewer-and-connection-settings}
 
 The viewer must support **Open H.264 encoding (50)** and **VeNCrypt X509Plain**.
-The validated client is **TigerVNC 1.14.1 built with FFmpeg H.264 support**.
-A version number alone does not prove that a packaged viewer includes H.264.
-Select H.264 explicitly if your viewer offers an encoding selection.
+Check the exact package for your operating system.
+
+| Platform | Client | BliKVM compatibility |
+| --- | --- | --- |
+| macOS | [DeskVNC Viewer 0.35.3 (Universal DMG)](https://github.com/psmux/DeskVNC/releases/download/v0.35.3/DeskVNCViewer_0.35.3_universal.dmg) | Video, keyboard and mouse verified on BliKVM v4 from an Intel Mac. The installer also includes an Apple Silicon build. |
+| Linux | [TigerVNC 1.14.1](https://github.com/TigerVNC/tigervnc/releases/tag/v1.14.1) built with FFmpeg H.264 support | Live video verified on BliKVM v4. Use a distribution package or build that includes H.264. |
+| Windows x64 | [TigerVNC Viewer 1.16.2 (standalone EXE)](https://sourceforge.net/projects/tigervnc/files/stable/1.16.2/vncviewer64-1.16.2.exe/download) | Open H.264 and X509Plain are present in this package. A live BliKVM connection with this Windows build is still unverified. |
+
+In DeskVNC, enter the device address and port (for example,
+`kvm.example.com:5900`) in the connection bar, then sign in with your BliKVM web
+account. In TigerVNC, select **H.264** in the encoding options if available.
+
+The official **TigerVNC 1.16.2 macOS DMG** lacks Open H.264. **RealVNC Viewer
+6.21.118** could not negotiate the required authentication in testing. On
+iOS and iPadOS, use the BliKVM web interface. Native VNC compatibility is
+unverified on those platforms.
+
+### TigerVNC command-line example
 
 For a device with a certificate valid for `kvm.example.com`:
 
