@@ -14,15 +14,29 @@
 4. 使用设备地址和自己的**网页账号**连接。VNC 默认关闭，保存此配置不会重启
    App 或网页视频服务。
 
-VNC 与网页共用现有的硬件 H.264 编码视频。关闭时，以及启用但没有客户端连接时，
-不会创建 VNC 视频订阅。停止读取数据的 VNC 连接有独立的超时处理，可在网页继续传输
-画面的同时被断开。关闭 VNC 会结束其现有连接。
+VNC 和网页共用一路 H.264 硬件编码。两边同时观看时，BliKVM 会分别发送编码后的
+视频，增加出站流量。只有客户端接入时，VNC 才订阅视频。停止读取数据的 VNC 连接
+可独立超时，网页可以继续播放。关闭 VNC 会结束其现有连接。
 
-## 客户端与连接参数
+## 兼容的 VNC 客户端 {#客户端与连接参数}
 
 客户端必须支持 **Open H.264 编码（50）** 和 **VeNCrypt X509Plain**。
-已验证的客户端是**编译启用 FFmpeg H.264 支持的 TigerVNC 1.14.1**。
-仅凭版本号不能判断发行包是否包含 H.264；客户端提供编码选项时，请明确选择 H.264。
+请核对对应操作系统的具体发行包。
+
+| 平台 | 客户端 | BliKVM 验证情况 |
+| --- | --- | --- |
+| macOS | [DeskVNC Viewer 0.35.3（通用 DMG）](https://github.com/psmux/DeskVNC/releases/download/v0.35.3/DeskVNCViewer_0.35.3_universal.dmg) | 已在 Intel Mac 上连接 BliKVM v4，验证画面和键鼠。安装包也包含 Apple Silicon 版本。 |
+| Linux | 启用 FFmpeg H.264 支持的 [TigerVNC 1.14.1](https://github.com/TigerVNC/tigervnc/releases/tag/v1.14.1) | 已在 BliKVM v4 上验证实时画面。请选用包含 H.264 的发行包或构建版本。 |
+| Windows x64 | [TigerVNC Viewer 1.16.2（独立 EXE）](https://sourceforge.net/projects/tigervnc/files/stable/1.16.2/vncviewer64-1.16.2.exe/download) | 已检查该发行包，包含 Open H.264 和 X509Plain。这个 Windows 版本尚未实连 BliKVM。 |
+
+在 DeskVNC 的连接栏输入设备地址和端口（例如 `kvm.example.com:5900`），再使用
+BliKVM 网页账号登录。在 TigerVNC 中，如果有编码选项，请选择 **H.264**。
+
+官方 **TigerVNC 1.16.2 macOS DMG** 缺少 Open H.264。实测 **RealVNC Viewer
+6.21.118** 无法协商所需的认证方式。iOS 和 iPadOS 可使用 BliKVM 网页界面，
+这两个平台的原生 VNC 客户端兼容性尚未验证。
+
+### TigerVNC 命令行示例
 
 如果设备证书对 `kvm.example.com` 有效，可使用：
 
