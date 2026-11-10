@@ -2796,6 +2796,8 @@ paths:
                           tasks: {type: boolean}
                           signedAudit: {type: boolean, enum: [false]}
                           versionFloor: {type: boolean, enum: [false]}
+                          onlineDownload: {type: boolean}
+                      download: {$ref: '#/components/schemas/OnlineUpdateDownload'}
         '401':
           description: Authentication required
         '500':
@@ -2827,6 +2829,64 @@ paths:
           description: Authentication required
         '502':
           description: Public index unavailable or malformed
+  /api/v1/updates/download:
+    get:
+      x-permission: device.update
+      tags: [system]
+      summary: Read the current device-side update download
+      operationId: getOnlineUpdateDownload
+      security: [{bearerAuth: []}]
+      responses:
+        '200':
+          description: Current download status, or idle
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok: {type: boolean}
+                  data: {$ref: '#/components/schemas/OnlineUpdateDownload'}
+        '403': {description: Administrator sign-in required}
+    post:
+      x-permission: device.update
+      tags: [system]
+      summary: Download and verify an update from the official catalog without installing it
+      operationId: startOnlineUpdateDownload
+      security: [{bearerAuth: []}]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [track, version, source]
+              properties:
+                track: {type: string, enum: [application, system]}
+                version: {type: string}
+                source: {type: string, enum: [auto, github, atomgit]}
+      responses:
+        '202':
+          description: The download started on the device
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok: {type: boolean}
+                  data: {$ref: '#/components/schemas/OnlineUpdateDownload'}
+        '400': {description: Invalid download request}
+        '403': {description: Administrator sign-in required}
+        '409': {description: Another operation is active or the package is unavailable or incompatible}
+        '502': {description: Official update catalog is unavailable}
+    delete:
+      x-permission: device.update
+      tags: [system]
+      summary: Cancel the active device-side download
+      operationId: cancelOnlineUpdateDownload
+      security: [{bearerAuth: []}]
+      responses:
+        '200': {description: Cancellation requested or no active download}
+        '403': {description: Administrator sign-in required}
   /api/v1/updates/events:
     get:
       x-permission: device.update
@@ -6587,6 +6647,19 @@ components:
         currentVersion: {type: string, format: date}
         recommendedVersion: {type: string, format: date}
         reason: {type: string}
+    OnlineUpdateDownload:
+      type: object
+      properties:
+        state: {type: string, enum: ['', idle, probing, downloading, verifying, ready, failed, cancelled]}
+        track: {type: string, enum: [application, system]}
+        version: {type: string}
+        name: {type: string}
+        size: {type: integer, format: int64}
+        received: {type: integer, format: int64}
+        source: {type: string, enum: [github, atomgit]}
+        switched: {type: boolean}
+        sha256: {type: string}
+        error: {type: string}
     UpdateTask:
       type: object
       required: [id, track, state, sourceVersion, bundleSha256, bundleName, startedAt, updatedAt, logs, checks]
