@@ -10,6 +10,6 @@ It differs from browser input, USB networking and arbitrary USB redirection. It 
 2. Open passthrough and check local device detection.
 3. For mouse passthrough, enable relative mouse in custom USB functions and select a mode including relative input.
 4. Enable passthrough, confirm running / grabbed status and test physical input.
-5. Set wheel reversal if needed and disable passthrough afterward.
+5. The physical mouse keeps its original scroll direction. Disable passthrough when finished.
 
 “Enabled, waiting for devices” means no usable input source has been found, not successful forwarding. The system may grab local input devices. Configuration requires appropriate management permission and operation follows account permissions. No old `pass_through` file editing is needed.
