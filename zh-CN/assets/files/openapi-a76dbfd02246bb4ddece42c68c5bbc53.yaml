@@ -1795,11 +1795,9 @@ paths:
                     enum: [true]
                   data:
                     type: object
-                    required: [enabled, wheelReverse]
+                    required: [enabled]
                     properties:
                       enabled:
-                        type: boolean
-                      wheelReverse:
                         type: boolean
         '401':
           description: Missing or invalid token
@@ -1842,54 +1840,6 @@ paths:
                     required: [enabled]
                     properties:
                       enabled:
-                        type: boolean
-        '400':
-          description: Invalid request
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-        '401':
-          description: Missing or invalid token
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-  /api/v1/hid/loop/update:
-    post:
-      x-permission: device.configure
-      tags: [hid]
-      summary: Update HID pass-through settings
-      operationId: postHidLoopUpdate
-      security:
-        - bearerAuth: []
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              required: [wheelReverse]
-              properties:
-                wheelReverse:
-                  type: boolean
-      responses:
-        '200':
-          description: Updated
-          content:
-            application/json:
-              schema:
-                type: object
-                required: [ok, data]
-                properties:
-                  ok:
-                    type: boolean
-                    enum: [true]
-                  data:
-                    type: object
-                    required: [wheelReverse]
-                    properties:
-                      wheelReverse:
                         type: boolean
         '400':
           description: Invalid request
@@ -7289,11 +7239,9 @@ components:
               $ref: '#/components/schemas/HidConnectionStatus'
             passThrough:
               type: object
-              required: [enabled, wheelReverse]
+              required: [enabled]
               properties:
                 enabled:
-                  type: boolean
-                wheelReverse:
                   type: boolean
             jiggler:
               $ref: '#/components/schemas/MouseJigglerStatus'
