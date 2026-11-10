@@ -1,5 +1,6 @@
 #!/usr/bin/env node
 import fs from 'node:fs/promises';
+import { createHash } from 'node:crypto';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -60,13 +61,95 @@ export function buildIndex(releases, generatedAt = new Date().toISOString()) {
         const rank = `${release.published_at}/${String(release.id).padStart(20, '0')}`;
         if (cmp > 0 || (cmp === 0 && rank > old.rank)) {
           chosen.set(key, { version, rank });
-          targets[target][channel][track] = { version, releaseUrl: release.html_url };
+          const candidate = { version, releaseUrl: release.html_url };
+          const sha256 = assetSHA(asset);
+          if (sha256) candidate.artifact = { name: asset.name, size: asset.size, sha256 };
+          targets[target][channel][track] = candidate;
         }
       }
     }
   }
   return { schemaVersion: 1, generatedAt, targets };
 }
+function assetSHA(asset) {
+  return /^sha256:[0-9a-f]{64}$/.test(asset?.digest || '') ? asset.digest.slice(7) : '';
+}
+
+function sameAsset(source, mirror) {
+  return source && mirror && assetSHA(source) && source.digest === mirror.digest && source.size === mirror.size;
+}
+
+async function jsonIfAvailable(url, fetchImpl, headers) {
+  try {
+    const response = await fetchImpl(url, { headers, signal: AbortSignal.timeout(10000) });
+    return response.ok ? response : null;
+  } catch { return null; }
+}
+
+// Downloads are optional additions to schema 1. Older devices keep using
+// releaseUrl, and an unavailable mirror never prevents a GitHub update.
+export async function enrichIndex(index, releases, fetchImpl = fetch, token = process.env.GITHUB_TOKEN) {
+  const candidates = new Map();
+  for (const family of Object.values(index.targets)) {
+    for (const channel of Object.values(family)) {
+      for (const [track, candidate] of Object.entries(channel)) {
+        if (!candidate?.artifact) continue;
+        if (!candidates.has(candidate.releaseUrl)) candidates.set(candidate.releaseUrl, []);
+        candidates.get(candidate.releaseUrl).push([track, candidate]);
+      }
+    }
+  }
+  const byURL = new Map(releases.map(release => [release.html_url, release]));
+  await Promise.all([...candidates].map(async ([url, entries]) => {
+    const release = byURL.get(url);
+    const tag = url.split('/').at(-1);
+    if (!release || !/^[A-Za-z0-9][A-Za-z0-9._+-]{0,160}$/.test(tag)) return;
+    const upstream = new Map(release.assets.map(asset => [asset.name, asset]));
+    const manifest = upstream.get('SHA256SUMS');
+    const infoAsset = upstream.get('BUILD-INFO.json');
+    const [mirrorResponse, infoResponse] = await Promise.all([
+      jsonIfAvailable(`https://api.atomgit.com/api/v5/repos/weixin_43053387/blikvm-firmware-mirror/releases/tags/${encodeURIComponent(tag)}`, fetchImpl),
+      infoAsset?.size > 0 && infoAsset.size <= 1024 * 1024 && assetSHA(infoAsset) && Number.isSafeInteger(infoAsset.id)
+        ? jsonIfAvailable(`https://api.github.com/repos/${REPOSITORY}/releases/assets/${infoAsset.id}`, fetchImpl, {
+            Accept: 'application/octet-stream', ...(token ? { Authorization: `Bearer ${token}` } : {}),
+          })
+        : null,
+    ]);
+    const mirror = await mirrorResponse?.json().catch(() => null);
+    const mirrored = new Map((mirror?.tag_name === tag && Array.isArray(mirror.assets) ? mirror.assets : [])
+      .filter(asset => asset?.type === 'attach').map(asset => [asset.name, asset]));
+    let platforms = [];
+    if (infoResponse) {
+      try {
+        const bytes = Buffer.from(await infoResponse.arrayBuffer());
+        if (bytes.length === infoAsset.size && createHash('sha256').update(bytes).digest('hex') === assetSHA(infoAsset)) {
+          const info = JSON.parse(bytes);
+          if (Array.isArray(info.platforms)) platforms = info.platforms;
+        }
+      } catch { /* The signed package will enforce compatibility at installation. */ }
+    }
+    for (const [track, candidate] of entries) {
+      const artifact = candidate.artifact;
+      if (sameAsset(manifest, mirrored.get('SHA256SUMS')) &&
+          sameAsset(upstream.get(artifact.name), mirrored.get(artifact.name))) {
+        artifact.atomgit = true;
+      }
+      const platform = platforms.find(p => p?.files?.[artifact.name]?.sha256 === artifact.sha256 &&
+        p.files[artifact.name].size === artifact.size);
+      if (!platform) continue;
+      if (track === 'app' && platform.minimumOS) {
+        try { parseVersion(platform.minimumOS); artifact.minOSVersion = platform.minimumOS; }
+        catch { /* Ignore malformed optional metadata. */ }
+      }
+      if (track === 'system' && platform.integratedAppMatchesStandalone === true && platform.appVersion) {
+        try { parseVersion(platform.appVersion); artifact.bundledAppVersion = platform.appVersion; }
+        catch { /* Ignore malformed optional metadata. */ }
+      }
+    }
+  }));
+  return index;
+}
+
 export async function fetchReleases(fetchImpl = fetch, token = process.env.GITHUB_TOKEN) {
   const headers = { Accept: 'application/vnd.github+json', 'X-GitHub-Api-Version': '2022-11-28', 'User-Agent': 'BliKVM-update-index' };
   if (token) headers.Authorization = `Bearer ${token}`;
@@ -88,6 +171,7 @@ async function main() {
   const input = option('--input');
   const releases = input ? JSON.parse(await fs.readFile(input, 'utf8')) : await fetchReleases();
   const result = buildIndex(releases);
+  if (!input) await enrichIndex(result, releases);
   const output = option('--output') || 'static/updates/index.json';
   try {
     const previous = JSON.parse(await fs.readFile(output, 'utf8'));
