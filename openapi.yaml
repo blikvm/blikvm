@@ -23,6 +23,7 @@ tags:
   - name: msd
   - name: hid
   - name: prometheus
+  - name: home-assistant
   - name: account
   - name: display
   - name: system
@@ -1225,6 +1226,95 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
+  /api/v1/home-assistant:
+    get:
+      x-permission: device.configure
+      tags: [home-assistant]
+      summary: Get Home Assistant MQTT settings and connection status
+      operationId: getHomeAssistant
+      security: [{ bearerAuth: [] }]
+      responses:
+        '200':
+          description: Connection status and settings with the MQTT password omitted
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/HomeAssistantResponse' }
+        '401': { description: Missing or invalid credentials }
+        '403': { description: Device configuration permission required }
+    put:
+      x-permission: device.configure
+      tags: [home-assistant]
+      summary: Save Home Assistant MQTT settings
+      description: >
+        Enabling the integration or changing an enabled broker configuration
+        requires a successful MQTT handshake before saving. Enabling remote ATX
+        commands requires ATX support and both host.power and host.power.force.
+      operationId: putHomeAssistant
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/HomeAssistantRequest' }
+      responses:
+        '200':
+          description: Saved settings and current connection status
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/HomeAssistantResponse' }
+        '400':
+          description: Invalid settings or ATX control unavailable
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorResponse' }
+        '401': { description: Missing or invalid credentials }
+        '403': { description: Missing device configuration or required host power permissions }
+        '409':
+          description: Settings changed during the broker check
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorResponse' }
+        '500':
+          description: Failed to initialize or save settings
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorResponse' }
+        '502':
+          description: MQTT broker handshake failed
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorResponse' }
+  /api/v1/home-assistant/test:
+    post:
+      x-permission: device.configure
+      tags: [home-assistant]
+      summary: Test Home Assistant MQTT broker connectivity
+      description: Tests the supplied broker settings without saving them or enabling the integration.
+      operationId: testHomeAssistant
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/HomeAssistantRequest' }
+      responses:
+        '200':
+          description: MQTT broker handshake succeeded
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/OkResponse' }
+        '400':
+          description: Invalid broker settings
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorResponse' }
+        '401': { description: Missing or invalid credentials }
+        '403': { description: Device configuration permission required }
+        '502':
+          description: MQTT broker handshake failed
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorResponse' }
   /api/v1/display:
     get:
       x-permission: device.configure
@@ -6546,6 +6636,57 @@ components:
             authentication: { type: string }
             clientRequirement: { type: string }
             maxClients: { type: integer }
+    HomeAssistantRequest:
+      type: object
+      properties:
+        enabled: { type: boolean }
+        address:
+          type: string
+          description: Broker hostname or IP address. Required for a connection test or when enabling the integration.
+        port:
+          type: integer
+          minimum: 0
+          maximum: 65535
+          description: Zero selects port 1883 for MQTT or 8883 when TLS is enabled.
+        username: { type: string }
+        password:
+          type: string
+          writeOnly: true
+          description: Requires a username. An empty or omitted password reuses the saved password if the address, port, TLS setting and username are unchanged.
+        clearPassword:
+          type: boolean
+          description: When true, use no password even if one was supplied or saved.
+        tls: { type: boolean }
+        discovery: { type: boolean }
+        remote:
+          type: boolean
+          description: Allow Home Assistant to send remote ATX power commands.
+    HomeAssistantResponse:
+      type: object
+      required: [ok, data]
+      properties:
+        ok: { type: boolean, enum: [true] }
+        data:
+          type: object
+          required: [status, atxControl, atxEnabled, atxSense, passwordSet, settings]
+          properties:
+            status: { type: string, enum: [disabled, connecting, connected, disconnected] }
+            error: { type: string }
+            atxControl: { type: boolean, description: The device supports ATX button control. }
+            atxEnabled: { type: boolean, description: ATX control is enabled on the device. }
+            atxSense: { type: boolean, description: The device can read the host power LED. }
+            passwordSet: { type: boolean, description: An MQTT broker password is saved. }
+            settings:
+              type: object
+              required: [enabled, address, port, username, tls, discovery, remote]
+              properties:
+                enabled: { type: boolean }
+                address: { type: string }
+                port: { type: integer }
+                username: { type: string }
+                tls: { type: boolean }
+                discovery: { type: boolean }
+                remote: { type: boolean }
     LocalDiscoveryResponse:
       type: object
       required: [ok, data]
