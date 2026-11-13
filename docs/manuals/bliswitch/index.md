@@ -1,5 +1,9 @@
 ---
 title: BliSwitch manual
+displayed_sidebar: null
+hide_table_of_contents: true
+pagination_next: null
+pagination_prev: null
 ---
 
 import {SwitchManualCards} from '@site/src/components/ChineseProductCatalog';

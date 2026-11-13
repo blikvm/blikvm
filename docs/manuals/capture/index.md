@@ -1,5 +1,9 @@
 ---
 title: HDMI capture modules manual
+displayed_sidebar: null
+hide_table_of_contents: true
+pagination_next: null
+pagination_prev: null
 ---
 
 import CaptureCards from '@site/src/components/CaptureCards';

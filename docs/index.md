@@ -2,6 +2,10 @@
 id: index
 title: Product documentation
 slug: /
+displayed_sidebar: null
+hide_table_of_contents: true
+pagination_next: null
+pagination_prev: null
 ---
 
 # Product documentation

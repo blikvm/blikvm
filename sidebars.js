@@ -143,16 +143,9 @@ export default {
   "captureSidebar": [
     {
       "type": "link",
-      "label": "← All product manuals",
-      "href": "/docs/"
+      "label": "← All capture modules",
+      "href": "/docs/manuals/capture/"
     },
-    "manuals/capture/index",
-    "device-guides/C778",
-    "capture/c778-raspberry-pi-5",
-    "capture/c778-rv1126b",
-    "device-guides/C792",
-    "device-guides/C790",
-    "device-guides/C779",
     "capture/linux-integration",
     "accessories/hdmi-csi-i2s"
   ],
@@ -178,5 +171,59 @@ export default {
     },
     "manuals/splitter/index",
     "accessories/usb-splitter-guide"
+  ],
+  "c778Sidebar": [
+    {
+      "type": "link",
+      "label": "← All capture modules",
+      "href": "/docs/manuals/capture/"
+    },
+    "device-guides/C778",
+    "capture/c778-raspberry-pi-5",
+    "capture/c778-rv1126b",
+    {
+      "type": "link",
+      "label": "Linux integration and troubleshooting",
+      "href": "/docs/capture/linux-integration"
+    }
+  ],
+  "c792Sidebar": [
+    {
+      "type": "link",
+      "label": "← All capture modules",
+      "href": "/docs/manuals/capture/"
+    },
+    "device-guides/C792",
+    {
+      "type": "link",
+      "label": "Linux integration and troubleshooting",
+      "href": "/docs/capture/linux-integration"
+    }
+  ],
+  "c790Sidebar": [
+    {
+      "type": "link",
+      "label": "← All capture modules",
+      "href": "/docs/manuals/capture/"
+    },
+    "device-guides/C790",
+    {
+      "type": "link",
+      "label": "Linux integration and troubleshooting",
+      "href": "/docs/capture/linux-integration"
+    }
+  ],
+  "c779Sidebar": [
+    {
+      "type": "link",
+      "label": "← All capture modules",
+      "href": "/docs/manuals/capture/"
+    },
+    "device-guides/C779",
+    {
+      "type": "link",
+      "label": "Linux integration and troubleshooting",
+      "href": "/docs/capture/linux-integration"
+    }
   ]
 };
