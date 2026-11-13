@@ -2,14 +2,14 @@
 title: HDMI capture modules manual
 ---
 
+import CaptureCards from '@site/src/components/CaptureCards';
+
 # HDMI capture modules manual
 
-Wiring, specifications and Linux integration for C778, C792, C790, C779 and the legacy C780.
+All products support Raspberry Pi, NVIDIA, Rockchip and other platforms. Technical support and custom solutions are available.
 
-- [C778: LT6911UXE HDMI → CSI-2](/docs/device-guides/C778)
-- [C792: HDMI passthrough](/docs/device-guides/C792)
-- [C790: dual CSI connectors and I²S](/docs/device-guides/C790)
-- [C779: two-lane video capture](/docs/device-guides/C779)
+<CaptureCards />
+
 - [Linux integration and troubleshooting](/docs/capture/linux-integration)
 - [C780 legacy reference](/docs/accessories/hdmi-csi-i2s#c780)
 

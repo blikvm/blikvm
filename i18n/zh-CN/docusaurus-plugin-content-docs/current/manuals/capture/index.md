@@ -2,14 +2,14 @@
 title: HDMI 采集模块 使用手册
 ---
 
+import CaptureCards from '@site/src/components/CaptureCards';
+
 # HDMI 采集模块 使用手册
 
-C778、C792、C790、C779 与历史 C780 的接线、规格及 Linux 接入。
+所有产品均支持树莓派、英伟达（NVIDIA）、瑞芯微（Rockchip）等平台，提供技术支持与方案定制。
 
-- [C778: LT6911UXE HDMI → CSI-2](/zh-CN/docs/device-guides/C778)
-- [C792：带 HDMI 环出](/zh-CN/docs/device-guides/C792)
-- [C790：双 CSI 接口与 I²S](/zh-CN/docs/device-guides/C790)
-- [C779：双通道视频采集](/zh-CN/docs/device-guides/C779)
+<CaptureCards zh />
+
 - [Linux 接入与排查](/zh-CN/docs/capture/linux-integration)
 - [C780 历史型号与接口参考](/zh-CN/docs/accessories/hdmi-csi-i2s#c780)
 
