@@ -3,6 +3,7 @@ import Layout from '@theme/Layout';
 import Link from '@docusaurus/Link';
 import useSiteLanguage from '@site/src/components/useSiteLanguage';
 import s from './c778.module.css';
+import C778Cases from '@site/src/components/C778Cases';
 
 export default function C778() {
   const {base, t, zh} = useSiteLanguage();
@@ -26,6 +27,7 @@ export default function C778() {
         <img className={s.modeDiagram} src={`${base}/assets/images/c778/output-split-${zh ? 'zh' : 'en'}.svg`} alt={t('左右半幅输出模式', 'Left/right split output profile')}/>
         <p className={s.note}>{t('4K60、1080p120 描述 HDMI 输入能力。主机实际采集、显示和编码规格需匹配所用固件、像素格式、CSI 带宽与应用性能。', '4K60 and 1080p120 describe HDMI input capability. Actual host capture, display and encoding also depend on firmware, pixel format, CSI bandwidth and application performance.')}</p>
       </section>
+      <C778Cases />
       <section id="platforms" className={s.section}><p className={s.eyebrow}>PLATFORM GUIDES</p><h2>{t('按主机选择接入方式', 'Choose the integration path for your host')}</h2><div className={s.platforms}>
         <article><span className={s.status}>{t('优先验证', 'Validation priority')}</span><h3>Raspberry Pi 5B</h3><p>{t('双 CAM/DISP 接入，配套 LT 驱动、RP1-CFE 和设备树。现有厂测包依赖精确内核版本。', 'Dual CAM/DISP connection with LT and RP1-CFE drivers plus a device-tree overlay. The existing test bundle requires an exact kernel match.')}</p><Link to={`${base}/docs/capture/c778-raspberry-pi-5`}>{t('查看 Pi 5B 指南 →', 'Read the Pi 5B guide →')}</Link></article>
         <article><span className={s.status}>{t('适配中', 'Integration in progress')}</span><h3>RV1126B</h3><p>{t('以 Luckfox Aura 为例，整理单路四 Lane CSI、I²C 与 I²S 接入。板级连接和输出模式需实物确认。', 'Luckfox Aura reference integration using one four-lane CSI path, I²C and I²S. Board wiring and output modes need hardware verification.')}</p><Link to={`${base}/docs/capture/c778-rv1126b`}>{t('查看 RV1126B 指南 →', 'Read the RV1126B guide →')}</Link></article>

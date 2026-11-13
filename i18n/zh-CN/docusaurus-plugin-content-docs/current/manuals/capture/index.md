@@ -1,5 +1,9 @@
 ---
 title: HDMI 采集模块 使用手册
+displayed_sidebar: null
+hide_table_of_contents: true
+pagination_next: null
+pagination_prev: null
 ---
 
 import CaptureCards from '@site/src/components/CaptureCards';
