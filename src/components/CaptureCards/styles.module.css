@@ -1,0 +1,14 @@
+.grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1.25rem; margin: 1.75rem 0 2rem; }
+.card { display: flex; flex-direction: column; overflow: hidden; border: 1px solid var(--ifm-color-emphasis-200); border-radius: 14px; background: var(--ifm-background-surface-color); color: var(--ifm-font-color-base); transition: border-color .2s, box-shadow .2s, transform .2s; }
+.card:hover { color: var(--ifm-font-color-base); text-decoration: none; border-color: var(--ifm-color-primary); box-shadow: 0 8px 24px rgba(0,0,0,.08); transform: translateY(-3px); }
+.card:focus-visible { outline: 3px solid var(--ifm-color-primary); outline-offset: 4px; }
+.image { height: 220px; padding: 24px; display: flex; align-items: center; justify-content: center; background: #f6f7f9; }
+.image img { width: 100%; height: 100%; object-fit: contain; }
+.body { padding: 1.25rem; display: flex; flex-direction: column; flex: 1; }
+.body h2 { margin: 0 0 .4rem; font-size: 1.4rem; }
+.specs { list-style: none; padding: 0; margin: 0 0 1.25rem; color: var(--ifm-color-emphasis-700); }
+.specs li { margin: .35rem 0; }
+.specs li:first-child { font-weight: 600; color: var(--ifm-font-color-base); }
+.body > span { margin-top: auto; color: var(--ifm-color-primary); font-weight: 600; font-size: .9rem; }
+@media (max-width: 600px) { .grid { grid-template-columns: 1fr; } }
+@media (prefers-reduced-motion: reduce) { .card { transition: none; } .card:hover { transform: none; } }
