@@ -7,9 +7,23 @@ import s from './styles.module.css';
 
 export function ManualCards() {
   const {zh, base, t} = useSiteLanguage();
-  return <div className={s.grid}>{getGroups(zh).map(([id, title, desc]) => <article className={s.card} key={id}>
-    <h3>{title}</h3><p>{desc}</p><Link to={`${base}/docs/manuals/${id}/`}>{t('打开使用手册 →', 'Open manual →')}</Link>
-  </article>)}</div>;
+  const products = getProducts(zh);
+  return <div className={s.manualGrid}>{getGroups(zh).map(([id, title, desc]) => {
+    const product = products.find(p => p.group === id);
+    return <Link className={s.manualCard} key={id} to={`${base}/docs/manuals/${id}/`}>
+      <div className={s.manualImage}><img src={`${base}${product.img}`} alt={title} loading="lazy" /></div>
+      <div className={s.manualBody}><h3>{title}</h3><p>{desc}</p><span>{t('打开使用手册 →', 'Open manual →')}</span></div>
+    </Link>;
+  })}</div>;
+}
+export function SwitchManualCards() {
+  const {zh, base, t} = useSiteLanguage();
+  return <div className={s.manualGrid}>{getProducts(zh).filter(p => p.group === 'bliswitch').map(product =>
+    <Link className={s.manualCard} key={product.id} to={`${base}/docs/${product.manual}`}>
+      <div className={s.manualImage}><img src={`${base}${product.img}`} alt={product.title} loading="lazy" /></div>
+      <div className={s.manualBody}><h3>{product.title}</h3><p>{product.description}</p><span>{t('打开使用手册 →', 'Open manual →')}</span></div>
+    </Link>
+  )}</div>;
 }
 export default function ProductCatalog({family}) {
   const {zh, base, t} = useSiteLanguage();
