@@ -77,7 +77,7 @@ case "${1:-start}" in
 esac
 ```
 
-Foreground services are preferred. A daemonized program must implement its own real `stop` and `status` actions: `status` returns zero only while that instance is alive. These actions have a two-second execution bound. The executor retains the running script snapshot for stopping it, even if its source is replaced.
+Foreground services are preferred. A daemonized program must implement its own real `stop` and `status` actions: `status` returns zero only while that instance is alive. These actions have a two-second execution bound. The executor retains the running script snapshot for stopping it, even if its source is replaced. If a daemon fails to stop, the executor reports failure, retains its ownership record and refuses to start a replacement. Correct its stop action before retrying.
 
 An SSH-created `SNN*.sh` with no policy defaults to once at startup, in filename order. Other unconfigured names default to manual. A new Web upload explicitly defaults to manual; editing an existing SSH startup script preserves its policy.
 

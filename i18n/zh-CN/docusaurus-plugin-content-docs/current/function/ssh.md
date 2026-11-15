@@ -35,7 +35,7 @@ passwd ops
 命令会交互询问密码。随后可用 `ssh ops@BLIKVM_ADDRESS` 登录，用户自行执行
 `passwd` 修改自己的密码。默认 `/home/ops` 保存在持久化 `/data/home`。
 公钥登录使用标准 `/home/ops/.ssh/authorized_keys`：归 `ops` 所有，`.ssh` 权限
-0700，公钥文件权限 0600。网页账号及角色与 Linux 账号独立。
+0700，公钥文件权限 0600。网页账号及角色与 Linux 账号独立。可能包含网页管理凭据的运行环境文件 `blikvm.env` 仅 root 可读。
 
 需要授予完整系统管理权限时，由 root 执行：
 

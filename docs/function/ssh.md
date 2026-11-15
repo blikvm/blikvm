@@ -38,7 +38,7 @@ The commands prompt for passwords. Connect with `ssh ops@BLIKVM_ADDRESS`; the
 user can change its own password using `passwd`. The default `/home/ops` lives
 on persistent `/data/home`. Public-key login uses the normal
 `/home/ops/.ssh/authorized_keys`: owned by `ops`, `.ssh` mode 0700 and file mode
-0600. Web accounts and their roles are independent of these Linux accounts.
+0600. Web accounts and their roles are independent of these Linux accounts. The runtime `blikvm.env` file can contain Web management credentials and is readable only by root.
 
 To grant full system administration, run as root:
 
