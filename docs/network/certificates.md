@@ -54,13 +54,14 @@ Run on your workstation, replacing `BLIKVM_ADDRESS`:
 
 ```sh
 ssh root@BLIKVM_ADDRESS 'umask 077; mkdir -p /data/work/extensions/lego/bin; chmod 700 /data/work/extensions/lego /data/work/extensions/lego/bin'
-scp -O ./acme-reference/blikvm-acme root@BLIKVM_ADDRESS:/data/work/extensions/lego/bin/blikvm-acme
+scp -O ./acme-reference/blikvm-acme root@BLIKVM_ADDRESS:/data/work/extensions/lego/bin/blikvm-acme.new
 ```
 
 Then run in the device's SSH terminal as root:
 
 ```sh
-chmod 700 /data/work/extensions/lego/bin/blikvm-acme
+chmod 700 /data/work/extensions/lego/bin/blikvm-acme.new
+mv -f /data/work/extensions/lego/bin/blikvm-acme.new /data/work/extensions/lego/bin/blikvm-acme
 /data/work/extensions/lego/bin/blikvm-acme configure
 ```
 
@@ -125,10 +126,27 @@ observed service state. A running process alone is not proof of successful renew
 The protected log retains the latest production attempt and redacts configured
 credential values; treat it as private diagnostic data.
 
-`enable` requires a successful first check and uses the common script manager:
+`enable` requires a successful first check and uses the common script manager.
+CLI **0.2.0** selects its paths from the installed executor protocol:
 
-- `/data/work/scripts/certificate-renewal.sh`
-- `/data/work/scripts-config/certificate-renewal.sh.conf`
+| Executor | Script | Policy |
+| --- | --- | --- |
+| Protocol 3, system `3.0.5-dev.2026111502` or later | `/data/init.d/certificate-renewal.sh` | `/data/init.d/.config/certificate-renewal.sh.conf` |
+| Earlier protocol 2 | `/data/work/scripts/certificate-renewal.sh` | `/data/work/scripts-config/certificate-renewal.sh.conf` |
+
+The system migrates an existing startup entry and working files when upgrading
+to protocol 3. If CLI 0.1.0 is already installed, update it to 0.2.0 before using
+its startup controls on that system. First stop only its migrated entry:
+
+```sh
+/etc/init.d/S98blikvm-scripts stop certificate-renewal.sh
+```
+
+Then use the download, checksum and atomic copy steps above to replace only
+`bin/blikvm-acme`. Keep the extension's `config/` and `state/` directories. For
+an already configured installation, skip `configure`; run `status` and `enable`
+to resume its existing schedule. This CLI update does not request a certificate
+or change DNS credentials, ACME account data or the installed HTTPS identity.
 
 The service uses `MODE=service`, `ENABLED=1`, `RESTART_POLICY=on-failure` and
 `RESTART_DELAY_SEC=5`. View it in **Advanced → Scripts**. Successful checks are
@@ -141,7 +159,7 @@ To reconfigure a running setup, run `disable` first, then `configure`. The new
 profile must pass a fresh check before it can be enabled. The tool keeps protected
 configuration backups and refuses to overwrite an existing legacy/custom startup
 script. For a legacy reference recipe, disable that entry in System Scripts,
-back up and move its script out of `/data/work/scripts/`, then run the new wizard.
+back up and move its script out of the active script directory shown above, then run the new wizard.
 Do not run the old worker and this manager together.
 
 ### Test before deployment

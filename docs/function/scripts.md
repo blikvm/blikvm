@@ -4,7 +4,7 @@ BliKVM can store third-party programs and their configuration on persistent stor
 
 Scripts execute on **BliKVM itself**, not on the controlled computer, and are separate from browser keyboard macros. Only administrators can manage scripts in the Web interface. The SSH examples require root access to the device.
 
-This guide applies to a system and App that include the new common script executor. An older system may have a scripts page without the corresponding startup service. An App update alone may not add that capability; follow the release notes for the matching system update.
+This guide applies to system/App `3.0.5-dev.2026111502` and later supporting the unified script executor. An older system may have a scripts page without the corresponding startup service. An App update alone may not add that capability; follow the release notes for the matching system update.
 
 ## Where to store software and configuration
 
@@ -15,12 +15,12 @@ For a program called `myservice`:
 | Path | Purpose |
 | --- | --- |
 | `/data/work/extensions/myservice/` | Program, dependencies, configuration and data to retain |
-| `/data/work/scripts/myservice.sh` | Startup script shown in System Scripts |
-| `/data/work/scripts-config/myservice.sh.conf` | Execution mode and restart policy |
-| `/data/work/scripts-runtime/myservice.sh/` | Execution status, managed-task output log and working directory |
+| `/data/init.d/myservice.sh` | Startup script shown in System Scripts |
+| `/data/init.d/.config/myservice.sh.conf` | Execution mode and restart policy |
+| `/data/init.d/.state/myservice.sh/` | Execution status, managed-task output log and working directory |
 | A software-specific directory under `/run/` | Temporary sockets, PID files and other files recreated after a reboot |
 
-Routine App and A/B system updates preserve this `/data/work/` data. **Factory reset removes managed scripts, settings and extension software. Back up important data separately before reflashing an image as well.**
+Routine App and A/B system updates preserve these persistent data. **Factory reset removes managed scripts, settings and extension software. Back up important data separately before reflashing an image as well.**
 
 Script management starts processes; it does not install software dependencies. Choose software compatible with the device CPU architecture, libraries and kernel capabilities. Copying an installation archive into the extension directory does not complete its installation.
 
@@ -58,6 +58,31 @@ The restart delay accepts 1–60 seconds. One-time startup tasks do not use the 
 
 **Running** means the process is executing, not that its application connection has succeeded. For example, check a VPN client's own status command to confirm connectivity.
 
+## One directory and one executor
+
+The Web interface, SSH and boot startup share `/data/init.d/` and the same OS-owned executor. These directories are root-private; an SSH administrator can use `sudo` after joining `wheel` (see [Linux accounts](./ssh.md)).
+
+The first supporting system boot migrates old scripts and policies automatically. Original script/config directories are archived in `/data/init.d/.legacy-backup/`; the old runtime directory moves to `.state` so relative working files survive. Existing names, modes and restart policies are retained. Raw POSIX scripts are automatically adapted with their original start body preserved. Migration conflicts stop without overwriting either copy and can be retried after resolving the conflict. New raw imports retain a content-addressed original in `.legacy-backup/imports`.
+
+For a new script, use `start/stop/status`, with the marker immediately after the shebang:
+
+```sh
+#!/bin/sh
+# BLIKVM_INITD=1
+case "${1:-start}" in
+  start) exec /data/work/extensions/myservice/bin/myservice ;;
+  stop) : ;; # The executor stops the owned foreground process group.
+  status) exec /etc/init.d/S98blikvm-scripts status myservice.sh ;;
+  *) exit 2 ;;
+esac
+```
+
+Foreground services are preferred. A daemonized program must implement its own real `stop` and `status` actions: `status` returns zero only while that instance is alive. These actions have a two-second execution bound. The executor retains the running script snapshot for stopping it, even if its source is replaced. If a daemon fails to stop, the executor reports failure, retains its ownership record and refuses to start a replacement. Correct its stop action before retrying.
+
+An SSH-created `SNN*.sh` with no policy defaults to once at startup, in filename order. Other unconfigured names default to manual. A new Web upload explicitly defaults to manual; editing an existing SSH startup script preserves its policy.
+
+App and supporting A/B updates preserve the new layout. An old OS does not read `/data/init.d`: migration does not provide old-OS startup compatibility. Preserve migration backups until the new system is verified; stop the active owner before any manual restoration. Factory reset also clears custom Linux accounts and homes.
+
 ## Use the command line over SSH
 
 Connect from your computer, replacing `BLIKVM_ADDRESS` with the device address:
@@ -75,7 +100,7 @@ Check the startup executor first:
 /etc/init.d/S98blikvm-scripts status
 ```
 
-The executor described here uses protocol version `2`. If a file is missing, the service is unavailable or only a legacy script entry exists, check the system and App versions first. Do not remount the system partition to add startup files manually.
+The executor described here uses protocol version `3`. If a file is missing, the service is unavailable or only a legacy script entry exists, check the system and App versions first. Do not remount the system partition to add startup files manually.
 
 ### Upload a third-party program
 
@@ -96,7 +121,7 @@ This example writes a log line every 10 seconds and needs no additional software
 ```sh
 umask 077
 mkdir -p /data/work/extensions/demo-service \
-  /data/work/scripts /data/work/scripts-config
+  /data/init.d /data/init.d/.config
 
 cat > /data/work/extensions/demo-service/run.sh <<'EOF'
 #!/bin/sh
@@ -107,11 +132,11 @@ done
 EOF
 chmod 700 /data/work/extensions/demo-service/run.sh
 
-cat > /data/work/scripts/demo-service.sh <<'EOF'
+cat > /data/init.d/demo-service.sh <<'EOF'
 #!/bin/sh
 exec /bin/sh /data/work/extensions/demo-service/run.sh
 EOF
-chmod 700 /data/work/scripts/demo-service.sh
+chmod 700 /data/init.d/demo-service.sh
 ```
 
 For a binary program, a startup script can use this form. Adjust the arguments according to that program's documentation:
@@ -122,21 +147,21 @@ exec /data/work/extensions/myservice/bin/myservice \
     --config /data/work/extensions/myservice/config/config.json
 ```
 
-Resident processes must remain in the foreground. Do not append `&` or enable the program's own daemonization option; the executor manages its lifecycle. Use absolute paths, because the script's default working directory is `/data/work/scripts-runtime/<script-name>/`.
+Keep this example in the foreground. For software that daemonizes, use a native init script with correct stop/status actions as described above. Use absolute paths, because the script's default working directory is `/data/init.d/.state/<script-name>/`.
 
 ### Start a service and enable startup
 
 Write the configuration for the example:
 
 ```sh
-cat > /data/work/scripts-config/.demo-service.tmp <<'EOF'
+cat > /data/init.d/.config/.demo-service.tmp <<'EOF'
 MODE=service
 ENABLED=1
 RESTART_POLICY=on-failure
 RESTART_DELAY_SEC=5
 EOF
-mv -f /data/work/scripts-config/.demo-service.tmp \
-  /data/work/scripts-config/demo-service.sh.conf
+mv -f /data/init.d/.config/.demo-service.tmp \
+  /data/init.d/.config/demo-service.sh.conf
 ```
 
 The executor applies it automatically; there is no need to restart the device or Web service. Scripts created over SSH also appear in the Web script list.
@@ -148,49 +173,60 @@ Configuration is one `KEY=VALUE` per line, not a shell script. Do not add `expor
 After the first start, run:
 
 ```sh
-cat /data/work/scripts-runtime/demo-service.sh/status
-tail -n 80 /data/work/scripts-runtime/demo-service.sh/output.log
+cat /data/init.d/.state/demo-service.sh/status
+tail -n 80 /data/init.d/.state/demo-service.sh/output.log
 ```
 
 Follow new output:
 
 ```sh
-tail -f /data/work/scripts-runtime/demo-service.sh/output.log
+tail -f /data/init.d/.state/demo-service.sh/output.log
 ```
 
 Pressing `Ctrl+C` stops the log viewer, not the service. In the status file, `STATE=running` means the process is running, `STATE=backoff` means it is waiting for a policy-driven restart, and `RESTART_COUNT` counts automatic restarts of the current managed task.
 
 Managed scripts write standard output and standard error to `output.log`, which retains approximately the latest 1 MiB. Logs written directly by the software follow that software's own settings.
 
-### Restart a managed task
+### Control a task through the shared executor
+
+```sh
+/etc/init.d/S98blikvm-scripts start demo-service.sh
+/etc/init.d/S98blikvm-scripts status demo-service.sh
+/etc/init.d/S98blikvm-scripts restart demo-service.sh
+/etc/init.d/S98blikvm-scripts stop demo-service.sh
+```
+
+`stop` leaves the task stopped for the current executor session. Set manual mode below to disable the next boot startup too. `start` on an already running task does not duplicate it. Use the controller rather than executing a managed script directly.
+
+### Restart requests from other integrations
 
 For a **Resident service** or **Run once at startup** task, write a new restart request:
 
 ```sh
-mkdir -p /data/work/scripts-runtime/demo-service.sh
+mkdir -p /data/init.d/.state/demo-service.sh
 cat /proc/sys/kernel/random/uuid \
-  > /data/work/scripts-runtime/demo-service.sh/restart.tmp
-mv -f /data/work/scripts-runtime/demo-service.sh/restart.tmp \
-  /data/work/scripts-runtime/demo-service.sh/restart
+  > /data/init.d/.state/demo-service.sh/restart.tmp
+mv -f /data/init.d/.state/demo-service.sh/restart.tmp \
+  /data/init.d/.state/demo-service.sh/restart
 ```
 
 Each request has different content, allowing the executor to recognize it. **Manual only** tasks do not respond to this request.
 
-Changes to a startup script under `/data/work/scripts/` or its `.conf` trigger reapplication. After replacing a program inside the extension directory, or changing that program's own configuration, restart the task explicitly. This request also starts a service again after a successful exit when its policy is `on-failure` or `never`.
+Changes to a startup script under `/data/init.d/` or its `.conf` trigger reapplication. After replacing a program inside the extension directory, or changing that program's own configuration, restart the task explicitly. This request also starts a service again after a successful exit when its policy is `on-failure` or `never`.
 
-Do not restart a resident task by running `sh /data/work/scripts/demo-service.sh` again. That bypasses the executor and may create a second instance.
+Do not restart a resident task by running `sh /data/init.d/demo-service.sh` again. That bypasses the executor and may create a second instance.
 
 ### Stop a service and disable startup
 
 ```sh
-cat > /data/work/scripts-config/.demo-service.tmp <<'EOF'
+cat > /data/init.d/.config/.demo-service.tmp <<'EOF'
 MODE=manual
 ENABLED=0
 RESTART_POLICY=never
 RESTART_DELAY_SEC=5
 EOF
-mv -f /data/work/scripts-config/.demo-service.tmp \
-  /data/work/scripts-config/demo-service.sh.conf
+mv -f /data/init.d/.config/.demo-service.tmp \
+  /data/init.d/.config/demo-service.sh.conf
 ```
 
 The executor stops the managed process and its descendants. To start again from this disabled state and restore startup, write the earlier `MODE=service` configuration again.
@@ -202,34 +238,30 @@ Do not use `kill` as a substitute for disabling the task: if its configuration r
 Prepare a short script:
 
 ```sh
-cat > /data/work/scripts/hello.sh <<'EOF'
+cat > /data/init.d/hello.sh <<'EOF'
 #!/bin/sh
 printf 'Hello from BliKVM\n'
 printf 'Working directory: %s\n' "$PWD"
 EOF
 
-mkdir -p /data/work/scripts-runtime/hello.sh
-(
-    cd /data/work/scripts-runtime/hello.sh
-    /bin/sh /data/work/scripts/hello.sh
-)
+/etc/init.d/S98blikvm-scripts exec hello.sh
 ```
 
-This SSH command displays output in the current terminal. It does not automatically create executor status records or write to the executor's `output.log`. A foreground command is also affected by its SSH session; use resident mode for a long-running process.
+The controller prints a JSON result and uses the same working directory, log, status, 60-second limit and 128 KiB output limit as Web Run. Killing/disconnecting the control client cancels the manual task and its child processes. Use resident mode for long-running software.
 
 ### Run once at startup
 
 Write the following configuration for the short task:
 
 ```sh
-cat > /data/work/scripts-config/.hello.tmp <<'EOF'
+cat > /data/init.d/.config/.hello.tmp <<'EOF'
 MODE=once
 ENABLED=1
 RESTART_POLICY=never
 RESTART_DELAY_SEC=5
 EOF
-mv -f /data/work/scripts-config/.hello.tmp \
-  /data/work/scripts-config/hello.sh.conf
+mv -f /data/init.d/.config/.hello.tmp \
+  /data/init.d/.config/hello.sh.conf
 ```
 
 It runs when first enabled and once after each subsequent boot. Restarting only the Web service does not repeat a completed task during the same boot. To run it again now, use the earlier restart-request commands with `hello.sh` in place of `demo-service.sh`.
@@ -239,8 +271,8 @@ It runs when first enabled and once after each subsequent boot. Restarting only 
 First select **Manual only** and confirm that the task has stopped (`STATE=stopped`, or an exited state with `PID=0`). Then remove its script and configuration:
 
 ```sh
-rm -f /data/work/scripts/demo-service.sh \
-  /data/work/scripts-config/demo-service.sh.conf
+rm -f /data/init.d/demo-service.sh \
+  /data/init.d/.config/demo-service.sh.conf
 ```
 
 The runtime directory may still contain historical logs and status. Clean it up if needed after confirming the task has stopped. **Deleting a script does not uninstall its extension software or automatically remove the software's configuration and identity.** Back up important data and remove the software's extension directory separately when it is no longer needed.
@@ -253,7 +285,7 @@ NetBird can run as independent third-party software. The following example uses 
 umask 077
 mkdir -p /data/work/extensions/netbird/versions/0.81.5 \
   /data/work/extensions/netbird/state \
-  /data/work/scripts /data/work/scripts-config
+  /data/init.d /data/init.d/.config
 chmod 700 /data/work/extensions/netbird /data/work/extensions/netbird/state
 ```
 
@@ -313,24 +345,24 @@ Set permissions and create the script-management entry:
 chmod 700 /data/work/extensions/netbird/run.sh \
   /data/work/extensions/netbird/netbird
 
-cat > /data/work/scripts/netbird.sh <<'EOF'
+cat > /data/init.d/netbird.sh <<'EOF'
 #!/bin/sh
 exec /data/work/extensions/netbird/run.sh
 EOF
-chmod 700 /data/work/scripts/netbird.sh
+chmod 700 /data/init.d/netbird.sh
 ```
 
 Choose **Resident service / Restart on failure / 5 seconds** in the UI, or write the following over SSH:
 
 ```sh
-cat > /data/work/scripts-config/.netbird.tmp <<'EOF'
+cat > /data/init.d/.config/.netbird.tmp <<'EOF'
 MODE=service
 ENABLED=1
 RESTART_POLICY=on-failure
 RESTART_DELAY_SEC=5
 EOF
-mv -f /data/work/scripts-config/.netbird.tmp \
-  /data/work/scripts-config/netbird.sh.conf
+mv -f /data/init.d/.config/.netbird.tmp \
+  /data/init.d/.config/netbird.sh.conf
 ```
 
 For first use, authorize the account after the service starts:
