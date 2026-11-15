@@ -4,7 +4,7 @@ BliKVM 支持把第三方程序及其配置放在持久化数据分区，并通�
 
 脚本在 **BliKVM 设备自身**执行，不是被控电脑上的命令，也不是浏览器键盘宏。Web 界面仅管理员可管理脚本；SSH 示例需要设备的 root 权限。
 
-本指南适用于包含新版通用脚本执行器的系统和 App。旧系统可能只有脚本界面，却缺少配套启动服务；仅升级 App 不一定能补齐该能力，应按发行说明升级配套系统。
+本指南适用于 `3.0.5-dev.2026111501` 及后续支持统一执行器的系统和 App。旧系统可能只有脚本界面，却缺少配套启动服务；仅升级 App 不一定能补齐该能力，应按发行说明升级配套系统。
 
 ## 软件与配置放在哪里
 
@@ -15,12 +15,12 @@ BliKVM 支持把第三方程序及其配置放在持久化数据分区，并通�
 | 路径 | 用途 |
 | --- | --- |
 | `/data/work/extensions/myservice/` | 软件程序、依赖、配置和需要保留的数据 |
-| `/data/work/scripts/myservice.sh` | 在脚本管理中显示的启动脚本 |
-| `/data/work/scripts-config/myservice.sh.conf` | 运行模式和重启策略 |
-| `/data/work/scripts-runtime/myservice.sh/` | 执行状态、受管任务的输出日志和工作目录 |
+| `/data/init.d/myservice.sh` | 在脚本管理中显示的启动脚本 |
+| `/data/init.d/.config/myservice.sh.conf` | 运行模式和重启策略 |
+| `/data/init.d/.state/myservice.sh/` | 执行状态、受管任务的输出日志和工作目录 |
 | `/run/` 下的软件专属目录 | 临时 socket、PID 等重启后可重建的文件 |
 
-普通 App 更新和 A/B 系统更新会保留上述 `/data/work/` 数据。**恢复出厂设置会清除受管理脚本、配置及扩展软件；重新烧录镜像前也应单独备份。**
+普通 App 更新和 A/B 系统更新会保留上述持久化数据。**恢复出厂设置会清除受管理脚本、配置及扩展软件；重新烧录镜像前也应单独备份。**
 
 脚本管理负责启动进程，不负责安装软件依赖。请选用与设备 CPU 架构、动态库及内核能力兼容的软件；只把安装包复制到扩展目录，并不代表已经完成安装。
 
@@ -58,6 +58,31 @@ Web 界面的手动执行最长为 60 秒，输出最多显示 128 KiB。常驻�
 
 “运行中”表示进程正在执行，不等于软件业务已连接成功。例如 VPN 还需要通过其自身的状态命令确认连接状态。
 
+## 统一目录和启动职责
+
+网页、SSH 和开机启动共用 `/data/init.d/` 及同一个系统执行器。这些管理目录仅 root 可访问；加入 `wheel` 的 SSH 管理员可通过 `sudo` 操作，见 [Linux 账号](./ssh.md)。
+
+首次启动配套新系统时会自动迁移旧脚本和配置。原目录保存在 `/data/init.d/.legacy-backup/`，旧运行目录移动到 `.state`，保留脚本生成的相对路径文件。文件名、模式和重启策略不变；旧 POSIX 脚本会适配为 init 脚本，保留原启动内容。迁移冲突时停止，不覆盖任一版本；解决冲突后可重试。后续直接导入的普通脚本，其原文按内容哈希备份到 `.legacy-backup/imports`。
+
+新脚本推荐使用 `start/stop/status`，标记必须紧跟 shebang：
+
+```sh
+#!/bin/sh
+# BLIKVM_INITD=1
+case "${1:-start}" in
+  start) exec /data/work/extensions/myservice/bin/myservice ;;
+  stop) : ;; # 执行器负责停止其拥有的前台进程组。
+  status) exec /etc/init.d/S98blikvm-scripts status myservice.sh ;;
+  *) exit 2 ;;
+esac
+```
+
+优先以前台方式运行。若程序自行后台化，必须在脚本中实现真正的 `stop` 和 `status`：只有对应实例存活时 `status` 才返回 0。探测与停止动作应在两秒内完成。执行器保留正在运行的脚本快照，替换源文件后仍能用旧逻辑停止旧实例。
+
+通过 SSH 创建的 `SNN*.sh` 若没有配置文件，默认按文件名顺序在开机执行一次；其他无配置文件名默认手动。网页新上传脚本显式默认手动；网页编辑已有 SSH 自启脚本会保留其策略。
+
+普通 App 和配套 A/B 更新保留新目录。旧系统不会读取 `/data/init.d`，本次迁移不提供旧系统的自启兼容。确认新系统工作正常前请保留备份；手动恢复旧布局前必须停止当前执行器，避免双重启动。恢复出厂设置也会清除自建 Linux 账号及 home。
+
 ## 通过 SSH 使用命令行
 
 在你的电脑上连接设备，将 `BLIKVM_ADDRESS` 替换为设备地址：
@@ -75,7 +100,7 @@ ssh root@BLIKVM_ADDRESS
 /etc/init.d/S98blikvm-scripts status
 ```
 
-本指南对应的执行器协议版本为 `2`。文件不存在、服务不可用或只有旧版脚本入口时，应先核对系统与 App 的配套版本；不要通过重新挂载系统分区来手工补启动文件。
+本指南对应的执行器协议版本为 `3`。文件不存在、服务不可用或只有旧版脚本入口时，应先核对系统与 App 的配套版本；不要通过重新挂载系统分区来手工补启动文件。
 
 ### 上传第三方程序
 
@@ -96,7 +121,7 @@ ssh root@BLIKVM_ADDRESS \
 ```sh
 umask 077
 mkdir -p /data/work/extensions/demo-service \
-  /data/work/scripts /data/work/scripts-config
+  /data/init.d /data/init.d/.config
 
 cat > /data/work/extensions/demo-service/run.sh <<'EOF'
 #!/bin/sh
@@ -107,11 +132,11 @@ done
 EOF
 chmod 700 /data/work/extensions/demo-service/run.sh
 
-cat > /data/work/scripts/demo-service.sh <<'EOF'
+cat > /data/init.d/demo-service.sh <<'EOF'
 #!/bin/sh
 exec /bin/sh /data/work/extensions/demo-service/run.sh
 EOF
-chmod 700 /data/work/scripts/demo-service.sh
+chmod 700 /data/init.d/demo-service.sh
 ```
 
 实际二进制软件的启动脚本可以使用下面的形式，程序参数需按该软件的说明调整：
@@ -122,21 +147,21 @@ exec /data/work/extensions/myservice/bin/myservice \
     --config /data/work/extensions/myservice/config/config.json
 ```
 
-常驻进程应保持在前台。不要在启动命令后加 `&`，也不要启用软件自己的后台化选项；管理器负责进程生命周期。请使用绝对路径，因为脚本的默认工作目录是 `/data/work/scripts-runtime/<脚本名>/`。
+本例应保持前台运行。若软件必须自行后台化，需按上文实现具备正确 stop/status 动作的原生 init 脚本。请使用绝对路径，因为脚本的默认工作目录是 `/data/init.d/.state/<脚本名>/`。
 
 ### 启动服务并启用开机自启
 
 为上面的示例写入配置：
 
 ```sh
-cat > /data/work/scripts-config/.demo-service.tmp <<'EOF'
+cat > /data/init.d/.config/.demo-service.tmp <<'EOF'
 MODE=service
 ENABLED=1
 RESTART_POLICY=on-failure
 RESTART_DELAY_SEC=5
 EOF
-mv -f /data/work/scripts-config/.demo-service.tmp \
-  /data/work/scripts-config/demo-service.sh.conf
+mv -f /data/init.d/.config/.demo-service.tmp \
+  /data/init.d/.config/demo-service.sh.conf
 ```
 
 执行器会自动应用配置，不需要重启设备或 Web 服务。SSH 创建的脚本也会出现在 Web 脚本列表中。
@@ -148,49 +173,60 @@ mv -f /data/work/scripts-config/.demo-service.tmp \
 首次启动后，执行：
 
 ```sh
-cat /data/work/scripts-runtime/demo-service.sh/status
-tail -n 80 /data/work/scripts-runtime/demo-service.sh/output.log
+cat /data/init.d/.state/demo-service.sh/status
+tail -n 80 /data/init.d/.state/demo-service.sh/output.log
 ```
 
 持续查看日志：
 
 ```sh
-tail -f /data/work/scripts-runtime/demo-service.sh/output.log
+tail -f /data/init.d/.state/demo-service.sh/output.log
 ```
 
 按 `Ctrl+C` 只会结束日志查看，不会停止服务。状态中的 `STATE=running` 表示进程正在运行，`STATE=backoff` 表示等待按策略重启，`RESTART_COUNT` 表示当前受管任务的自动重启次数。
 
 受管脚本的标准输出和标准错误保留在 `output.log` 中，文件保留最新约 1 MiB。软件自行写入的日志由该软件自己的配置决定。
 
-### 重启一个受管任务
+### 使用同一执行器控制任务
+
+```sh
+/etc/init.d/S98blikvm-scripts start demo-service.sh
+/etc/init.d/S98blikvm-scripts status demo-service.sh
+/etc/init.d/S98blikvm-scripts restart demo-service.sh
+/etc/init.d/S98blikvm-scripts stop demo-service.sh
+```
+
+`stop` 使任务在本次执行器会话保持停止；还要关闭下次开机自启时，按下文改为手动模式。对运行中的任务执行 `start` 不会创建第二个实例。请通过执行器控制受管任务。
+
+### 其他集成使用的重启请求
 
 对“常驻服务”或“开机执行一次”任务，写入新的重启请求：
 
 ```sh
-mkdir -p /data/work/scripts-runtime/demo-service.sh
+mkdir -p /data/init.d/.state/demo-service.sh
 cat /proc/sys/kernel/random/uuid \
-  > /data/work/scripts-runtime/demo-service.sh/restart.tmp
-mv -f /data/work/scripts-runtime/demo-service.sh/restart.tmp \
-  /data/work/scripts-runtime/demo-service.sh/restart
+  > /data/init.d/.state/demo-service.sh/restart.tmp
+mv -f /data/init.d/.state/demo-service.sh/restart.tmp \
+  /data/init.d/.state/demo-service.sh/restart
 ```
 
 每次生成不同的请求内容，执行器会处理此次重启。“仅手动执行”模式不响应该请求。
 
-修改 `/data/work/scripts/` 中的启动脚本或对应 `.conf` 会触发重新应用。只替换扩展目录中的程序、或修改软件自己的配置后，应主动重启任务。已正常退出且策略为 `on-failure` 或 `never` 的服务，也可通过此方式再次启动。
+修改 `/data/init.d/` 中的启动脚本或对应 `.conf` 会触发重新应用。只替换扩展目录中的程序、或修改软件自己的配置后，应主动重启任务。已正常退出且策略为 `on-failure` 或 `never` 的服务，也可通过此方式再次启动。
 
-不要重复执行 `sh /data/work/scripts/demo-service.sh` 来重启常驻任务，这会绕过管理器并可能产生第二个实例。
+不要重复执行 `sh /data/init.d/demo-service.sh` 来重启常驻任务，这会绕过管理器并可能产生第二个实例。
 
 ### 停止服务并关闭开机自启
 
 ```sh
-cat > /data/work/scripts-config/.demo-service.tmp <<'EOF'
+cat > /data/init.d/.config/.demo-service.tmp <<'EOF'
 MODE=manual
 ENABLED=0
 RESTART_POLICY=never
 RESTART_DELAY_SEC=5
 EOF
-mv -f /data/work/scripts-config/.demo-service.tmp \
-  /data/work/scripts-config/demo-service.sh.conf
+mv -f /data/init.d/.config/.demo-service.tmp \
+  /data/init.d/.config/demo-service.sh.conf
 ```
 
 执行器会停止受管进程及其子进程。从该停止状态重新启动并恢复自启时，重新写入前面的 `MODE=service` 配置即可。
@@ -202,34 +238,30 @@ mv -f /data/work/scripts-config/.demo-service.tmp \
 准备一个短脚本：
 
 ```sh
-cat > /data/work/scripts/hello.sh <<'EOF'
+cat > /data/init.d/hello.sh <<'EOF'
 #!/bin/sh
 printf 'Hello from BliKVM\n'
 printf 'Working directory: %s\n' "$PWD"
 EOF
 
-mkdir -p /data/work/scripts-runtime/hello.sh
-(
-    cd /data/work/scripts-runtime/hello.sh
-    /bin/sh /data/work/scripts/hello.sh
-)
+/etc/init.d/S98blikvm-scripts exec hello.sh
 ```
 
-该 SSH 命令的输出显示在当前终端，不会自动生成管理器的运行状态或写入其 `output.log`。前台运行还会受到当前 SSH 会话的影响；长期进程应使用常驻模式。
+执行器输出 JSON 结果，与网页“运行”共用工作目录、日志、状态、60 秒时限和 128 KiB 输出上限。中断控制客户端会取消该手动任务并清理子进程；长期任务应选择常驻模式。
 
 ### 设置开机执行一次
 
 对上面的短任务写入：
 
 ```sh
-cat > /data/work/scripts-config/.hello.tmp <<'EOF'
+cat > /data/init.d/.config/.hello.tmp <<'EOF'
 MODE=once
 ENABLED=1
 RESTART_POLICY=never
 RESTART_DELAY_SEC=5
 EOF
-mv -f /data/work/scripts-config/.hello.tmp \
-  /data/work/scripts-config/hello.sh.conf
+mv -f /data/init.d/.config/.hello.tmp \
+  /data/init.d/.config/hello.sh.conf
 ```
 
 首次启用会执行，后续每次开机再执行一次。同一启动周期内，仅重启 Web 服务不会重复执行已经完成的任务。若需现在再执行一次，可按前面的重启请求方法，把路径中的 `demo-service.sh` 换成 `hello.sh`。
@@ -239,8 +271,8 @@ mv -f /data/work/scripts-config/.hello.tmp \
 先切换为“仅手动执行”，确认任务已停止（`STATE=stopped`，或已退出且 `PID=0`）后，再删除对应脚本与配置：
 
 ```sh
-rm -f /data/work/scripts/demo-service.sh \
-  /data/work/scripts-config/demo-service.sh.conf
+rm -f /data/init.d/demo-service.sh \
+  /data/init.d/.config/demo-service.sh.conf
 ```
 
 对应运行目录中可能仍保留历史日志和状态，确认任务已停止后可按需清理。**删除脚本不会卸载扩展软件，也不会自动删除软件的配置和身份。** 确认不再需要并完成备份后，再单独删除它自己的扩展目录。
@@ -253,7 +285,7 @@ NetBird 可以作为独立第三方软件使用。下面以 V4 上的 NetBird `0
 umask 077
 mkdir -p /data/work/extensions/netbird/versions/0.81.5 \
   /data/work/extensions/netbird/state \
-  /data/work/scripts /data/work/scripts-config
+  /data/init.d /data/init.d/.config
 chmod 700 /data/work/extensions/netbird /data/work/extensions/netbird/state
 ```
 
@@ -313,24 +345,24 @@ exec /data/work/extensions/netbird/versions/0.81.5/netbird \
 chmod 700 /data/work/extensions/netbird/run.sh \
   /data/work/extensions/netbird/netbird
 
-cat > /data/work/scripts/netbird.sh <<'EOF'
+cat > /data/init.d/netbird.sh <<'EOF'
 #!/bin/sh
 exec /data/work/extensions/netbird/run.sh
 EOF
-chmod 700 /data/work/scripts/netbird.sh
+chmod 700 /data/init.d/netbird.sh
 ```
 
 通过 UI 选择“常驻服务 / 失败时重启 / 5 秒”，或通过 SSH 写入：
 
 ```sh
-cat > /data/work/scripts-config/.netbird.tmp <<'EOF'
+cat > /data/init.d/.config/.netbird.tmp <<'EOF'
 MODE=service
 ENABLED=1
 RESTART_POLICY=on-failure
 RESTART_DELAY_SEC=5
 EOF
-mv -f /data/work/scripts-config/.netbird.tmp \
-  /data/work/scripts-config/netbird.sh.conf
+mv -f /data/init.d/.config/.netbird.tmp \
+  /data/init.d/.config/netbird.sh.conf
 ```
 
 首次使用时，在服务启动后进行账号授权：
