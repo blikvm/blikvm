@@ -24,7 +24,7 @@ For a connected device's serial port use the [serial terminal](./serial-terminal
 
 ## Persistent Linux users on native A/B systems
 
-Pi4B, V4 and RV1126B system/App `3.0.5-dev.2026111501` introduces native account
+Pi4B, V4 and RV1126B system/App `3.0.5-dev.2026111502` introduces native account
 management with the same commands on all three platforms. Install the matching
 signed **system update** first; an App-only update does not add this OS feature.
 As root:
@@ -68,3 +68,7 @@ there, and passwords changed under the new layout are not mirrored into the
 legacy root-only store. New data remains when returning to a supporting system;
 this is not a promise of old-system credential compatibility. Factory reset
 removes custom users and homes. Back up data before reflashing.
+
+The OS keeps `/data/work/conf` root-owned with mode 0700. This also protects
+credentials if an older App recreates a 0644 configuration file during rollback.
+Use a matching system/App for the new script-management layout.

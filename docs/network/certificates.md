@@ -131,7 +131,7 @@ CLI **0.2.0** selects its paths from the installed executor protocol:
 
 | Executor | Script | Policy |
 | --- | --- | --- |
-| Protocol 3, system `3.0.5-dev.2026111501` or later | `/data/init.d/certificate-renewal.sh` | `/data/init.d/.config/certificate-renewal.sh.conf` |
+| Protocol 3, system `3.0.5-dev.2026111502` or later | `/data/init.d/certificate-renewal.sh` | `/data/init.d/.config/certificate-renewal.sh.conf` |
 | Earlier protocol 2 | `/data/work/scripts/certificate-renewal.sh` | `/data/work/scripts-config/certificate-renewal.sh.conf` |
 
 The system migrates an existing startup entry and working files when upgrading

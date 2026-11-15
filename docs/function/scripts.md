@@ -4,7 +4,7 @@ BliKVM can store third-party programs and their configuration on persistent stor
 
 Scripts execute on **BliKVM itself**, not on the controlled computer, and are separate from browser keyboard macros. Only administrators can manage scripts in the Web interface. The SSH examples require root access to the device.
 
-This guide applies to system/App `3.0.5-dev.2026111501` and later supporting the unified script executor. An older system may have a scripts page without the corresponding startup service. An App update alone may not add that capability; follow the release notes for the matching system update.
+This guide applies to system/App `3.0.5-dev.2026111502` and later supporting the unified script executor. An older system may have a scripts page without the corresponding startup service. An App update alone may not add that capability; follow the release notes for the matching system update.
 
 ## Where to store software and configuration
 

@@ -112,7 +112,7 @@ CLI **0.2.0** 根据当前系统执行器协议选择目录：
 
 | 执行器 | 脚本 | 运行策略 |
 | --- | --- | --- |
-| 协议 3，系统 `3.0.5-dev.2026111501` 及之后 | `/data/init.d/certificate-renewal.sh` | `/data/init.d/.config/certificate-renewal.sh.conf` |
+| 协议 3，系统 `3.0.5-dev.2026111502` 及之后 | `/data/init.d/certificate-renewal.sh` | `/data/init.d/.config/certificate-renewal.sh.conf` |
 | 较早的协议 2 | `/data/work/scripts/certificate-renewal.sh` | `/data/work/scripts-config/certificate-renewal.sh.conf` |
 
 升级到协议 3 时，系统会迁移已有启动脚本和工作文件。如果已经安装 CLI 0.1.0，
