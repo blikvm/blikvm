@@ -10,7 +10,7 @@
 
 
 <link rel="search" type="application/opensearchdescription+xml" title="BliKVM" href="/zh-CN/opensearch.xml"><link rel="stylesheet" href="/zh-CN/assets/css/styles.5a8d6821.css">
-<script src="/zh-CN/assets/js/runtime~main.690aa69d.js" defer="defer"></script>
+<script src="/zh-CN/assets/js/runtime~main.fff09e84.js" defer="defer"></script>
 <script src="/zh-CN/assets/js/main.f64abf0c.js" defer="defer"></script>
 </head>
 <body class="navigation-with-keyboard">
@@ -41,14 +41,14 @@
 <p>第一条没有结果时，请先升级匹配硬件的签名 App。复制工具不能让旧 App 获得证书
 导入能力。开启自启前还应确认通用脚本执行器支持服务模式。</p>
 <h3 class="anchor anchorWithStickyNavbar_LWe7" id="复制工具">复制工具<a href="#复制工具" class="hash-link" aria-label="复制工具的直接链接" title="复制工具的直接链接">​</a></h3>
-<p>下载<a href="/zh-CN/assets/files/acme-reference-d442928237e3ea581fea81fb5ee4211a.zip" target="_blank">参考文件压缩包</a>
-和 <a href="/zh-CN/assets/files/SHA256SUMS-e719835a77b95e8df53e1d80fc836d36.txt" target="_blank">SHA256SUMS.txt</a>，在电脑上核对
+<p>下载<a href="/zh-CN/assets/files/acme-reference-d62db214abc0a865296020697133fb14.zip" target="_blank">参考文件压缩包</a>
+和 <a href="/zh-CN/assets/files/SHA256SUMS-90b22b41345bc03b4f5616bb3f3afd48.txt" target="_blank">SHA256SUMS.txt</a>，在电脑上核对
 压缩包的 SHA256 后解压。源文件位于仓库的 <code>static/examples/acme/</code>。压缩包包含
 工具和参考脚本，不包含第三方 lego 程序或任何 DNS 凭据。</p>
 <p>在电脑终端执行，替换 <code>BLIKVM_ADDRESS</code> 为设备地址：</p>
-<div class="language-sh codeBlockContainer_Ckt0 theme-code-block" style="--prism-color:#393A34;--prism-background-color:#f6f8fa"><div class="codeBlockContent_biex"><pre tabindex="0" class="prism-code language-sh codeBlock_bY9V thin-scrollbar" style="color:#393A34;background-color:#f6f8fa"><code class="codeBlockLines_e6Vv"><span class="token-line" style="color:#393A34"><span class="token plain">ssh root@BLIKVM_ADDRESS &#x27;umask 077; mkdir -p /data/work/extensions/lego/bin; chmod 700 /data/work/extensions/lego /data/work/extensions/lego/bin&#x27;</span><br></span><span class="token-line" style="color:#393A34"><span class="token plain">scp -O ./acme-reference/blikvm-acme root@BLIKVM_ADDRESS:/data/work/extensions/lego/bin/blikvm-acme</span><br></span></code></pre><div class="buttonGroup__atx"><button type="button" aria-label="复制代码到剪贴板" title="复制" class="clean-btn"><span class="copyButtonIcons_eSgA" aria-hidden="true"><svg viewBox="0 0 24 24" class="copyButtonIcon_y97N"><path fill="currentColor" d="M19,21H8V7H19M19,5H8A2,2 0 0,0 6,7V21A2,2 0 0,0 8,23H19A2,2 0 0,0 21,21V7A2,2 0 0,0 19,5M16,1H4A2,2 0 0,0 2,3V17H4V3H16V1Z"></path></svg><svg viewBox="0 0 24 24" class="copyButtonSuccessIcon_LjdS"><path fill="currentColor" d="M21,7L9,19L3.5,13.5L4.91,12.09L9,16.17L19.59,5.59L21,7Z"></path></svg></span></button></div></div></div>
+<div class="language-sh codeBlockContainer_Ckt0 theme-code-block" style="--prism-color:#393A34;--prism-background-color:#f6f8fa"><div class="codeBlockContent_biex"><pre tabindex="0" class="prism-code language-sh codeBlock_bY9V thin-scrollbar" style="color:#393A34;background-color:#f6f8fa"><code class="codeBlockLines_e6Vv"><span class="token-line" style="color:#393A34"><span class="token plain">ssh root@BLIKVM_ADDRESS &#x27;umask 077; mkdir -p /data/work/extensions/lego/bin; chmod 700 /data/work/extensions/lego /data/work/extensions/lego/bin&#x27;</span><br></span><span class="token-line" style="color:#393A34"><span class="token plain">scp -O ./acme-reference/blikvm-acme root@BLIKVM_ADDRESS:/data/work/extensions/lego/bin/blikvm-acme.new</span><br></span></code></pre><div class="buttonGroup__atx"><button type="button" aria-label="复制代码到剪贴板" title="复制" class="clean-btn"><span class="copyButtonIcons_eSgA" aria-hidden="true"><svg viewBox="0 0 24 24" class="copyButtonIcon_y97N"><path fill="currentColor" d="M19,21H8V7H19M19,5H8A2,2 0 0,0 6,7V21A2,2 0 0,0 8,23H19A2,2 0 0,0 21,21V7A2,2 0 0,0 19,5M16,1H4A2,2 0 0,0 2,3V17H4V3H16V1Z"></path></svg><svg viewBox="0 0 24 24" class="copyButtonSuccessIcon_LjdS"><path fill="currentColor" d="M21,7L9,19L3.5,13.5L4.91,12.09L9,16.17L19.59,5.59L21,7Z"></path></svg></span></button></div></div></div>
 <p>然后在设备 SSH 终端以 root 执行：</p>
-<div class="language-sh codeBlockContainer_Ckt0 theme-code-block" style="--prism-color:#393A34;--prism-background-color:#f6f8fa"><div class="codeBlockContent_biex"><pre tabindex="0" class="prism-code language-sh codeBlock_bY9V thin-scrollbar" style="color:#393A34;background-color:#f6f8fa"><code class="codeBlockLines_e6Vv"><span class="token-line" style="color:#393A34"><span class="token plain">chmod 700 /data/work/extensions/lego/bin/blikvm-acme</span><br></span><span class="token-line" style="color:#393A34"><span class="token plain">/data/work/extensions/lego/bin/blikvm-acme configure</span><br></span></code></pre><div class="buttonGroup__atx"><button type="button" aria-label="复制代码到剪贴板" title="复制" class="clean-btn"><span class="copyButtonIcons_eSgA" aria-hidden="true"><svg viewBox="0 0 24 24" class="copyButtonIcon_y97N"><path fill="currentColor" d="M19,21H8V7H19M19,5H8A2,2 0 0,0 6,7V21A2,2 0 0,0 8,23H19A2,2 0 0,0 21,21V7A2,2 0 0,0 19,5M16,1H4A2,2 0 0,0 2,3V17H4V3H16V1Z"></path></svg><svg viewBox="0 0 24 24" class="copyButtonSuccessIcon_LjdS"><path fill="currentColor" d="M21,7L9,19L3.5,13.5L4.91,12.09L9,16.17L19.59,5.59L21,7Z"></path></svg></span></button></div></div></div>
+<div class="language-sh codeBlockContainer_Ckt0 theme-code-block" style="--prism-color:#393A34;--prism-background-color:#f6f8fa"><div class="codeBlockContent_biex"><pre tabindex="0" class="prism-code language-sh codeBlock_bY9V thin-scrollbar" style="color:#393A34;background-color:#f6f8fa"><code class="codeBlockLines_e6Vv"><span class="token-line" style="color:#393A34"><span class="token plain">chmod 700 /data/work/extensions/lego/bin/blikvm-acme.new</span><br></span><span class="token-line" style="color:#393A34"><span class="token plain">mv -f /data/work/extensions/lego/bin/blikvm-acme.new /data/work/extensions/lego/bin/blikvm-acme</span><br></span><span class="token-line" style="color:#393A34"><span class="token plain">/data/work/extensions/lego/bin/blikvm-acme configure</span><br></span></code></pre><div class="buttonGroup__atx"><button type="button" aria-label="复制代码到剪贴板" title="复制" class="clean-btn"><span class="copyButtonIcons_eSgA" aria-hidden="true"><svg viewBox="0 0 24 24" class="copyButtonIcon_y97N"><path fill="currentColor" d="M19,21H8V7H19M19,5H8A2,2 0 0,0 6,7V21A2,2 0 0,0 8,23H19A2,2 0 0,0 21,21V7A2,2 0 0,0 19,5M16,1H4A2,2 0 0,0 2,3V17H4V3H16V1Z"></path></svg><svg viewBox="0 0 24 24" class="copyButtonSuccessIcon_LjdS"><path fill="currentColor" d="M21,7L9,19L3.5,13.5L4.91,12.09L9,16.17L19.59,5.59L21,7Z"></path></svg></span></button></div></div></div>
 <p>向导会询问域名、DNS 服务商、凭据、可选的递归 DNS，以及是否接受当前
 Let&#x27;s Encrypt 订户协议；随后下载官方 <strong>lego 5.6.0 linux/arm64</strong>，核对固定的
 压缩包和可执行文件 SHA256，将配置以仅 root 可读的权限保存，签发并校验证书，
@@ -79,10 +79,15 @@ DNS 缓存了 NXDOMAIN，可在向导里为 lego 单独指定可达递归解析�
 上次成功、上次证书变化、下次检查，以及配置的自启和实际进程状态。进程运行不等于
 续期成功。受保护日志保留最近一次生产检查并脱敏已配置凭据，仍应按私有诊断数据处理。</p>
 <p><code>enable</code> 要求首次检查成功，通过现有通用脚本管理器接入：</p>
-<ul>
-<li><code>/data/work/scripts/certificate-renewal.sh</code></li>
-<li><code>/data/work/scripts-config/certificate-renewal.sh.conf</code></li>
-</ul>
+<p>CLI <strong>0.2.0</strong> 根据当前系统执行器协议选择目录：</p>
+<table><thead><tr><th>执行器</th><th>脚本</th><th>运行策略</th></tr></thead><tbody><tr><td>协议 3，系统 <code>3.0.5-dev.2026111502</code> 及之后</td><td><code>/data/init.d/certificate-renewal.sh</code></td><td><code>/data/init.d/.config/certificate-renewal.sh.conf</code></td></tr><tr><td>较早的协议 2</td><td><code>/data/work/scripts/certificate-renewal.sh</code></td><td><code>/data/work/scripts-config/certificate-renewal.sh.conf</code></td></tr></tbody></table>
+<p>升级到协议 3 时，系统会迁移已有启动脚本和工作文件。如果已经安装 CLI 0.1.0，
+在新系统上使用它的启停命令前，请先更新到 0.2.0。先仅停止已迁移的续期任务：</p>
+<div class="language-sh codeBlockContainer_Ckt0 theme-code-block" style="--prism-color:#393A34;--prism-background-color:#f6f8fa"><div class="codeBlockContent_biex"><pre tabindex="0" class="prism-code language-sh codeBlock_bY9V thin-scrollbar" style="color:#393A34;background-color:#f6f8fa"><code class="codeBlockLines_e6Vv"><span class="token-line" style="color:#393A34"><span class="token plain">/etc/init.d/S98blikvm-scripts stop certificate-renewal.sh</span><br></span></code></pre><div class="buttonGroup__atx"><button type="button" aria-label="复制代码到剪贴板" title="复制" class="clean-btn"><span class="copyButtonIcons_eSgA" aria-hidden="true"><svg viewBox="0 0 24 24" class="copyButtonIcon_y97N"><path fill="currentColor" d="M19,21H8V7H19M19,5H8A2,2 0 0,0 6,7V21A2,2 0 0,0 8,23H19A2,2 0 0,0 21,21V7A2,2 0 0,0 19,5M16,1H4A2,2 0 0,0 2,3V17H4V3H16V1Z"></path></svg><svg viewBox="0 0 24 24" class="copyButtonSuccessIcon_LjdS"><path fill="currentColor" d="M21,7L9,19L3.5,13.5L4.91,12.09L9,16.17L19.59,5.59L21,7Z"></path></svg></span></button></div></div></div>
+<p>然后按照前面的下载、校验和原子复制步骤，只替换 <code>bin/blikvm-acme</code>，保留扩展的
+<code>config/</code> 和 <code>state/</code>。已有配置无需重新运行 <code>configure</code>；执行 <code>status</code> 和 <code>enable</code>
+即可恢复原来的检查计划。更新 CLI 本身不会请求证书，也不会修改 DNS 凭据、
+ACME 账户或当前 HTTPS 身份。</p>
 <p>使用 <code>MODE=service</code>、<code>ENABLED=1</code>、<code>RESTART_POLICY=on-failure</code> 和
 <code>RESTART_DELAY_SEC=5</code>。在 <strong>高级 → 脚本</strong> 中查看进程与日志。检查成功后间隔
 12 小时再检查；失败后依次等待 5 分钟、15 分钟、60 分钟重试。计划保存在数据盘，
@@ -91,7 +96,7 @@ DNS 缓存了 NXDOMAIN，可在向导里为 lego 单独指定可达递归解析�
 <p>重新配置时先执行 <code>disable</code>，再执行 <code>configure</code>。新配置必须重新检查成功才能
 开启自启。工具保存仅 root 可读的配置备份，并拒绝覆盖已有的旧版或自定义同名启动
 脚本。若曾安装旧参考方案，请先在脚本管理中禁用该项，备份并移走
-<code>/data/work/scripts/</code> 内的旧脚本，再运行新向导；不要同时运行两个续期进程。</p>
+上述当前脚本目录内的旧脚本，再运行新向导；不要同时运行两个续期进程。</p>
 <h3 class="anchor anchorWithStickyNavbar_LWe7" id="先测试再部署">先测试再部署<a href="#先测试再部署" class="hash-link" aria-label="先测试再部署的直接链接" title="先测试再部署的直接链接">​</a></h3>
 <div class="language-sh codeBlockContainer_Ckt0 theme-code-block" style="--prism-color:#393A34;--prism-background-color:#f6f8fa"><div class="codeBlockContent_biex"><pre tabindex="0" class="prism-code language-sh codeBlock_bY9V thin-scrollbar" style="color:#393A34;background-color:#f6f8fa"><code class="codeBlockLines_e6Vv"><span class="token-line" style="color:#393A34"><span class="token plain">/data/work/extensions/lego/bin/blikvm-acme configure --prepare-only</span><br></span><span class="token-line" style="color:#393A34"><span class="token plain">/data/work/extensions/lego/bin/blikvm-acme test</span><br></span><span class="token-line" style="color:#393A34"><span class="token plain">/data/work/extensions/lego/bin/blikvm-acme renew</span><br></span><span class="token-line" style="color:#393A34"><span class="token plain">/data/work/extensions/lego/bin/blikvm-acme enable</span><br></span></code></pre><div class="buttonGroup__atx"><button type="button" aria-label="复制代码到剪贴板" title="复制" class="clean-btn"><span class="copyButtonIcons_eSgA" aria-hidden="true"><svg viewBox="0 0 24 24" class="copyButtonIcon_y97N"><path fill="currentColor" d="M19,21H8V7H19M19,5H8A2,2 0 0,0 6,7V21A2,2 0 0,0 8,23H19A2,2 0 0,0 21,21V7A2,2 0 0,0 19,5M16,1H4A2,2 0 0,0 2,3V17H4V3H16V1Z"></path></svg><svg viewBox="0 0 24 24" class="copyButtonSuccessIcon_LjdS"><path fill="currentColor" d="M21,7L9,19L3.5,13.5L4.91,12.09L9,16.17L19.59,5.59L21,7Z"></path></svg></span></button></div></div></div>
 <p><code>--prepare-only</code> 只下载校验客户端并保存配置，不签发证书、不开启自启。<code>test</code>
