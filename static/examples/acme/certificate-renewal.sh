@@ -1,5 +1,6 @@
 #!/bin/sh
-# Copy to /data/work/scripts/certificate-renewal.sh and enable service mode.
+# Copy to /data/init.d/certificate-renewal.sh and enable service mode (protocol 3).
+# Older protocol 2 systems use /data/work/scripts/certificate-renewal.sh.
 set -u
 BASE=${BLIKVM_ACME_DIR:-/data/work/extensions/lego}
 interval=${BLIKVM_ACME_INTERVAL:-43200}

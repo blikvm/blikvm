@@ -3,7 +3,7 @@
 # Uses only tools supplied by the supported ARM64 images; no Python or system writes.
 set -eu
 umask 077
-VERSION=0.1.0
+VERSION=0.2.0
 LEGO_VERSION=5.6.0
 ARCHIVE_SHA=34d87a6552d69390c4a4560237045c47713a8e148d899e16db0e97040894ed1f
 BINARY_SHA=815ffd1f3ebd65bfbb9cd790bfd18f9cca91f48d8aec3a08732b3fc3b39056d7
@@ -25,6 +25,25 @@ say() { printf '%s\n' "$*"; }
 fail() { printf 'Error: %s\n' "$*" >&2; exit 1; }
 need_root() { [ "$(id -u)" = 0 ] || fail 'Run as root.'; }
 safe_path() { case "$1" in /*) ;; *) fail 'Use an absolute installation path.';; esac; case "$1" in /|*/../*|*/..|*/./*|*\'*|*\"*|*[!a-zA-Z0-9/_.-]*) fail 'Unsafe installation path.';; esac; }
+script_layout() {
+ protocol=
+ if [ -x "$SUPERVISOR" ]; then protocol=$("$SUPERVISOR" version 2>/dev/null | sed -n 's/.*"protocol"[[:space:]]*:[[:space:]]*\([0-9][0-9]*\).*/\1/p') || protocol=; fi
+ case "$protocol" in ''|*[!0-9]*) protocol=0;; esac
+ # The migration marker also permits disabling an existing v3 service while
+ # its executor is unavailable. No second startup directory is created.
+ if [ "$protocol" -ge 3 ] || { [ "$protocol" = 0 ] && [ -f "${BLIKVM_ACME_SCRIPT_ROOT:-/data}/init.d/.migration-v3.json" ]; }; then
+  SCRIPT_ROOT=${BLIKVM_ACME_SCRIPT_ROOT:-/data}
+  SCRIPT_DIR=$SCRIPT_ROOT/init.d
+  SCRIPT_CONFIG=$SCRIPT_DIR/.config
+  SCRIPT_STATE=$SCRIPT_DIR/.state
+ else
+  SCRIPT_ROOT=${BLIKVM_ACME_SCRIPT_ROOT:-/data/work}
+  SCRIPT_DIR=$SCRIPT_ROOT/scripts
+  SCRIPT_CONFIG=$SCRIPT_ROOT/scripts-config
+  SCRIPT_STATE=$SCRIPT_ROOT/scripts-runtime
+ fi
+ safe_path "$SCRIPT_ROOT"
+}
 regular_private() {
  [ -f "$1" ] && [ ! -L "$1" ] || fail 'Credential/configuration must be a regular file.'
  [ "$(stat -c %u "$1")" = 0 ] || fail 'Credential/configuration must be owned by root.'
@@ -151,8 +170,8 @@ configure() {
  domain= provider=route53 region=us-east-1 zone= resolver=
  if [ -e "$CONF" ]; then read_config; domain=$ACME_DOMAIN; provider=$ACME_DNS_PROVIDER; region=${AWS_REGION:-us-east-1}; zone=${AWS_HOSTED_ZONE_ID:-}; resolver=${ACME_DNS_RESOLVER:-}; fi
  old_aws=${ACME_AWS_FILE:-$BASE/config/aws.credentials}; old_cf=${ACME_CF_FILE:-$BASE/config/cloudflare.token}
- if [ -e "$SCRIPT_ROOT/scripts/certificate-renewal.sh" ]; then managed_script "$SCRIPT_ROOT/scripts/certificate-renewal.sh" || fail 'An existing legacy/custom certificate-renewal.sh is retained. Disable and move that entry in System Scripts before using configure.'; fi
- service_conf=$SCRIPT_ROOT/scripts-config/certificate-renewal.sh.conf
+ if [ -e "$SCRIPT_DIR/certificate-renewal.sh" ]; then managed_script "$SCRIPT_DIR/certificate-renewal.sh" || fail 'An existing legacy/custom certificate-renewal.sh is retained. Disable and move that entry in System Scripts before using configure.'; fi
+ service_conf=$SCRIPT_CONFIG/certificate-renewal.sh.conf
  if [ -f "$service_conf" ] && grep -q '^MODE=service$' "$service_conf" && grep -q '^ENABLED=1$' "$service_conf"; then fail 'Run disable before reconfiguring an automatic renewal service.'; fi
  cfgstage=$(mktemp -d "$BASE/config/profile.XXXXXX"); chmod 700 "$cfgstage"
  say 'BliKVM certificate setup. Existing ACME accounts, certificates and installed HTTPS identity are retained until a valid replacement is deployed.'
@@ -253,10 +272,10 @@ test_issuance() {
 }
 managed_script() { grep -q '^# Managed by blikvm-acme ' "$1"; }
 service_config() {
- safe_path "$SCRIPT_ROOT"; mkdir -p "$SCRIPT_ROOT/scripts" "$SCRIPT_ROOT/scripts-config"
- target=$SCRIPT_ROOT/scripts/certificate-renewal.sh
+ safe_path "$SCRIPT_ROOT"; mkdir -p "$SCRIPT_DIR" "$SCRIPT_CONFIG"
+ target=$SCRIPT_DIR/certificate-renewal.sh
  if [ -e "$target" ]; then [ ! -L "$target" ] && managed_script "$target" || fail 'An existing certificate-renewal.sh is not owned by this tool; it was retained.'; fi
- printf "#!/bin/sh\n# Managed by blikvm-acme %s %s\nexport BLIKVM_ACME_DIR='%s'\nexport BLIKVM_ACME_SERVER='%s'\nexec '%s' worker\n" "$VERSION" "$(sha256sum "$BASE/bin/blikvm-acme" | awk '{print $1}')" "$BASE" "$SERVER" "$BASE/bin/blikvm-acme" >"$target.new"
+ printf "#!/bin/sh\n# BLIKVM_INITD=1\n# Managed by blikvm-acme %s %s\ncase \"\${1:-start}\" in\nstart)\n export BLIKVM_ACME_DIR='%s'\n export BLIKVM_ACME_SERVER='%s'\n exec '%s' worker ;;\nstop) : ;;\nstatus) exec '%s' status certificate-renewal.sh ;;\n*) exit 2 ;;\nesac\n" "$VERSION" "$(sha256sum "$BASE/bin/blikvm-acme" | awk '{print $1}')" "$BASE" "$SERVER" "$BASE/bin/blikvm-acme" "$INIT" >"$target.new"
  chmod 700 "$target.new"; mv -f "$target.new" "$target"
 }
 enable() {
@@ -268,17 +287,21 @@ enable() {
  case "$protocol" in ''|*[!0-9]*) fail 'Cannot verify common service supervisor capability.';; esac
  [ "$protocol" -ge 2 ] || fail 'Service mode requires supervisor protocol 2 or newer.'
  service_config
- conf=$SCRIPT_ROOT/scripts-config/certificate-renewal.sh.conf
+ conf=$SCRIPT_CONFIG/certificate-renewal.sh.conf
  printf 'MODE=service\nENABLED=1\nRESTART_POLICY=on-failure\nRESTART_DELAY_SEC=5\n' >"$conf.new";chmod 600 "$conf.new";mv -f "$conf.new" "$conf"
  # The newly started daemon must not inherit this operation's flock descriptor.
  "$INIT" start 9>&-
+ if [ "$protocol" -ge 3 ]; then
+  reply=$("$INIT" start certificate-renewal.sh 9>&-) || fail 'Common executor could not start renewal.'
+  printf '%s\n' "$reply" | grep -q '"exitCode"[[:space:]]*:[[:space:]]*0[,}]' || fail 'Common executor refused renewal; inspect System Scripts.'
+ fi
  say 'Automatic renewal enabled through the common script manager.'
 }
 disable() {
  prepare_dirs;lock
- target=$SCRIPT_ROOT/scripts/certificate-renewal.sh
+ target=$SCRIPT_DIR/certificate-renewal.sh
  if [ -e "$target" ]; then [ ! -L "$target" ] && managed_script "$target" || fail 'Existing startup script is not owned by this tool; it was retained.'; fi
- conf=$SCRIPT_ROOT/scripts-config/certificate-renewal.sh.conf
+ conf=$SCRIPT_CONFIG/certificate-renewal.sh.conf
  if [ -f "$conf" ]; then
   printf 'MODE=manual\nENABLED=0\nRESTART_POLICY=on-failure\nRESTART_DELAY_SEC=5\n' >"$conf.new";chmod 600 "$conf.new";mv -f "$conf.new" "$conf"
  fi
@@ -289,10 +312,10 @@ status() {
  read_state
  if [ -f "$CONF" ]; then read_config;domain=$ACME_DOMAIN;provider=$ACME_DNS_PROVIDER;else domain=unconfigured;provider=unconfigured;fi
  configured=no;running=unknown
- conf=$SCRIPT_ROOT/scripts-config/certificate-renewal.sh.conf
+ conf=$SCRIPT_CONFIG/certificate-renewal.sh.conf
  if [ -f "$conf" ] && grep -q '^MODE=service$' "$conf" && grep -q '^ENABLED=1$' "$conf";then configured=yes;fi
- if [ -f "$SCRIPT_ROOT/scripts-runtime/certificate-renewal.sh/status" ]; then
-  running=$(sed -n 's/^STATE=//p' "$SCRIPT_ROOT/scripts-runtime/certificate-renewal.sh/status")
+ if [ -f "$SCRIPT_STATE/certificate-renewal.sh/status" ]; then
+  running=$(sed -n 's/^STATE=//p' "$SCRIPT_STATE/certificate-renewal.sh/status")
  fi
  say "BliKVM ACME $VERSION"
  say "Domain: $domain";say "Provider: $provider";say "Automatic checks enabled: $configured";say "Service state: ${running:-unknown}"
@@ -325,4 +348,5 @@ case "$command" in help|--help|-h) usage;exit;; version|--version) say "$VERSION
 need_root
 for utility in awk sed grep stat date flock sha256sum; do command -v "$utility" >/dev/null || fail "Required system tool missing: $utility";done
 safe_path "$BASE";safe_path "$SCRIPT_ROOT";safe_path "$SERVER";safe_path "$SUPERVISOR"
+script_layout
 case "$command" in configure) configure "$@";; test) test_issuance;; renew) renew;; deploy) deploy;; status) status;; log) [ ! -f "$LOG" ] || { regular_private "$LOG";cat "$LOG"; };; enable) enable;; disable) disable;; worker) worker;; *) usage;exit 2;; esac

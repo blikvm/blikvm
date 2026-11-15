@@ -47,13 +47,14 @@
 
 ```sh
 ssh root@BLIKVM_ADDRESS 'umask 077; mkdir -p /data/work/extensions/lego/bin; chmod 700 /data/work/extensions/lego /data/work/extensions/lego/bin'
-scp -O ./acme-reference/blikvm-acme root@BLIKVM_ADDRESS:/data/work/extensions/lego/bin/blikvm-acme
+scp -O ./acme-reference/blikvm-acme root@BLIKVM_ADDRESS:/data/work/extensions/lego/bin/blikvm-acme.new
 ```
 
 然后在设备 SSH 终端以 root 执行：
 
 ```sh
-chmod 700 /data/work/extensions/lego/bin/blikvm-acme
+chmod 700 /data/work/extensions/lego/bin/blikvm-acme.new
+mv -f /data/work/extensions/lego/bin/blikvm-acme.new /data/work/extensions/lego/bin/blikvm-acme
 /data/work/extensions/lego/bin/blikvm-acme configure
 ```
 
@@ -107,8 +108,24 @@ DNS 缓存了 NXDOMAIN，可在向导里为 lego 单独指定可达递归解析�
 
 `enable` 要求首次检查成功，通过现有通用脚本管理器接入：
 
-- `/data/work/scripts/certificate-renewal.sh`
-- `/data/work/scripts-config/certificate-renewal.sh.conf`
+CLI **0.2.0** 根据当前系统执行器协议选择目录：
+
+| 执行器 | 脚本 | 运行策略 |
+| --- | --- | --- |
+| 协议 3，系统 `3.0.5-dev.2026111501` 及之后 | `/data/init.d/certificate-renewal.sh` | `/data/init.d/.config/certificate-renewal.sh.conf` |
+| 较早的协议 2 | `/data/work/scripts/certificate-renewal.sh` | `/data/work/scripts-config/certificate-renewal.sh.conf` |
+
+升级到协议 3 时，系统会迁移已有启动脚本和工作文件。如果已经安装 CLI 0.1.0，
+在新系统上使用它的启停命令前，请先更新到 0.2.0。先仅停止已迁移的续期任务：
+
+```sh
+/etc/init.d/S98blikvm-scripts stop certificate-renewal.sh
+```
+
+然后按照前面的下载、校验和原子复制步骤，只替换 `bin/blikvm-acme`，保留扩展的
+`config/` 和 `state/`。已有配置无需重新运行 `configure`；执行 `status` 和 `enable`
+即可恢复原来的检查计划。更新 CLI 本身不会请求证书，也不会修改 DNS 凭据、
+ACME 账户或当前 HTTPS 身份。
 
 使用 `MODE=service`、`ENABLED=1`、`RESTART_POLICY=on-failure` 和
 `RESTART_DELAY_SEC=5`。在 **高级 → 脚本** 中查看进程与日志。检查成功后间隔
@@ -119,7 +136,7 @@ DNS 缓存了 NXDOMAIN，可在向导里为 lego 单独指定可达递归解析�
 重新配置时先执行 `disable`，再执行 `configure`。新配置必须重新检查成功才能
 开启自启。工具保存仅 root 可读的配置备份，并拒绝覆盖已有的旧版或自定义同名启动
 脚本。若曾安装旧参考方案，请先在脚本管理中禁用该项，备份并移走
-`/data/work/scripts/` 内的旧脚本，再运行新向导；不要同时运行两个续期进程。
+上述当前脚本目录内的旧脚本，再运行新向导；不要同时运行两个续期进程。
 
 ### 先测试再部署
 

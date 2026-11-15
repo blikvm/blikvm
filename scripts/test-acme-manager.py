@@ -30,7 +30,7 @@ printf '%s|%s|%s|%s\\n' "${AWS_PROFILE:-}" "${AWS_SHARED_CREDENTIALS_FILE:-}" "$
 if [ "${FAKE_LEAK:-0}" = 1 ];then echo 'TESTSECRET1234567890 TESTACCESSKEY1234 TESTCLOUDFLARETOKEN1234';fi
 exit "${FAKE_ISSUER_EXIT:-0}"
 ''')
-  self.init=self.root/'init';self.exe(self.init,'#!/bin/sh\necho start >> "$TEST_ROOT/starts"\n')
+  self.init=self.root/'init';self.exe(self.init,'#!/bin/sh\necho "$*" >> "$TEST_ROOT/starts"\n[ "$#" != 2 ] || printf \'{"exitCode":0,"queued":true}\\n\'\n')
   self.supervisor=self.root/'supervisor';self.exe(self.supervisor,'#!/bin/sh\nprintf \'{"protocol":2}\\n\'\n')
   self.env=dict(os.environ,PATH=str(self.bin)+':'+os.environ['PATH'],TEST_ROOT=str(self.root),TEST_BASE=str(self.base),BLIKVM_ACME_DIR=str(self.base),BLIKVM_ACME_SERVER=str(self.server),BLIKVM_ACME_SCRIPT_ROOT=str(self.service),BLIKVM_ACME_INIT=str(self.init),BLIKVM_ACME_SUPERVISOR=str(self.supervisor))
  def exe(self,path,text):path.write_text(text);path.chmod(0o755)
@@ -46,8 +46,9 @@ exit "${FAKE_ISSUER_EXIT:-0}"
     ready,_,_=select.select([fd],[],[],.1)
     if ready:
      try:data=os.read(fd,65536)
-     except OSError:break
-     if not data:break
+     except OSError:data=b''
+     # A PTY can report EOF/EIO just before waitpid observes the child's exit.
+     # Keep polling the bounded child wait instead of killing a successful wizard.
      transcript+=data;pending+=data
      if i<len(answers) and answers[i][0].encode() in pending:
       os.write(fd,(answers[i][1]+'\n').encode());pending=b'';i+=1
@@ -73,7 +74,7 @@ exit "${FAKE_ISSUER_EXIT:-0}"
   self.configured();before=(self.base/'config/renewal.env').read_bytes();profiles=list((self.base/'config').glob('profile.*'))
   code,text,_=self.wizard(self.answers(agree='no',existing=True));self.assertNotEqual(code,0);self.assertEqual((self.base/'config/renewal.env').read_bytes(),before);self.assertEqual(list((self.base/'config').glob('profile.*')),profiles);self.assertFalse((self.root/'imports').exists())
  def test_failed_issuer_is_redacted_and_retains_identity(self):
-  self.configured();r=self.run_tool('renew',FAKE_ISSUER_EXIT='7',FAKE_LEAK='1');self.assertEqual(r.returncode,7,r.stderr);self.assertFalse((self.root/'imports').exists());s=self.state();self.assertEqual(s['LAST_ERROR'],'issuer_failed');self.assertEqual(int(s['NEXT_CHECK'])-int(s['LAST_CHECK']),300)
+  self.configured();started=int(time.time());r=self.run_tool('renew',FAKE_ISSUER_EXIT='7',FAKE_LEAK='1');ended=int(time.time());self.assertEqual(r.returncode,7,r.stderr);self.assertFalse((self.root/'imports').exists());s=self.state();self.assertEqual(s['LAST_ERROR'],'issuer_failed');self.assertGreaterEqual(int(s['NEXT_CHECK']),started+300);self.assertLessEqual(int(s['NEXT_CHECK']),ended+300)
   text=(self.base/'state/renewal.log').read_text()+self.run_tool('status').stdout
   self.assertNotIn('TESTSECRET1234567890',text);self.assertNotIn('TESTACCESSKEY1234',text);self.assertIn('[REDACTED]',text)
  def test_success_no_duplicate_change_time_and_deployment_retry(self):
@@ -93,6 +94,36 @@ exit "${FAKE_ISSUER_EXIT:-0}"
   self.assertEqual(self.run_tool('disable').returncode,0);self.assertIn('ENABLED=0',(self.service/'scripts-config/certificate-renewal.sh.conf').read_text());self.assertTrue((self.base/'config/renewal.env').exists());self.assertTrue((self.root/'fingerprint').exists())
  def test_custom_startup_script_is_not_overwritten(self):
   folder=self.service/'scripts';folder.mkdir(parents=True);target=folder/'certificate-renewal.sh';target.write_text('#!/bin/sh\necho custom\n');r=self.run_tool('configure','--prepare-only');self.assertNotEqual(r.returncode,0);self.assertEqual(target.read_text(),'#!/bin/sh\necho custom\n');self.assertFalse((self.base/'config/renewal.env').exists())
+ def test_protocol3_uses_unified_storage_and_native_contract(self):
+  self.exe(self.supervisor,'#!/bin/sh\nprintf \'{"protocol":3}\\n\'\n')
+  self.configured();self.assertEqual(self.run_tool('renew').returncode,0)
+  result=self.run_tool('enable');self.assertEqual(result.returncode,0,result.stderr)
+  self.assertEqual((self.root/'starts').read_text().splitlines(),['start','start certificate-renewal.sh'])
+  directory=self.service/'init.d';target=directory/'certificate-renewal.sh';config=directory/'.config/certificate-renewal.sh.conf'
+  self.assertEqual(target.read_text().splitlines()[:2],['#!/bin/sh','# BLIKVM_INITD=1'])
+  self.assertEqual(subprocess.run(['sh','-n',str(target)]).returncode,0)
+  self.assertEqual(subprocess.run(['sh',str(target),'stop']).returncode,0)
+  runtime=directory/'.state/certificate-renewal.sh';runtime.mkdir(parents=True);(runtime/'status').write_text('STATE=running\n')
+  self.assertIn('Service state: running',self.run_tool('status').stdout)
+  self.assertEqual(self.run_tool('disable').returncode,0);self.assertIn('ENABLED=0',config.read_text())
+  for name in ['scripts','scripts-config','scripts-runtime']:self.assertFalse((self.service/name).exists())
+ def test_migrated_manager_preserves_credentials_and_existing_native_entry(self):
+  self.configured();self.assertEqual(self.run_tool('renew').returncode,0)
+  before=(self.base/'config/renewal.env').read_bytes();identity=(self.root/'fingerprint').read_bytes()
+  self.exe(self.supervisor,'#!/bin/sh\nprintf \'{"protocol":3}\\n\'\n')
+  directory=self.service/'init.d';directory.mkdir(parents=True);(directory/'certificate-renewal.sh').write_text('#!/bin/sh\n# BLIKVM_INITD=1\n# Automatically adapted\n# Managed by blikvm-acme 0.1.0 old-hash\nexit 0\n')
+  r=self.run_tool('enable');self.assertEqual(r.returncode,0,r.stderr)
+  self.assertEqual((self.base/'config/renewal.env').read_bytes(),before);self.assertEqual((self.root/'fingerprint').read_bytes(),identity)
+  self.assertIn('# Managed by blikvm-acme 0.2.0 ',(directory/'certificate-renewal.sh').read_text())
+ def test_unavailable_v3_executor_can_still_disable_existing_service(self):
+  directory=self.service/'init.d';config=directory/'.config/certificate-renewal.sh.conf';config.parent.mkdir(parents=True)
+  (directory/'.migration-v3.json').write_text('{}');config.write_text('MODE=service\nENABLED=1\n')
+  self.supervisor.unlink();r=self.run_tool('disable');self.assertEqual(r.returncode,0,r.stderr)
+  self.assertIn('ENABLED=0',config.read_text());self.assertFalse((self.service/'scripts-config').exists())
+ def test_active_protocol2_takes_precedence_over_retained_v3_marker(self):
+  directory=self.service/'init.d';directory.mkdir(parents=True);(directory/'.migration-v3.json').write_text('{}')
+  self.configured();self.assertEqual(self.run_tool('renew').returncode,0);self.assertEqual(self.run_tool('enable').returncode,0)
+  self.assertTrue((self.service/'scripts/certificate-renewal.sh').exists());self.assertFalse((directory/'certificate-renewal.sh').exists())
  def test_old_supervisor_cannot_enable_service(self):
   self.configured();self.assertEqual(self.run_tool('renew').returncode,0);self.exe(self.supervisor,'#!/bin/sh\nprintf \'{"protocol":1}\\n\'\n');r=self.run_tool('enable');self.assertNotEqual(r.returncode,0);self.assertFalse((self.root/'starts').exists());self.assertFalse((self.service/'scripts-config/certificate-renewal.sh.conf').exists())
  def test_startup_daemon_does_not_inherit_operation_lock(self):
