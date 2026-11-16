@@ -75,7 +75,7 @@ Use a matching system/App for the new script-management layout.
 
 ## Bash terminal on native A/B systems
 
-From system/App `3.0.5-dev.2026111601`, root and newly created Linux users use
+From system/App `3.0.5-dev.2026111605`, root and newly created Linux users use
 Bash for login on Pi4B, V4 and RV1126B. Existing non-root accounts retain their
 chosen shell. `/bin/sh` remains BusyBox ash for system and POSIX scripts.
 

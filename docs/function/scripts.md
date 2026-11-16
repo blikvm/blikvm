@@ -28,7 +28,7 @@ Script management starts processes; it does not install software dependencies. C
 
 Open **Settings → Advanced & Diagnostics → System Scripts**.
 
-1. Prepare a `.sh` file beginning with `#!/bin/sh` (POSIX) or `#!/bin/bash` (Bash), upload it and select **View**. Bash scripts require system/App `3.0.5-dev.2026111601` or later.
+1. Prepare a `.sh` file beginning with `#!/bin/sh` (POSIX) or `#!/bin/bash` (Bash), upload it and select **View**. Bash scripts require system/App `3.0.5-dev.2026111605` or later.
 2. For a short task, keep **Manual only** and select **Run** to inspect its output.
 3. For long-running software, choose **Resident service** and configure the restart policy and delay. Do not use manual execution to keep VPN clients or similar daemons running.
 4. Changes to the mode and policy are saved and applied automatically. Check that the state becomes **Running**, and inspect the log if needed.
@@ -396,7 +396,7 @@ For standalone HTTPS renewal reference scripts and configuration, see [Certifica
 
 ## Bash scripts
 
-With system/App `3.0.5-dev.2026111601` or later, Web uploads, SSH-created files,
+With system/App `3.0.5-dev.2026111605` or later, Web uploads, SSH-created files,
 manual execution and boot services all honor the exact first line: `#!/bin/sh`
 or `#!/bin/bash`. Bash scripts are syntax-checked and run with Bash, including
 native `start/stop/status` actions. They do not source interactive login files.

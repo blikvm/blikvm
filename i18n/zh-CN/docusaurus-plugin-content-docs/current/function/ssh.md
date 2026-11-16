@@ -65,7 +65,7 @@ SquashFS 重新挂载为可写。自定义自启服务与网页共用[系统脚�
 
 ## 原生 A/B 系统的 Bash 终端
 
-从系统/App `3.0.5-dev.2026111601` 开始，Pi4B、V4 和 RV1126B 的 root 与新建
+从系统/App `3.0.5-dev.2026111605` 开始，Pi4B、V4 和 RV1126B 的 root 与新建
 Linux 用户默认使用 Bash 登录。已有普通用户保留原来选择的 shell。
 `/bin/sh` 仍为 BusyBox ash，系统脚本和 POSIX 脚本继续使用它。
 
