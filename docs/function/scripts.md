@@ -28,7 +28,7 @@ Script management starts processes; it does not install software dependencies. C
 
 Open **Settings → Advanced & Diagnostics → System Scripts**.
 
-1. Prepare a `.sh` file beginning with `#!/bin/sh`, upload it and select **View**.
+1. Prepare a `.sh` file beginning with `#!/bin/sh` (POSIX) or `#!/bin/bash` (Bash), upload it and select **View**. Bash scripts require system/App `3.0.5-dev.2026111601` or later.
 2. For a short task, keep **Manual only** and select **Run** to inspect its output.
 3. For long-running software, choose **Resident service** and configure the restart policy and delay. Do not use manual execution to keep VPN clients or similar daemons running.
 4. Changes to the mode and policy are saved and applied automatically. Check that the state becomes **Running**, and inspect the log if needed.
@@ -62,7 +62,7 @@ The restart delay accepts 1–60 seconds. One-time startup tasks do not use the 
 
 The Web interface, SSH and boot startup share `/data/init.d/` and the same OS-owned executor. These directories are root-private; an SSH administrator can use `sudo` after joining `wheel` (see [Linux accounts](./ssh.md)).
 
-The first supporting system boot migrates old scripts and policies automatically. Original script/config directories are archived in `/data/init.d/.legacy-backup/`; the old runtime directory moves to `.state` so relative working files survive. Existing names, modes and restart policies are retained. Raw POSIX scripts are automatically adapted with their original start body preserved. Migration conflicts stop without overwriting either copy and can be retried after resolving the conflict. New raw imports retain a content-addressed original in `.legacy-backup/imports`.
+The first supporting system boot migrates old scripts and policies automatically. Original script/config directories are archived in `/data/init.d/.legacy-backup/`; the old runtime directory moves to `.state` so relative working files survive. Existing names, modes and restart policies are retained. Raw supported shell scripts are automatically adapted with their original start body preserved. Migration conflicts stop without overwriting either copy and can be retried after resolving the conflict. New raw imports retain a content-addressed original in `.legacy-backup/imports`.
 
 For a new script, use `start/stop/status`, with the marker immediately after the shebang:
 
@@ -393,3 +393,24 @@ To restart or disable NetBird, use the same script-management commands above wit
 - **Configuration disappears after reboot:** Check that the program's configuration, identity and databases are stored in its extension directory. Do not store data that must survive a reboot under `/run/`.
 
 For standalone HTTPS renewal reference scripts and configuration, see [Certificate import and optional renewal](../network/certificates.md).
+
+## Bash scripts
+
+With system/App `3.0.5-dev.2026111601` or later, Web uploads, SSH-created files,
+manual execution and boot services all honor the exact first line: `#!/bin/sh`
+or `#!/bin/bash`. Bash scripts are syntax-checked and run with Bash, including
+native `start/stop/status` actions. They do not source interactive login files.
+The running snapshot retains its interpreter for cleanup after a source edit.
+An older executor rejects Bash uploads with a system-update message.
+`#!/usr/bin/env bash` and shebang arguments are not supported.
+
+For example, upload this as a manual task:
+
+```bash
+#!/bin/bash
+items=(one two three)
+printf '%s\n' "${items[@]}"
+```
+
+Changing a shebang does not convert Bash syntax into POSIX syntax. Keep
+`#!/bin/sh` on scripts intended for that interpreter.

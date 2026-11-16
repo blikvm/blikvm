@@ -72,3 +72,30 @@ removes custom users and homes. Back up data before reflashing.
 The OS keeps `/data/work/conf` root-owned with mode 0700. This also protects
 credentials if an older App recreates a 0644 configuration file during rollback.
 Use a matching system/App for the new script-management layout.
+
+## Bash terminal on native A/B systems
+
+From system/App `3.0.5-dev.2026111601`, root and newly created Linux users use
+Bash for login on Pi4B, V4 and RV1126B. Existing non-root accounts retain their
+chosen shell. `/bin/sh` remains BusyBox ash for system and POSIX scripts.
+
+An interactive SSH login shows the model, hostname, local connection address,
+OS/App versions and persistent paths. The prompt is `user@host:directory#` for
+root and ends with `$` for other users. Colors are optional: set `NO_COLOR=1`
+before starting an interactive Bash, or use a `dumb` terminal for plain text.
+`~/.hushlogin` suppresses the welcome. Noninteractive SSH commands and file
+transfers do not print the welcome. `pstree -p` shows processes and their PIDs.
+
+Root keeps `/root` as its home; only its Bash history is stored at
+`/data/work/state/shell/root/.bash_history`. Other users keep their own history
+in `~/.bash_history` under their persistent home. History files are private
+(mode 0600), and sessions append rather than replace each other's history.
+Existing private RV root history is imported once and its original retained.
+If persistent storage or the home path is unavailable or unsafe, history
+persistence is disabled; no shared temporary history is used. Do not enter
+passwords or tokens as command arguments.
+
+New users receive a `.bashrc` that loads the shared defaults; they can add their
+own aliases and interactive preferences there. Existing custom startup files
+are preserved. Use native `adduser -s /bin/bash USER` to choose Bash explicitly when creating
+an account. No writable system remount is needed.
