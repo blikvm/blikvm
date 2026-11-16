@@ -1,6 +1,8 @@
 # Device terminal and SSH
 
-**Settings → Advanced & Diagnostics → SSH Terminal** opens BliKVM's own management shell, rather than the controlled computer's desktop or serial port. The web terminal uses an authenticated real-time channel.
+**3.0.5 stable package compatibility:** App 3.0.5 requires System 3.0.5 or newer on all three platforms. Upgrade an older system, including a 3.0.5 development system, with its matching signed system package before installing the App. The development-version references below record when individual features first became available.
+
+**SSH Terminal** in the KVM toolbar opens BliKVM's own management shell, rather than the controlled computer's desktop or serial port. The web terminal uses an authenticated real-time channel.
 
 ## Web terminal
 
