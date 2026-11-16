@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "generatedAt": "2026-11-16T10:12:17.263Z",
+  "generatedAt": "2026-11-16T10:16:03.381Z",
   "targets": {
     "bcm2711": {
       "stable": {
