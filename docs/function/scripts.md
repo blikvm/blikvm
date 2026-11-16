@@ -1,5 +1,7 @@
 # System scripts and third-party software
 
+**3.0.5 stable package compatibility:** App 3.0.5 requires System 3.0.5 or newer on all three platforms. Upgrade an older system, including a 3.0.5 development system, with its matching signed system package before installing the App. The development-version references below record when individual features first became available.
+
 BliKVM can store third-party programs and their configuration on persistent storage and manage manual tasks, startup tasks and resident services through System Scripts. Use the Web interface or manage the same files over SSH.
 
 Scripts execute on **BliKVM itself**, not on the controlled computer, and are separate from browser keyboard macros. Only administrators can manage scripts in the Web interface. The SSH examples require root access to the device.
@@ -26,7 +28,7 @@ Script management starts processes; it does not install software dependencies. C
 
 ## Manage scripts in the Web interface
 
-Open **Settings → Advanced & Diagnostics → System Scripts**.
+Open **Settings → Maintenance → System Scripts**.
 
 1. Prepare a `.sh` file beginning with `#!/bin/sh` (POSIX) or `#!/bin/bash` (Bash), upload it and select **View**. Bash scripts require system/App `3.0.5-dev.2026111605` or later.
 2. For a short task, keep **Manual only** and select **Run** to inspect its output.
