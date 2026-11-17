@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "generatedAt": "2026-11-17T09:13:56.813Z",
+  "generatedAt": "2026-11-17T11:42:59.613Z",
   "targets": {
     "bcm2711": {
       "stable": {
@@ -11,6 +11,7 @@
             "name": "blikvm-v1-v2-v3-app-3.0.5.tar.gz",
             "size": 32980705,
             "sha256": "1915a928e10ecef107056450608ef22df9e74419df49f2dd5b4fe9fedbdc3386",
+            "atomgit": true,
             "minOSVersion": "3.0.5"
           }
         },
@@ -21,6 +22,7 @@
             "name": "blikvm-v1-v2-v3-system-3.0.5.raucb",
             "size": 135416349,
             "sha256": "a73a250361dbc0ed1294e15e11655430cfb9076540481a2ea91676b12e8a1df7",
+            "atomgit": true,
             "bundledAppVersion": "3.0.5"
           }
         }
@@ -59,6 +61,7 @@
             "name": "blikvm-v4-app-3.0.5.tar.gz",
             "size": 30760321,
             "sha256": "8d5e36243317372d6eeebb5069e10e829da5f384c4c9f5985d09b4a0b835bb92",
+            "atomgit": true,
             "minOSVersion": "3.0.5"
           }
         },
@@ -69,6 +72,7 @@
             "name": "blikvm-v4-system-3.0.5.raucb",
             "size": 128509877,
             "sha256": "7bd2b7b73cbef720c4b57c685fc7b37876cb3c99a4e22d72eb5af65ed58cec51",
+            "atomgit": true,
             "bundledAppVersion": "3.0.5"
           }
         }
@@ -107,6 +111,7 @@
             "name": "blikvm-rv1126b-app-3.0.5.tar.gz",
             "size": 30612716,
             "sha256": "0d0822b14e090270ade178e7e1cd257f72a4ee1cd156818ebc57020d430bf1d1",
+            "atomgit": true,
             "minOSVersion": "3.0.5"
           }
         },
@@ -137,6 +142,7 @@
             "name": "blikvm-rv1126b-tc358743-system-3.0.5.raucb",
             "size": 110442421,
             "sha256": "dbe7527b52098463f47d7b60a0c8a81bd0d18406951b130eee365e97cacf3aca",
+            "atomgit": true,
             "bundledAppVersion": "3.0.5"
           }
         }
