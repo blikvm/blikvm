@@ -4,102 +4,135 @@ title: C778 · 树莓派 5B 使用指南
 
 # C778 接入 Raspberry Pi 5B
 
-本指南优先整理 **一个 HDMI 输入 → 双路 CSI 半幅 → 主机拼接** 的方案。两路各为 960×1080 @ 120 fps，目标完整画面为 1920×1080。先确认左右半幅与颜色，再做帧率验收。
+本指南使用 [C778 Linux 驱动仓库](https://github.com/blikvm/c778-lt6911uxe)，通过树莓派 5B 的 CSI 接口采集 HDMI 图像，通过 I²S 接口采集 HDMI 音频。
 
-:::info 当前适用范围
-现有材料提供 Pi 5 厂测包，内核精确匹配 `6.18.39+rpt-rpi-2712`，不是任意树莓派系统的通用安装包。正式驱动源码、安装器与固件锁定表仍在整理。本页面的命令用于已配置的开发环境或配套厂测包，不保证全新系统仅执行几条命令即可使用。
-:::
+## 准备设备
 
-## 准备硬件与环境
+- Raspberry Pi 5B，64 位系统（aarch64），内核 `6.18.50+rpt-rpi-2712`。
+- C778、独立 5V 电源和兼容的四 Lane 22Pin CSI 排线。
+- HDMI 视频源，例如电脑或播放器，以及 HDMI 线。
+- 需要声音时，准备 I²S 连接线，并将 HDMI 源设置为 **48 kHz 双声道 PCM**。
 
-- Raspberry Pi 5B、主机电源、散热与可登录的 64 位 Linux 系统。
-- C778、配套 5V 电源线、两条经确认兼容的 22Pin FPC 排线。
-- 能输出目标时序的 HDMI 视频源与线材。先使用静态文字/色条，再测试运动画面。
-- 两个 CAM/DISP 接口均留给 C778；停止其他相机或采集程序。
-
-Pi 5 提供两个四 Lane MIPI 接口，标为 CAM/DISP 0 和 CAM/DISP 1，接口能力见 [树莓派官方资料](https://www.raspberrypi.com/documentation/computers/sbcs.html)。接线必须同时核对 C778 的线序、排线接点方向与主机引脚。
-
-## 接线
-
-1. 关闭 Pi 和 C778 电源，按 [接口图](/zh-CN/docs/device-guides/C778#接口与供电) 核对电源极性与排线接点。
-2. 双路模式将两个 C778 MIPI 输出分别接入 Pi 的两个 CAM/DISP 口。当前厂测约定 P3=LEFT→CSI0、P1=RIGHT→CSI1；正式接线照片还需将该内部命名与 C778 的 MIPI0/MIPI1 丝印逐一核对。
-3. 需要音频时单独连接 I²S；本节视频厂测不覆盖录音。
-4. 接入 HDMI 源，为 C778 提供 5V，然后启动 Pi。
-
-**不要根据排线颜色或固定 `/dev/videoX` 编号猜左右通道。**第一次连接先确认 media 实体、实际半幅内容，再记录稳定的对应关系。
-
-## 确认系统和采集路径
-
-在 Pi 的终端执行：
+先在树莓派终端确认系统：
 
 ```bash
 uname -m
 uname -r
-uname -v
-cat /proc/device-tree/model
-v4l2-ctl --list-devices
-for media in /dev/media*; do
-  [ -e "$media" ] || continue
-  media-ctl -d "$media" -p
-done
 ```
 
-`v4l2-ctl` 和 `media-ctl` 通常由 `v4l-utils` 提供；使用 Raspberry Pi OS 时可通过系统软件源安装。厂测包另带所需运行时。
+仓库加载脚本会检查内核版本，安装的 headers 应与当前运行内核一致。
 
-现有厂测栈使用 `anran_lt6911uxe`、`anran_rp1_cfe` 两个模块和专用 DTBO。只有 LT 芯片模块不代表主机 CSI 路径已适配。先发现两条不同的 capture path，再确认各级 pad 和 video 队列格式一致。
+## 连接 C778
 
-## 使用现有厂测包
+关闭树莓派和 C778 电源后接线：
 
-向技术支持获取匹配的完整 `uxe-factory-test` 目录；保留全部文件与执行权限。该包会部署测试驱动和启动片段，首次运行前备份启动配置；若已有相机/驱动配置冲突，应先停止并查清冲突，不要强制覆盖。
+1. 将 C778 的一个 MIPI 输出连接到树莓派 **CAM/DISP 0**，按[硬件手册](/docs/device-guides/C778)核对排线接点方向。
+2. 将电脑或播放器的 HDMI 输出连接到 C778 的 **VIDEO-IN**。
+3. 需要采集音频时，按下表连接 I²S。GPIO 使用 **BCM 编号**。
+4. 为 C778 接入独立 5V 电源，再启动树莓派。不要将 5V 接入 CSI 的 3.3V 引脚。
 
-当前包要求：
+| C778 I²S | 树莓派 BCM GPIO | 物理针脚 |
+| --- | --- | --- |
+| SCK / SCLK | GPIO18 | 12 |
+| WFS / WS | GPIO19 | 35 |
+| SD / SDOUT | GPIO20 | 38 |
+| GND | GND | 例如 39 |
 
-| 检查项 | 精确值 |
-| --- | --- |
-| 架构 | aarch64 / BCM2712 |
-| 内核 | `6.18.39+rpt-rpi-2712` |
-| 构建版本 | `#1 SMP PREEMPT Debian 1:6.18.39-1+rpt1 (2026-07-29)` |
-| `/sys/kernel/notes` SHA-256 | `b552b3ec76cc19236e62f85f613db2ef61c213ff9de1d45da5e0cd5fb6caa987` |
+此接法由 C778 提供音频时钟，树莓派接收；不需要连接 MCLK。视频走 CSI，音频走独立的 I²S 连接。
+
+## 下载并加载驱动
+
+在树莓派执行：
 
 ```bash
-# 先确认版本和指纹，不匹配时不要加载包内 .ko
-uname -r
-uname -v
-sha256sum /sys/kernel/notes
+sudo apt update
+sudo apt install build-essential git device-tree-compiler v4l-utils kmod ffmpeg alsa-utils
+sudo apt install "linux-headers-$(uname -r)"
 
-# 在匹配的目标 Pi 上执行
-cd ~/uxe-factory-test
-sudo ./test
+git clone https://github.com/blikvm/c778-lt6911uxe.git
+cd c778-lt6911uxe
+make -j4
+bash scripts/load.sh
 ```
 
-- `REBOOT_REQUIRED`：部署完成，需要手动重启；**还未通过采集验收**。执行 `sudo reboot` 后，再在相同目录运行 `sudo ./test`。
-- `PASS`：本次双路数据链路通过包内验收条件。
-- `KERNEL_BUILD_MISMATCH`：内核构建不一致，停止；不要强制加载模块。
-- 其他失败：保留 `results/<本次测试目录>/` 下报告和日志。
+看到 `C778 development driver is bound on CSI0` 表示视频驱动已绑定。
 
-不要为匹配旧测试包盲目降级内核，也不要假设上述历史软件包版本一直可从软件源下载；正式发布应提供源码构建或匹配镜像。
+## 获取图像
 
-撤销由测试包新增的配置：
+让 HDMI 源输出画面，然后检查输入、配置采集并读取 120 帧：
 
 ```bash
-cd ~/uxe-factory-test
-sudo ./test --restore
-# 如果提示需要重启，再手动重启
+bash scripts/status.sh
+bash scripts/configure-capture.sh
+bash scripts/capture.sh 120
 ```
 
-## 检查实际画面
+`status.sh` 显示 HDMI 输入分辨率；`configure-capture.sh` 显示实际采集节点、宽高和像素格式。`capture.sh` 用于检查采集，不会弹出预览窗口或保存视频。
 
-厂测通过还需要检查以下内容：
+### 预览画面
 
-1. 彩条和文字方向：排除 RGB/BGR 颠倒、左右反转和通道交换。
-2. 左右分割边界：两路拼接后宽度为 1920、高度为 1080，无重叠或缺列。
-3. 运动画面或源帧计数：确认两个半幅来自同一源帧，不能只看各自 fps。
-4. 断开/重接 HDMI、切换分辨率和重启后的自动恢复。
+以下示例用于 **3840×2160、UYVY** 输入。先从 HDMI 源选择该输出模式，并重新执行 `configure-capture.sh`；使用其他分辨率时，将命令中的宽高替换为实际采集值。
 
-已有桌面预览脚本会将输出限制为 60 fps；它可以辅助检查内容，**不能用于证明 120 fps 的实时显示或编码能力**。
+```bash
+. ./scripts/find-path.sh
+c778_find_path
+ffplay -f v4l2 -input_format uyvy422 -video_size 3840x2160 \
+  -i "$C778_VIDEO"
+```
 
-## 留存验收结果
+在树莓派图形桌面的终端运行预览，按 `f` 切换全屏，按 `q` 退出。退出预览后再运行其他视频采集命令。
 
-正式发布前至少记录：主板版本、C778 板号、系统/内核、驱动 commit、DTBO 与芯片固件 SHA-256、输入时序、两路格式、实际 fps、序号/时间戳、颜色和同步检查、持续时间与错误日志。
+### 保存一张图片
 
-[返回 C778 手册](/zh-CN/docs/device-guides/C778) · [RV1126B 示例](/zh-CN/docs/capture/c778-rv1126b)
+同样以 3840×2160、UYVY 为例：
+
+```bash
+mkdir -p results
+. ./scripts/find-path.sh
+c778_find_path
+v4l2-ctl -d "$C778_VIDEO" --stream-mmap=4 --stream-skip=5 \
+  --stream-count=1 --stream-to=results/frame.uyvy
+ffmpeg -f rawvideo -pixel_format uyvy422 -video_size 3840x2160 \
+  -i results/frame.uyvy -frames:v 1 -update 1 results/frame.png
+```
+
+图片保存在仓库的 `results/frame.png`。
+
+## 获取音频
+
+确认 HDMI 源正在播放带声音的内容，并已设置为 **48 kHz 双声道 PCM**。在仓库目录加载音频配置：
+
+```bash
+dtc -@ -I dts -O dtb -o c778-audio.dtbo c778-audio.dts
+sudo dtoverlay "$PWD/c778-audio.dtbo"
+arecord -l
+```
+
+声卡列表中应出现 `C778-I2S`。录制 10 秒音频：
+
+```bash
+mkdir -p results
+arecord -D hw:C778I2S,0 -f S32_LE -r 48000 -c 2 -d 10 results/audio.wav
+```
+
+使用树莓派默认音频输出播放录音：
+
+```bash
+aplay results/audio.wav
+```
+
+音频保存在 `results/audio.wav`。如果没有声音，检查 HDMI 源的音量和 PCM 设置，以及 I²S 信号线与 GND 接线。
+
+## 重启后使用
+
+以上驱动和音频配置为临时加载，重启后在仓库目录重新执行：
+
+```bash
+bash scripts/load.sh
+bash scripts/configure-capture.sh
+sudo dtoverlay "$PWD/c778-audio.dtbo"
+```
+
+HDMI 源切换分辨率后，先停止预览或采集，再重新执行 `configure-capture.sh`。
+
+[返回 C778 手册](/docs/device-guides/C778) · [RV1126B 示例](/docs/capture/c778-rv1126b)
