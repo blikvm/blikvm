@@ -4,102 +4,60 @@ title: C778 · 树莓派 5B 使用指南
 
 # C778 接入 Raspberry Pi 5B
 
-本指南优先整理 **一个 HDMI 输入 → 双路 CSI 半幅 → 主机拼接** 的方案。两路各为 960×1080 @ 120 fps，目标完整画面为 1920×1080。先确认左右半幅与颜色，再做帧率验收。
+当前公开开发流程请使用 [C778 Linux 驱动仓库](https://github.com/blikvm/c778-lt6911uxe)：**单路 CSI0 采集完整画面**，使用 `c778_lt6911uxe` 和系统自带 RP1-CFE。
 
-:::info 当前适用范围
-现有材料提供 Pi 5 厂测包，内核精确匹配 `6.18.39+rpt-rpi-2712`，不是任意树莓派系统的通用安装包。正式驱动源码、安装器与固件锁定表仍在整理。本页面的命令用于已配置的开发环境或配套厂测包，不保证全新系统仅执行几条命令即可使用。
-:::
+## 已验证环境与边界
 
-## 准备硬件与环境
+- Raspberry Pi 5 Model B Rev 1.0、aarch64，内核 `6.18.50+rpt-rpi-2712`。
+- CAM/DISP 0 四 Lane：已有 600 帧短时测试，完整 3840×2160 UYVY，约 60 fps。
+- 测试仍有 `DPHY: Datarate 2495 Mbps out of range` 告警，长期 4K60 数据完整性尚待排查。
+- 此结果不覆盖双 CSI、左右拼接、1080p120、校准颜色、采集中热插拔及其他内核。
 
-- Raspberry Pi 5B、主机电源、散热与可登录的 64 位 Linux 系统。
-- C778、配套 5V 电源线、两条经确认兼容的 22Pin FPC 排线。
-- 能输出目标时序的 HDMI 视频源与线材。先使用静态文字/色条，再测试运动画面。
-- 两个 CAM/DISP 接口均留给 C778；停止其他相机或采集程序。
+不要强制加载不匹配的模块，也不要盲目降级。需要与运行内核匹配的 headers。芯片 ID 不能代替固件版本与指纹，已知时应记录固件和输出模式。
 
-Pi 5 提供两个四 Lane MIPI 接口，标为 CAM/DISP 0 和 CAM/DISP 1，接口能力见 [树莓派官方资料](https://www.raspberrypi.com/documentation/computers/sbcs.html)。接线必须同时核对 C778 的线序、排线接点方向与主机引脚。
+## 接线与视频采集
 
-## 接线
+接线前关闭电源。C778 使用独立 5V 供电，不能把 5V 接入 Pi CSI 的 3.3V 引脚。使用兼容的四 Lane 22Pin 排线，将待测 C778 输出接到 Pi CAM/DISP 0，按[硬件手册](/docs/device-guides/C778)核对接点方向。
 
-1. 关闭 Pi 和 C778 电源，按 [接口图](/zh-CN/docs/device-guides/C778#接口与供电) 核对电源极性与排线接点。
-2. 双路模式将两个 C778 MIPI 输出分别接入 Pi 的两个 CAM/DISP 口。当前厂测约定 P3=LEFT→CSI0、P1=RIGHT→CSI1；正式接线照片还需将该内部命名与 C778 的 MIPI0/MIPI1 丝印逐一核对。
-3. 需要音频时单独连接 I²S；本节视频厂测不覆盖录音。
-4. 接入 HDMI 源，为 C778 提供 5V，然后启动 Pi。
-
-**不要根据排线颜色或固定 `/dev/videoX` 编号猜左右通道。**第一次连接先确认 media 实体、实际半幅内容，再记录稳定的对应关系。
-
-## 确认系统和采集路径
-
-在 Pi 的终端执行：
+在 Pi 上执行：
 
 ```bash
 uname -m
 uname -r
 uname -v
-cat /proc/device-tree/model
-v4l2-ctl --list-devices
-for media in /dev/media*; do
-  [ -e "$media" ] || continue
-  media-ctl -d "$media" -p
-done
+sudo apt update
+sudo apt install build-essential git device-tree-compiler v4l-utils kmod
+sudo apt install "linux-headers-$(uname -r)"
+git clone https://github.com/blikvm/c778-lt6911uxe.git
+cd c778-lt6911uxe
+make -j4
+bash scripts/load.sh
+bash scripts/status.sh
+bash scripts/configure-capture.sh
+bash scripts/capture.sh 120
 ```
 
-`v4l2-ctl` 和 `media-ctl` 通常由 `v4l-utils` 提供；使用 Raspberry Pi OS 时可通过系统软件源安装。厂测包另带所需运行时。
+配置采集前应接好有效 HDMI 源。脚本会查找实际 media/video 节点，不应假定 `/dev/video0`。默认仅临时加载，重启后需要重新运行；可选产测自启动另行安装。精确内核要求、排障与保存图片示例以仓库为准。
 
-现有厂测栈使用 `anran_lt6911uxe`、`anran_rp1_cfe` 两个模块和专用 DTBO。只有 LT 芯片模块不代表主机 CSI 路径已适配。先发现两条不同的 capture path，再确认各级 pad 和 video 队列格式一致。
+## 音频与产测回环
 
-## 使用现有厂测包
+同一台 Pi 可生成测试源：**HDMI1 → C778 HDMI 输入 → CSI0/I²S → Pi → HDMI0 显示器**。显示器预览的是采集返回的路径。
 
-向技术支持获取匹配的完整 `uxe-factory-test` 目录；保留全部文件与执行权限。该包会部署测试驱动和启动片段，首次运行前备份启动配置；若已有相机/驱动配置冲突，应先停止并查清冲突，不要强制覆盖。
+| C778 I²S | 树莓派 BCM GPIO | 物理针脚 |
+| --- | --- | --- |
+| SCK / SCLK | 18 | 12 |
+| WFS / WS | 19 | 35 |
+| SD / SDOUT | 20 | 38 |
+| GND | GND | 例如 39 |
 
-当前包要求：
+C778 提供时钟，Pi 使用时钟接收模式。CSI 视频不包含此音频路径，需要独立 I²S 配置。音频 overlay 创建 `C778-I2S`，当前验证格式为 48 kHz 双声道 PCM、S32_LE 采集；仅出现声卡不能证明已采集到声音。
 
-| 检查项 | 精确值 |
-| --- | --- |
-| 架构 | aarch64 / BCM2712 |
-| 内核 | `6.18.39+rpt-rpi-2712` |
-| 构建版本 | `#1 SMP PREEMPT Debian 1:6.18.39-1+rpt1 (2026-07-29)` |
-| `/sys/kernel/notes` SHA-256 | `b552b3ec76cc19236e62f85f613db2ef61c213ff9de1d45da5e0cd5fb6caa987` |
+参见仓库[音频与产测配置](https://github.com/blikvm/c778-lt6911uxe/blob/main/docs/pi5-audio-factory.md)，获取依赖、安装、自启动和卸载步骤。测试显示动态彩条、帧号、计时及大号红绿音频状态，左/右声道分别输出 1000/1500 Hz 测试音。需要桌面自动登录并核对双屏布局。采集音频采用分段回放，有间隔和延迟，不代表音画同步已验证。
 
-```bash
-# 先确认版本和指纹，不匹配时不要加载包内 .ko
-uname -r
-uname -v
-sha256sum /sys/kernel/notes
+旧版程序已通过 10/10 次软件重启，Boot ID 各不相同，视频预览持续更新，检测到 1000 Hz 测试音。该记录属于旧版左声道检测程序，不应作为新版双声道判定或断电冷启动的验证证据。
 
-# 在匹配的目标 Pi 上执行
-cd ~/uxe-factory-test
-sudo ./test
-```
+## 验收记录
 
-- `REBOOT_REQUIRED`：部署完成，需要手动重启；**还未通过采集验收**。执行 `sudo reboot` 后，再在相同目录运行 `sudo ./test`。
-- `PASS`：本次双路数据链路通过包内验收条件。
-- `KERNEL_BUILD_MISMATCH`：内核构建不一致，停止；不要强制加载模块。
-- 其他失败：保留 `results/<本次测试目录>/` 下报告和日志。
+记录板号、内核构建、源码 commit、DTBO/固件指纹、接线、输入时序、实际格式/帧率和帧序号。另行检查完整画面、颜色、左右声道、拔插/切换时序恢复与断电启动。音频绿色或播放器运行不等同于完整量产验收。
 
-不要为匹配旧测试包盲目降级内核，也不要假设上述历史软件包版本一直可从软件源下载；正式发布应提供源码构建或匹配镜像。
-
-撤销由测试包新增的配置：
-
-```bash
-cd ~/uxe-factory-test
-sudo ./test --restore
-# 如果提示需要重启，再手动重启
-```
-
-## 检查实际画面
-
-厂测通过还需要检查以下内容：
-
-1. 彩条和文字方向：排除 RGB/BGR 颠倒、左右反转和通道交换。
-2. 左右分割边界：两路拼接后宽度为 1920、高度为 1080，无重叠或缺列。
-3. 运动画面或源帧计数：确认两个半幅来自同一源帧，不能只看各自 fps。
-4. 断开/重接 HDMI、切换分辨率和重启后的自动恢复。
-
-已有桌面预览脚本会将输出限制为 60 fps；它可以辅助检查内容，**不能用于证明 120 fps 的实时显示或编码能力**。
-
-## 留存验收结果
-
-正式发布前至少记录：主板版本、C778 板号、系统/内核、驱动 commit、DTBO 与芯片固件 SHA-256、输入时序、两路格式、实际 fps、序号/时间戳、颜色和同步检查、持续时间与错误日志。
-
-[返回 C778 手册](/zh-CN/docs/device-guides/C778) · [RV1126B 示例](/zh-CN/docs/capture/c778-rv1126b)
+[返回 C778 手册](/docs/device-guides/C778) · [RV1126B 示例](/docs/capture/c778-rv1126b)

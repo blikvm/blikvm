@@ -4,31 +4,20 @@ title: C778 · Raspberry Pi 5B guide
 
 # C778 on Raspberry Pi 5B
 
-This guide describes the **one HDMI input → two CSI half-frame paths → host-side stitching** profile. Each path carries 960×1080 @ 120 fps, forming a complete 1920×1080 image after correct pairing. Verify left/right ordering and colors before measuring frame rate.
+Use the public [C778 Linux driver repository](https://github.com/blikvm/c778-lt6911uxe) for the current **single CSI0, full-frame** development workflow. It uses `c778_lt6911uxe` with the distribution RP1-CFE driver.
 
-:::info Scope of the existing software
-The available factory-test bundle requires the exact kernel `6.18.39+rpt-rpi-2712`. It is not a universal installer for every Raspberry Pi image. Production driver source, installer and firmware-version mapping are being organized. The commands below apply to an already configured development environment or the matching test bundle, not an arbitrary clean system.
-:::
+## Tested environment and limits
 
-## Hardware and environment
+- Raspberry Pi 5 Model B Rev 1.0, aarch64; kernel `6.18.50+rpt-rpi-2712`.
+- One four-lane CAM/DISP 0 path: a recorded 600-frame test delivered complete 3840×2160 UYVY buffers at about 60 fps.
+- The test logged `DPHY: Datarate 2495 Mbps out of range`; long-term 4K60 integrity is still unresolved.
+- Dual CSI, stitching, 1080p120, calibrated color, active hotplug and other kernels are not established by this result.
 
-- Raspberry Pi 5B, host power supply, cooling and a bootable 64-bit Linux system with terminal access.
-- C778, its dedicated 5V lead and two verified compatible 22-pin FPC cables.
-- An HDMI source and cable supporting the target timing. Begin with static text/color bars, then use motion video.
-- Both CAM/DISP ports available for C778; stop other camera and capture applications.
+Do not force-load a module on another kernel or downgrade blindly. Build against matching installed headers. Chip identity does not identify a reproducible firmware release; record firmware/profile information when known.
 
-Pi 5 has two four-lane MIPI ports labeled CAM/DISP 0 and CAM/DISP 1; see the [official Raspberry Pi connector description](https://www.raspberrypi.com/documentation/computers/sbcs.html). Verify module pinout, FPC contact orientation and host pins together.
+## Connect and capture
 
-## Wiring
-
-1. Turn off both devices and check power polarity and FPC orientation against the [C778 connector reference](/docs/device-guides/C778#connectors-and-power).
-2. For split operation, connect both C778 MIPI outputs to the two Pi CAM/DISP ports. The existing factory-test convention is P3=LEFT→CSI0 and P1=RIGHT→CSI1. This internal naming must still be mapped explicitly to C778's MIPI0/MIPI1 silkscreen using the actual wiring.
-3. Connect I²S separately if audio is needed; the video factory test does not verify recording.
-4. Connect the HDMI source, supply C778 with 5V, then boot the Pi.
-
-Do not infer left/right paths from cable color or fixed `/dev/videoX` numbers. Identify the media entities and actual image halves, then record their correspondence.
-
-## Inspect the system and capture paths
+Power down before changing FPC or GPIO wiring. Give C778 its dedicated 5V supply; never inject 5V into the Pi CSI 3.3V pin. Connect the tested C778 output to Pi CAM/DISP 0 with a compatible four-lane 22-pin FPC. Check contact orientation against the [hardware manual](/docs/device-guides/C778).
 
 Run on the Pi:
 
@@ -36,70 +25,39 @@ Run on the Pi:
 uname -m
 uname -r
 uname -v
-cat /proc/device-tree/model
-v4l2-ctl --list-devices
-for media in /dev/media*; do
-  [ -e "$media" ] || continue
-  media-ctl -d "$media" -p
-done
+sudo apt update
+sudo apt install build-essential git device-tree-compiler v4l-utils kmod
+sudo apt install "linux-headers-$(uname -r)"
+git clone https://github.com/blikvm/c778-lt6911uxe.git
+cd c778-lt6911uxe
+make -j4
+bash scripts/load.sh
+bash scripts/status.sh
+bash scripts/configure-capture.sh
+bash scripts/capture.sh 120
 ```
 
-`v4l2-ctl` and `media-ctl` are normally provided by `v4l-utils`; on Raspberry Pi OS they can be installed from the system package repositories. The factory-test bundle carries its own runtime tools.
+Connect a valid HDMI source before configuring capture. The scripts discover actual media/video nodes; do not assume `/dev/video0`. Loading is temporary unless the optional factory startup is installed. Reboot removes the runtime configuration. See the repository for exact supported kernel, troubleshooting and capture-image examples.
 
-The existing test stack uses `anran_lt6911uxe`, `anran_rp1_cfe` and a dedicated DTBO. Loading the bridge module alone does not establish a working host CSI path. Discover two distinct capture paths and verify consistent pad and video-queue formats.
+## Audio and factory loopback
 
-## Existing factory-test bundle
+The Pi can also generate the source: **HDMI1 → C778 HDMI input → CSI0/I²S → Pi → HDMI0 monitor**. The second output displays the captured path rather than simply duplicating the source.
 
-Obtain the complete matching `uxe-factory-test` folder from support and preserve all files and executable permissions. The bundle can deploy test modules and boot configuration. Back up boot configuration first. Investigate existing camera/driver conflicts rather than forcing an overwrite.
+| C778 I²S | Pi BCM GPIO | Physical pin |
+| --- | --- | --- |
+| SCK / SCLK | 18 | 12 |
+| WFS / WS | 19 | 35 |
+| SD / SDOUT | 20 | 38 |
+| GND | GND | e.g. 39 |
 
-The current bundle requires:
+C778 supplies the clocks and Pi receives them. CSI video alone does not provide audio. The optional audio overlay creates `C778-I2S`; it is tested with 48 kHz stereo PCM, S32_LE capture. A registered card is not proof of non-silent audio.
 
-| Check | Exact value |
-| --- | --- |
-| Architecture | aarch64 / BCM2712 |
-| Kernel | `6.18.39+rpt-rpi-2712` |
-| Build | `#1 SMP PREEMPT Debian 1:6.18.39-1+rpt1 (2026-07-29)` |
-| `/sys/kernel/notes` SHA-256 | `b552b3ec76cc19236e62f85f613db2ef61c213ff9de1d45da5e0cd5fb6caa987` |
+See the repository's [audio and factory setup](https://github.com/blikvm/c778-lt6911uxe/blob/main/docs/pi5-audio-factory.md) for the overlay, dependencies, installation and uninstall commands. The desktop test shows moving bars, counters and a large green/red audio label, with separate 1000/1500 Hz left/right test tones. It needs desktop autologin and the documented display layout. Audio replay is segmented and delayed; it does not establish A/V synchronization.
 
-```bash
-# Verify first. Do not load bundled modules on a mismatched kernel.
-uname -r
-uname -v
-sha256sum /sys/kernel/notes
+The earlier test program passed 10/10 software reboots with distinct Boot IDs, active video preview and recent 1000 Hz detection. This covered the older left-channel detector, not cold-power starts or the newer stereo classifier. Keep those evidence sets separate.
 
-# Run only on the matching target Pi.
-cd ~/uxe-factory-test
-sudo ./test
-```
+## Acceptance evidence
 
-- `REBOOT_REQUIRED`: deployment completed; capture has **not** passed. Reboot manually with `sudo reboot`, then run `sudo ./test` again from the same folder.
-- `PASS`: this particular run passed the bundle's concurrent capture checks.
-- `KERNEL_BUILD_MISMATCH`: stop; do not force-load modules.
-- Other failures: keep the report and logs in the corresponding `results/<run-directory>/`.
-
-Do not blindly downgrade to an old kernel to match a test bundle, or assume historical package versions remain available. A production release should provide a reproducible source build or matching system image.
-
-To revert configuration added by the bundle:
-
-```bash
-cd ~/uxe-factory-test
-sudo ./test --restore
-# Reboot manually if requested.
-```
-
-## Verify image content
-
-A passing data-path test still needs content checks:
-
-1. Color bars and text: exclude RGB/BGR swaps, mirroring and exchanged channels.
-2. Stitching boundary: confirm a 1920×1080 image with no missing or repeated columns.
-3. Motion or a source frame counter: verify both halves come from the same source frame; independent fps readings are insufficient.
-4. HDMI disconnection/reconnection, resolution changes and reboot recovery.
-
-The existing desktop preview script limits its output to 60 fps. It can help inspect image content but **cannot prove 120 fps display or encoding performance**.
-
-## Keep acceptance evidence
-
-Record host and module revisions, system/kernel, driver commit, DTBO and firmware hashes, input timing, both capture formats, measured fps, sequence/timestamps, color and synchronization checks, test duration and kernel errors.
+Record board revisions, kernel/build, source commit, DTBO and firmware hashes, wiring, source timing, actual format/fps and frame sequences. Check colors, complete image content, both audio channels, cable/mode recovery and cold starts separately. A green audio label or running player is not a complete production acceptance test.
 
 [Back to C778](/docs/device-guides/C778) · [RV1126B guide](/docs/capture/c778-rv1126b)
