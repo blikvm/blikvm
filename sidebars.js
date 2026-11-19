@@ -96,6 +96,7 @@ export default {
         "function/rtc",
         "function/interface-preferences",
         "function/atx",
+        "function/ipmi-redfish",
         "function/serial-terminal",
         "function/ssh",
         "function/scripts",
