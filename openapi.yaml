@@ -2242,6 +2242,49 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
+  /api/v1/management:
+    get:
+      operationId: getManagementIntegrations
+      x-permission: security.manage
+      summary: Read IPMI, Serial over LAN, and Redfish settings
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Management settings and runtime status with credentials omitted, including SoL readiness and its reason when unavailable
+        '403':
+          description: Administrator authentication required
+    post:
+      operationId: postManagementIntegrations
+      x-permission: security.manage
+      summary: Configure IPMI, Serial over LAN, and Redfish
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                redfishEnabled: { type: boolean }
+                ipmiEnabled: { type: boolean }
+                ipmiAddress: { type: string }
+                ipmiUser: { type: string }
+                ipmiPassword:
+                  type: string
+                  format: password
+                  writeOnly: true
+                solEnabled: { type: boolean }
+      responses:
+        '200':
+          description: Updated management settings and runtime status
+        '400':
+          description: Invalid management configuration
+        '403':
+          description: Administrator authentication required
+        '409':
+          description: IPMI listener could not start or the target serial port is unavailable for SoL
   /api/v1/msd/mount:
     post:
       x-permission: media.use
@@ -2256,10 +2299,17 @@ paths:
           application/json:
             schema:
               type: object
-              required: [name, cdrom, readOnly]
+              required: [cdrom, readOnly]
+              oneOf:
+                - required: [name]
+                - required: [url]
               properties:
                 name:
                   type: string
+                url:
+                  type: string
+                  format: uri
+                  description: HTTP(S) image mounted directly as a read-only CD-ROM. Requires media.upload in addition to media.use.
                 cdrom:
                   type: boolean
                 readOnly:
