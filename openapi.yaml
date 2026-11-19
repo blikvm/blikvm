@@ -504,6 +504,45 @@ paths:
           description: System upgrade required or video analysis NTP currently owns the clock
         '503':
           description: Apply failed; refresh status to inspect current policy
+  /api/v1/network/cellular:
+    get:
+      x-permission: device.configure
+      tags: [network]
+      summary: Read USB cellular adapter and IPv4 uplink status
+      operationId: getNetworkCellular
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Observed HiLink adapters and their device-side network counters
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [ok, data]
+                properties:
+                  ok:
+                    type: boolean
+                  data:
+                    type: array
+                    items:
+                      type: object
+                      required: [usbId, port]
+                      properties:
+                        usbId: {type: string}
+                        port: {type: string}
+                        interface: {type: string}
+                        ipv4: {type: string}
+                        gateway: {type: string}
+                        role: {type: string, enum: [active, standby, no-default]}
+                        rxBytes: {type: integer, minimum: 0}
+                        txBytes: {type: integer, minimum: 0}
+        '401':
+          description: Missing or invalid token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
   /api/v1/network/discovery:
     get:
       x-permission: device.configure
