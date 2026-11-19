@@ -802,19 +802,17 @@
 .demoScreen {
   position: relative;
   overflow: hidden;
-  aspect-ratio: 1648 / 1078;
+  aspect-ratio: 1440 / 900;
   border: 1px solid #aecbbb;
   border-radius: clamp(12px, 2vw, 22px);
   background: #f0f3f2;
   box-shadow: 0 20px 60px #153b2529;
 }
 
-/* Frame the console area within the existing README illustration. */
 .demoScreen img {
   position: absolute;
-  inset: -21.24% auto auto -4.37%;
-  width: 108.74%;
-  max-width: none;
+  inset: 0;
+  width: 100%;
   height: auto;
   display: block;
 }
