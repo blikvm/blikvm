@@ -27,6 +27,14 @@
     "message": "合作伙伴",
     "description": "Navbar item with label Partners"
   },
+  "item.label.V1 / V2 / V3 Demo": {
+    "message": "V1 / V2 / V3 演示",
+    "description": "Navbar item with label V1 / V2 / V3 Demo"
+  },
+  "item.label.V4 Demo": {
+    "message": "V4 演示",
+    "description": "Navbar item with label V4 Demo"
+  },
   "item.label.Demo": {
     "message": "在线体验",
     "description": "Navbar item with label Demo"

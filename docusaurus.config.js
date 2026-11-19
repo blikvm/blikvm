@@ -117,7 +117,15 @@ const config = {
             position: 'left',
             label: 'Docs',
           },
-          {href: 'https://blikvm.com/demo/', label: 'Demo', position: 'left', target: '_blank', rel: 'noopener noreferrer'},
+          {
+            type: 'custom-demoDropdown',
+            label: 'Demo',
+            position: 'left',
+            items: [
+              {href: '/demo/?platform=pi', label: 'V1 / V2 / V3 Demo', target: '_blank', rel: 'noopener noreferrer'},
+              {href: '/demo/?platform=v4', label: 'V4 Demo', target: '_blank', rel: 'noopener noreferrer'},
+            ],
+          },
           {to: '/discover', label: 'My devices', position: 'left'},
           {to: '/blog', label: 'Blog', position: 'left'},
           {

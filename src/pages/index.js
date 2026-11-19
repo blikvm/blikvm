@@ -5,7 +5,7 @@ import useDocusaurusContext from '@docusaurus/useDocusaurusContext';
 import Layout from '@theme/Layout';
 import Link from '@docusaurus/Link';
 import useBaseUrl from '@docusaurus/useBaseUrl';
-import demoPreview from '@site/images/blikvm-readme-hero.png';
+import demoPreview from '@site/images/blikvm-demo-pi.webp';
 
 import styles from './index.module.css';
 import Translate from '@docusaurus/Translate';
@@ -217,9 +217,9 @@ export default function Home() {
           <p className={styles.demoIntro}><Translate id="homepage.demoPreview.description">Explore remote video, keyboard control, and virtual media in the BliKVM console.</Translate></p>
           <figure className={styles.demoFigure}>
             <div className={styles.demoScreen}>
-              <img src={demoPreview} alt={currentLocale === 'zh-CN' ? 'BliKVM 在线演示的远程桌面、虚拟介质和键盘' : 'BliKVM demo with a remote desktop, virtual media, and keyboard'} width={2400} height={1860} loading="lazy" decoding="async" />
+              <img src={demoPreview} alt={currentLocale === 'zh-CN' ? 'BliKVM V1 / V2 / V3 演示的远程桌面' : 'Remote desktop in the BliKVM V1 / V2 / V3 demo'} width={1440} height={900} loading="lazy" decoding="async" />
               <div className={styles.demoAction}>
-                <a className={styles.demoLaunch} href="https://blikvm.com/demo/">
+                <a className={styles.demoLaunch} href="/demo/?platform=pi">
                   <span aria-hidden="true">▶</span>
                   <Translate id="homepage.demoPreview.cta">Try the BliKVM Console</Translate>
                 </a>

@@ -1,0 +1,32 @@
+.toggle {
+  list-style: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: .45rem;
+}
+
+.toggle::-webkit-details-marker {
+  display: none;
+}
+
+.toggle::after {
+  content: '';
+  width: .45rem;
+  height: .45rem;
+  border-right: 2px solid currentColor;
+  border-bottom: 2px solid currentColor;
+  transform: translateY(-.12rem) rotate(45deg);
+}
+
+/* Infima disables link-style dropdown toggles that have no href. */
+.dropdown:global(.navbar__item.dropdown) > .toggle:global(.navbar__link) {
+  pointer-events: auto;
+}
+
+.dropdown[open] > :global(.dropdown__menu) {
+  opacity: 1;
+  pointer-events: auto;
+  visibility: visible;
+  transform: translateY(0);
+}
