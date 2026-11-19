@@ -1,6 +1,6 @@
 # Virtual media
 
-Virtual media presents an image stored on BliKVM as a USB flash drive or CD/DVD to the controlled computer for installers and rescue systems. It is not a shared browser-to-computer folder.
+Virtual media presents a USB flash drive or CD/DVD to the controlled computer for installers, rescue systems and file transfer.
 
 Open **Virtual Media** in the toolbar. The USB data connection and storage class must work. Media use requires media permission; uploads also need upload permission.
 
@@ -18,6 +18,14 @@ Open **Virtual Media** in the toolbar. The USB data connection and storage class
 6. Confirm the installer or rescue environment starts. Eject afterward to avoid booting the installer again.
 
 ISO is presented as read-only CD/DVD. Use the flash-drive flow for ordinary files. Renaming a file `.iso` does not make it bootable.
+
+## Mount an ISO directly from a URL
+
+On versions that show **Mount URL**, open **Virtual Media → CD/DVD Images → Image URL**, paste the HTTP or HTTPS URL of an ISO file, and select **Mount URL**.
+
+BliKVM reads the required portions of the ISO from the server as the computer requests them. The ISO is read-only, and the full file is never saved to BliKVM storage. The server must be reachable from BliKVM and support HTTP byte-range requests (`206 Partial Content`). Keep the link and server available until you select **Eject**.
+
+Use **Import from URL** to keep a local copy for later use. On RV1126B, direct mounting also needs a system image with FUSE support.
 
 ## Transfer files with the flash drive
 
