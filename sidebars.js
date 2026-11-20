@@ -18,8 +18,7 @@ export default {
         "device-guides/BliKVM-v3-guide",
         "device-guides/BliKVM-v2-guide",
         "device-guides/BliKVM-v1-guide"
-      ],
-      "collapsed": false
+      ]
     },
     {
       "type": "category",
@@ -33,26 +32,27 @@ export default {
     },
     {
       "type": "category",
-      "label": "Video and audio",
+      "label": "Video",
       "items": [
         "video/video-modes",
         "video/webrtc",
         "video/edid",
         "video/hdmi-passthrough",
-        "peripheral-devices/two-way-audio",
-        "video/cameras",
         "video/latency"
       ]
     },
     {
       "type": "category",
-      "label": "Keyboard, mouse and USB",
+      "label": "Peripheral devices",
       "items": [
         "peripheral-devices/keyboard-mouse/mouse",
         "peripheral-devices/keyboard-mouse/shortcuts",
         "peripheral-devices/paste-ocr",
         "peripheral-devices/keyboard-mouse/mouse-jiggler",
         "peripheral-devices/keyboard-mouse/hid-passthrough",
+        "peripheral-devices/gamepad",
+        "peripheral-devices/two-way-audio",
+        "video/cameras",
         "peripheral-devices/usb",
         "peripheral-devices/msd",
         "peripheral-devices/kvm-switch"

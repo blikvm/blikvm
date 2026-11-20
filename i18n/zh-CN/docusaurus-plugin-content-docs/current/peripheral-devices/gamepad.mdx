@@ -1,0 +1,26 @@
+# 游戏手柄
+
+BliKVM 可以将浏览器所在电脑的手柄输入，经 USB 设备端转发给被控设备。App 3.0.5 新增标准 HID 和 Nintendo Switch 两种手柄配置。详见 [3.0.5 发布说明](https://github.com/blikvm/blikvm/releases/tag/v3.0.5)。
+
+## 设置手柄转发
+
+1. 用 USB 数据线连接 BliKVM 的 USB 设备端与被控设备。在打开浏览器的电脑上，通过 USB 或蓝牙连接实体手柄，再通过受信任的 HTTPS 打开 BliKVM 控制台。
+2. 打开**设置 → 键鼠与 USB → [自定义USB功能](./usb.md)**，选择**自定义**预设，打开**启用游戏手柄**。在**手柄输出模式**中选择**通用 USB 手柄**以使用标准 HID，连接 Switch 主机时选择 **Nintendo Switch（独占）**。点击**应用 USB 功能**，等待 USB 重新连接。
+3. 在控制台工具栏打开**游戏手柄**。保持浏览器标签页处于前台，按下实体手柄的任意按键，在**按键检测**中确认有响应。松开按键并让摇杆回中后，转发会自动开始。
+4. 在被控设备的手柄测试界面或支持手柄的游戏中，检查按键、摇杆和十字键。
+
+启用 Switch 模式前，请先弹出已挂载的虚拟介质。此模式会暂停键盘和鼠标等其他 USB 功能，并保留原有设置。
+
+如果浏览器未识别手柄，可以尝试菜单中的**连接手柄（WebHID）**。如果**按键检测**有响应但被控设备没有反应，请检查 USB 数据连接、手柄输出模式，以及被控设备是否识别了手柄。
+
+## 实测视频
+
+<iframe
+  style={{display: 'block', width: '100%', maxWidth: '560px', aspectRatio: '16 / 9', height: 'auto', border: 0}}
+  src="https://player.bilibili.com/player.html?isOutside=true&aid=117624876828349&bvid=BV1CTsw6kEyr&cid=43649204285&p=1&autoplay=0"
+  title="BliKVM 游戏手柄实测（哔哩哔哩）"
+  loading="lazy"
+  allowFullScreen
+/>
+
+[在哔哩哔哩观看](https://www.bilibili.com/video/BV1CTsw6kEyr/)

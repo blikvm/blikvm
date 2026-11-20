@@ -21,4 +21,4 @@ Enable USB networking in custom functions and open its configuration. Set the de
 
 Sharing lets the controlled computer use BliKVM's uplink. Enable it only with the network boundary understood. The uplink follows the preferred network. Renew the computer's DHCP lease as directed and verify local maintenance access and outbound traffic separately.
 
-See [Virtual media](./msd.md), [Local input passthrough](./keyboard-mouse/hid-passthrough.md), [Cameras](../video/cameras.md) and [Audio](./two-way-audio.md).
+See [Virtual media](./msd.md), [Local input passthrough](./keyboard-mouse/hid-passthrough.md), [Gamepad](./gamepad.mdx), [Cameras](../video/cameras.md) and [Audio](./two-way-audio.md).
