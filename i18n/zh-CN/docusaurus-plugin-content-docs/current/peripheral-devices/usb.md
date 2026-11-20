@@ -25,4 +25,4 @@
 
 网络共享使被控电脑可以访问 BliKVM 的上行网络，应在了解网络边界后启用。上行跟随首选网络；保存后按提示更新电脑的 DHCP 租约，并分别验证本地维护访问和外连。
 
-相关流程：[虚拟介质](./msd.md)、[本地键鼠直通](./keyboard-mouse/hid-passthrough.md)、[摄像头](../video/cameras.md)、[音频](./two-way-audio.md)。
+相关流程：[虚拟介质](./msd.md)、[本地键鼠直通](./keyboard-mouse/hid-passthrough.md)、[游戏手柄](./gamepad.mdx)、[摄像头](../video/cameras.md)、[音频](./two-way-audio.md)。

@@ -1,0 +1,28 @@
+# Gamepad
+
+BliKVM forwards input from a gamepad connected to the computer running the browser. The target receives the input through BliKVM's USB device port. App 3.0.5 introduced the Standard HID and Nintendo Switch profiles. See the [3.0.5 release notes](https://github.com/blikvm/blikvm/releases/tag/v3.0.5).
+
+## Set up gamepad forwarding
+
+1. Connect BliKVM's USB device port to the target with a USB data cable. Connect or pair the physical gamepad to the computer running the browser over USB or Bluetooth. Open the BliKVM console over trusted HTTPS.
+2. Go to **Settings → Keyboard, Mouse & USB → [Custom USB functions](./usb.md)**. Select the **Custom** preset and turn on **Enable Gamepad**. Under **Gamepad output**, select **Generic USB gamepad** for standard HID or **Nintendo Switch (standalone)** for a Switch console. Select **Apply USB functions** and wait for USB to reconnect.
+3. Open **Gamepad** in the console toolbar. Keep the browser tab active and press a button to detect the controller. Use **Input check** to confirm the button response. Release the buttons and center the sticks to start forwarding.
+4. Open the target's controller test screen or a game with controller support. Verify the buttons, sticks and D-pad there.
+
+Eject any mounted virtual media before applying Switch mode. This mode pauses the other USB functions, including keyboard and mouse, and keeps their settings.
+
+If the browser does not detect the controller and **Connect controller with WebHID** is available, try that option. If **Input check** responds but the target does not, check the USB data connection, the selected output mode and whether the target recognizes the controller.
+
+## Hands-on test video
+
+<iframe
+  style={{display: 'block', width: '100%', maxWidth: '560px', aspectRatio: '16 / 9', height: 'auto', border: 0}}
+  src="https://www.youtube.com/embed/0AgSzXzUErc"
+  title="BliKVM gamepad test on YouTube"
+  loading="lazy"
+  allow="encrypted-media; picture-in-picture; web-share"
+  referrerPolicy="strict-origin-when-cross-origin"
+  allowFullScreen
+/>
+
+[Watch on YouTube](https://www.youtube.com/watch?v=0AgSzXzUErc)

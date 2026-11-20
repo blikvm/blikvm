@@ -46,6 +46,7 @@ const config = {
       /** @type {import('@docusaurus/preset-classic').Options} */
       ({
         docs: {
+          sidebarCollapsed: false,
           // Both locales share the same product-manual hierarchy.
           path: process.env.DOCUSAURUS_CURRENT_LOCALE === 'zh-CN'
             ? './i18n/zh-CN/docusaurus-plugin-content-docs/current'
