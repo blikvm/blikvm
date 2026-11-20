@@ -65,6 +65,7 @@ export default {
         "network/notes",
         "network/static-ip",
         "network/wifi",
+        "network/usb-4g",
         "network/https",
         "network/certificates",
         "network/security",

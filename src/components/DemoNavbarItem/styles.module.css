@@ -1,22 +1,14 @@
 .toggle {
   list-style: none;
   cursor: pointer;
-  display: flex;
-  align-items: center;
-  gap: .45rem;
 }
 
 .toggle::-webkit-details-marker {
   display: none;
 }
 
-.toggle::after {
-  content: '';
-  width: .45rem;
-  height: .45rem;
-  border-right: 2px solid currentColor;
-  border-bottom: 2px solid currentColor;
-  transform: translateY(-.12rem) rotate(45deg);
+.dropdown:not([open]) > .toggle:global(.menu__link--sublist-caret)::after {
+  transform: rotateZ(90deg);
 }
 
 /* Infima disables link-style dropdown toggles that have no href. */
