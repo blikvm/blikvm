@@ -12,6 +12,7 @@ BliKVM 的网络用于打开网页、协商媒体连接，以及访问 VPN、DDN
 
 - [静态 IP 与 DHCP](./static-ip.md)：配置接口地址、网关和 DNS。
 - [Wi-Fi](./wifi.md)：连接无线网络，按设备能力使用热点。
+- [USB 4G 网卡](./usb-4g.md)：使用移动数据连接或作为备用上行。
 - [HTTPS 与端口](./https.md)：管理网页入口和证书。
 - [远程访问选择](./internet-access/overview.md)：比较 VPN、端口转发和隧道。
 

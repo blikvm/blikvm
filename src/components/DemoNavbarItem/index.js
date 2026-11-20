@@ -15,7 +15,12 @@ export default function DemoNavbarItem({ label, items, mobile, onClick }) {
         event.currentTarget.open = false;
         event.currentTarget.querySelector('summary').focus();
       }}>
-      <summary className={clsx(styles.toggle, mobile ? 'menu__link' : 'navbar__link')}>{label}</summary>
+      <summary className={clsx(
+        styles.toggle,
+        mobile ? 'menu__link menu__link--sublist menu__link--sublist-caret' : 'navbar__link',
+      )}>
+        {label}
+      </summary>
       <ul className={mobile ? 'menu__list' : 'dropdown__menu'}>
         {items.map(({ href, label: itemLabel, ...linkProps }) => (
           <li className={mobile ? 'menu__list-item' : undefined} key={href}>

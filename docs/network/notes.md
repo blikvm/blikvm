@@ -8,6 +8,7 @@ Open **Settings → Network → Interfaces & Addresses** for interface, MAC, IPv
 
 - [Static IP and DHCP](./static-ip.md): addresses, gateways and DNS.
 - [Wi-Fi](./wifi.md): wireless and supported hotspots.
+- [USB 4G adapter](./usb-4g.md): mobile data and a backup uplink.
 - [HTTPS and ports](./https.md): web entry and certificates.
 - [Remote access options](./internet-access/overview.md): VPN, forwarding and tunnels.
 
