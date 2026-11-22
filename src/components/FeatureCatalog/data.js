@@ -6,6 +6,10 @@ export const featureGroups = [
     features: [
       ['浏览器远程控制', 'Browser remote control', '通过 HDMI 查看被控电脑，包括 BIOS 和启动画面。', 'View the target over HDMI, including BIOS and boot screens.', 'getting-started/web-interface'],
       ['USB 键鼠', 'USB keyboard and mouse', '通过 USB HID 操作被控电脑，支持屏幕键盘和键鼠转发。', 'Control the target through USB HID using keyboard and mouse forwarding or the on-screen keyboard.', 'peripheral-devices/keyboard-mouse/hid-passthrough'],
+      ['游戏手柄', 'Gamepad forwarding', '从浏览器将实体手柄输入转发给电脑或 Nintendo Switch。', 'Forward a physical controller from your browser to a computer or Nintendo Switch.', 'peripheral-devices/gamepad', {
+        keywords: '远程游戏 远程手柄 手柄转发 游戏控制器 controller joystick HID USB OTG',
+        requirements: ['App 3.0.5 起。需要可信 HTTPS 和 USB 数据连接，Switch 独占模式会暂停其他 USB 功能。', 'App 3.0.5 or later. Requires trusted HTTPS and a USB data connection. Switch mode pauses the other USB functions.'],
+      }],
       ['鼠标模式与防休眠', 'Mouse modes and jiggler', '按操作场景选择鼠标模式，或使用鼠标微动保持活动。', 'Choose a mouse mode or use the mouse jiggler to keep the target active.', 'peripheral-devices/keyboard-mouse/mouse-jiggler'],
       ['组合键与宏', 'Shortcuts and macros', '发送快捷键或运行配置好的按键序列。', 'Send shortcuts or run a configured key sequence.', 'peripheral-devices/keyboard-mouse/shortcuts'],
       ['文本输入与 OCR', 'Text input and OCR', '通过模拟键盘输入文本，或识别画面中选定区域的文字。', 'Type text through keyboard emulation or recognize text in a selected region of the screen.', 'peripheral-devices/paste-ocr'],
@@ -18,11 +22,21 @@ export const featureGroups = [
     features: [
       ['HDMI 视频与串流', 'HDMI video and streaming', '按设备和浏览器支持选择 H.264 / H.265 WebRTC 或 MJPEG。', 'Choose H.264 or H.265 over WebRTC, or MJPEG, where supported by the device and browser.', 'video/video-modes'],
       ['截图与录制', 'Screenshots and recording', '保存远程画面截图，或使用浏览器支持的录制功能。', 'Save a remote frame or record using supported browser functionality.', 'video/video-modes'],
-      ['EDID', 'EDID', '在支持的设备上管理 HDMI 输入向电脑声明的显示模式。', 'Manage the display modes advertised to the computer on supported devices.', 'video/edid'],
-      ['HDMI 环出', 'HDMI passthrough', '带 HDMI 输出的硬件可连接本地显示器，软件控制取决于平台。', 'Connect a local monitor on hardware with HDMI output. Software controls vary by platform.', 'video/hdmi-passthrough'],
+      ['EDID', 'EDID', '管理 HDMI 输入向电脑声明的分辨率和刷新率。', 'Manage the resolutions and refresh rates advertised over HDMI to the target.', 'video/edid', {
+        requirements: ['需要采集硬件支持写入 EDID。当前 v4/H616 采集方案不支持软件写入。', 'Requires capture hardware with EDID write support. The current v4/H616 capture integration does not support software writes.'],
+        compare: 'blikvm',
+      }],
+      ['HDMI 环出', 'HDMI passthrough', '把 HDMI 输入同时送到本地显示器。', 'Send the HDMI input to a local monitor as well.', 'video/hdmi-passthrough', {
+        keywords: '本地屏幕 loop out loopback',
+        requirements: ['设备需要 HDMI 输出接口。软件开关取决于平台支持。', 'Requires an HDMI output port. Software control varies by platform.'],
+        compare: 'blikvm',
+      }],
       ['远程音频与模拟麦克风', 'Remote audio and microphone emulation', '在浏览器收听被控电脑声音，或将管理端麦克风转发成被控端的 USB 麦克风。', 'Listen to target audio or forward the management microphone as a USB microphone on the target.', 'peripheral-devices/two-way-audio'],
       ['第二路 USB 摄像头', 'Secondary USB camera', '通过 BliKVM 的 USB 主机口接入兼容摄像头，查看独立于 HDMI 的画面。', 'Connect a compatible camera to the BliKVM USB host port for a feed separate from HDMI.', 'video/cameras'],
-      ['UVC 摄像头转发', 'UVC camera forwarding', '将管理端摄像头转发为被控电脑识别的 USB 摄像头，需要相应 USB 功能和浏览器权限。', 'Present the management camera as a USB camera on the target, with supported USB functions and browser permissions.', 'video/cameras'],
+      ['UVC 摄像头转发', 'UVC camera forwarding', '把管理端的视频送到被控电脑的相机或会议软件。', 'Send video from your browser to a camera or meeting app on the target.', 'video/cameras', {
+        keywords: 'webcam web camera 浏览器摄像头 视频会议 USB OTG',
+        requirements: ['需要启用 USB UVC，并使用可信 HTTPS 和有摄像头发送权限的账号。', 'Requires USB UVC, trusted HTTPS, and an account with camera-send permission.'],
+      }],
       ['HDMI 分析与延迟检查', 'HDMI analysis and latency', '查看输入信号信息，排查采集与串流链路。', 'Inspect input signal information and troubleshoot capture and streaming.', 'video/latency'],
     ],
   },
@@ -30,12 +44,25 @@ export const featureGroups = [
     id: 'recovery',
     title: ['装机、恢复与电源', 'Installation, recovery, and power'],
     features: [
-      ['虚拟光驱与闪存盘', 'Virtual CD/DVD and flash drive', '挂载 ISO 启动安装或救援环境，或用虚拟闪存盘传文件。需要 USB 数据连接和存储功能。', 'Boot an installer or rescue image from ISO, or transfer files using a virtual flash drive. Requires USB data and storage support.', 'peripheral-devices/msd'],
-      ['USB 功能配置', 'USB function configuration', '按设备支持启用键鼠、存储、麦克风和摄像头等 USB 类。', 'Enable supported USB classes such as keyboard, mouse, storage, microphone, and camera.', 'peripheral-devices/usb'],
-      ['ATX 电源和复位', 'ATX power and reset', '通过兼容的 ATX 控制板和主板接线操作电源、复位并查看电源状态。', 'Use a compatible ATX board and motherboard wiring for power, reset, and status.', 'function/atx'],
+      ['虚拟光驱与闪存盘', 'Virtual CD/DVD and flash drive', '挂载 ISO 启动安装或救援环境，或用虚拟闪存盘传文件。', 'Boot an installer or rescue image from ISO, or transfer files using a virtual flash drive.', 'peripheral-devices/msd', {
+        keywords: '装机 远程装机 重装系统 远程重装系统 虚拟介质 remote reinstall virtual media boot menu USB OTG',
+        requirements: ['需要 USB 数据连接，且已启用 USB 存储功能。', 'Requires a USB data connection and an enabled USB storage function.'],
+      }],
+      ['USB 功能配置', 'USB function configuration', '按设备支持启用键鼠、存储、麦克风和摄像头等 USB 类。', 'Enable supported USB classes such as keyboard, mouse, storage, microphone, and camera.', 'peripheral-devices/usb', {
+        keywords: 'USB OTG USB gadget 自定义USB功能 USB 虚拟网络',
+        requirements: ['可同时启用的功能取决于设备的 USB 端点容量。', 'Available combinations depend on the device’s USB endpoint capacity.'],
+      }],
+      ['ATX 电源和复位', 'ATX power and reset', '从浏览器操作电源、复位并查看电源状态。', 'Control power and reset and check power status from the browser.', 'function/atx', {
+        keywords: '远程开机 远程关机 remote power cycle motherboard',
+        requirements: ['需要兼容的 ATX 控制板及主板接线。', 'Requires a compatible ATX board and motherboard wiring.'],
+      }],
       ['网络唤醒', 'Wake-on-LAN', '发送唤醒包。被控电脑的固件、网卡和网络需支持。', 'Send a wake packet to a target with compatible firmware, network adapter, and network.', 'function/wake-on-lan'],
       ['串口终端', 'Serial terminal', '在配置了兼容串口设备和接线的情况下打开终端。', 'Open a terminal with a compatible serial device and wiring.', 'function/serial-terminal'],
-      ['多机切换', 'Multi-computer switching', '一台 BliKVM 搭配 BliSwitch v1 或 v2，可在最多 4 台或 8 台电脑之间切换 HDMI 和 USB。v2 接好 ATX 后支持逐台电源控制。', 'Switch HDMI and USB between up to 4 computers with BliSwitch v1 or 8 with v2. The v2 supports per-host power control with ATX wiring.', 'peripheral-devices/kvm-switch'],
+      ['多机切换', 'Multi-computer switching', '在同一个控制台切换多台电脑的 HDMI 画面和 USB 键鼠。', 'Switch HDMI video and USB input between computers from one console.', 'peripheral-devices/kvm-switch', {
+        keywords: '多主机切换 一控多 KVM switch multi host',
+        requirements: ['BliSwitch v1 支持 4 台，v2 支持 8 台。v2 接好 ATX 后可逐台控制电源。', 'BliSwitch v1 supports 4 computers and v2 supports 8. The v2 supports per-host power with ATX wiring.'],
+        compare: 'bliswitch',
+      }],
     ],
   },
   {
