@@ -67,9 +67,9 @@
     "message": "远程接入方案",
     "description": "中文文档目录：远程接入方案"
   },
-  "sidebar.tutorialSidebar.category.设备与维护": {
-    "message": "设备与维护",
-    "description": "中文文档目录：设备与维护"
+  "sidebar.blikvmSidebar.category.进阶使用": {
+    "message": "进阶使用",
+    "description": "中文文档目录：进阶使用"
   },
   "sidebar.tutorialSidebar.category.硬件与安装": {
     "message": "硬件与安装",

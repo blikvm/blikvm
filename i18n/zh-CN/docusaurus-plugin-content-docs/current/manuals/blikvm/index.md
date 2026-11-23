@@ -15,6 +15,7 @@ BliKVM 通过 HDMI 采集画面、USB 模拟键鼠和介质，让你在浏览器
 | --- | --- |
 | 烧录 SD 卡或重装系统 | [完整烧录步骤](/zh-CN/docs/getting-started/flashing-os) |
 | 第一次连接与登录 | [首次使用](/zh-CN/docs/getting-started/first-steps) |
+| 连接并远程控制手机 | [远程控制手机](/zh-CN/docs/function/remote-phone-control) |
 | 认识控制台和设置 | [网页界面](/zh-CN/docs/getting-started/web-interface) |
 | 分配账号、权限与双重验证 | [账号与安全](/zh-CN/docs/getting-started/auth) |
 | 调整画面或排查远程黑屏 | [视频模式](/zh-CN/docs/video/video-modes)、[WebRTC](/zh-CN/docs/video/webrtc) |

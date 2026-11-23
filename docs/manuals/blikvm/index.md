@@ -15,6 +15,7 @@ This manual describes the current software. Available functions depend on hardwa
 | --- | --- |
 | Flash an SD card or reinstall | [Flashing and recovery](/docs/getting-started/flashing-os) |
 | Connect and sign in for the first time | [First steps](/docs/getting-started/first-steps) |
+| Connect and control a phone | [Remote phone control](/docs/function/remote-phone-control) |
 | Find console tools and settings | [Web interface](/docs/getting-started/web-interface) |
 | Manage accounts, permissions and 2FA | [Accounts and security](/docs/getting-started/auth) |
 | Adjust video or troubleshoot a black screen | [Video modes](/docs/video/video-modes), [WebRTC](/docs/video/webrtc) |

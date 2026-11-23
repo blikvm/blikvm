@@ -89,13 +89,14 @@ export default {
     },
     {
       "type": "category",
-      "label": "设备与维护",
+      "label": "进阶使用",
       "items": [
         "function/update",
         "function/fan",
         "function/OLED-display",
         "function/rtc",
         "function/interface-preferences",
+        "function/remote-phone-control",
         "function/atx",
         "function/ipmi-redfish",
         "function/serial-terminal",
