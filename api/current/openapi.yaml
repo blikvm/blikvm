@@ -7135,7 +7135,16 @@ components:
           type: string
         type:
           type: string
-          description: wired|wifi
+          description: Wired or Wi-Fi adapter, or NetworkManager virtual device type.
+        readOnly:
+          type: boolean
+          description: Address configuration is managed outside Network Details.
+        state:
+          type: string
+          description: NetworkManager device state.
+        cableDisconnected:
+          type: boolean
+          description: Ethernet carrier is absent.
         mac:
           type: string
         ip4:
@@ -7275,13 +7284,16 @@ components:
 
     WireGuardConfigStatus:
       type: object
-      required: [state, config, webrtcPublicHost]
+      required: [state, ip, config, webrtcPublicHost]
       properties:
         version:
           type: string
           description: Installed wireguard-tools version. An empty value means it could not be read.
         state:
           type: string
+        ip:
+          type: string
+          description: The wg0 tunnel IPv4 address, or an empty string when unavailable.
         config:
           type: object
           required: [exists, path]
