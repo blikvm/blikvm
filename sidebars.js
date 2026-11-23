@@ -89,13 +89,14 @@ export default {
     },
     {
       "type": "category",
-      "label": "Device and maintenance",
+      "label": "Advanced usage",
       "items": [
         "function/update",
         "function/fan",
         "function/OLED-display",
         "function/rtc",
         "function/interface-preferences",
+        "function/remote-phone-control",
         "function/atx",
         "function/ipmi-redfish",
         "function/serial-terminal",

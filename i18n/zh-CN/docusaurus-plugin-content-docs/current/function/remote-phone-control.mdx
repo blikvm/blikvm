@@ -1,0 +1,40 @@
+import PhoneWiring from '@site/src/components/PhoneWiring';
+
+# 远程控制手机
+
+支持有线外接显示和 USB 键鼠输入的手机可以作为被控设备。BliKVM 通过 HDMI 采集手机画面，再通过 USB 把键鼠操作送回手机。下方实测展示了如何在 BliKVM 网页控制台里操作 iPhone，包含打开应用和输入文字。
+
+<iframe
+  style={{display: 'block', width: '100%', maxWidth: '720px', aspectRatio: '16 / 10', height: 'auto', border: 0}}
+  src="https://player.bilibili.com/player.html?isOutside=true&aid=117663565089427&bvid=BV1FkyJzHEAv&cid=43846470299&p=1&autoplay=0"
+  title="BliKVM 远程控制手机实测（哔哩哔哩）"
+  loading="lazy"
+  allowFullScreen
+/>
+
+[在哔哩哔哩观看](https://www.bilibili.com/video/BV1FkyJzHEAv/)
+
+## 确认手机和扩展坞支持
+
+- 手机需要能**同时**输出有线视频并接收 USB 键鼠输入。以 USB-C 接线为例，使用兼容的扩展坞，要求同时有 **HDMI 输出**和 **USB 数据口**。接入 BliKVM 前，可先用显示器和有线鼠标一起测试。
+- iPhone 请先核对该型号的[有线外接显示支持](https://support.apple.com/zh-cn/105099)。使用鼠标时，在 **设置 → 辅助功能 → 触控 → 辅助触控**中开启辅助触控。接入方法可参照 [Apple 的指针设备指南](https://support.apple.com/zh-cn/111775)。
+- Android 手机请按具体型号确认有线视频输出和 USB 输入能力。外接画面也可能显示桌面模式，例如 [Samsung DeX](https://www.samsung.com/us/support/answer/ANS10003477/)。
+
+## 接线与验证
+
+<PhoneWiring />
+
+| 用途 | 接线 |
+| --- | --- |
+| 连接手机 | 手机 USB-C 接口 → 扩展坞的 USB-C 上行连接 |
+| 传送画面 | 扩展坞 HDMI 输出 → BliKVM HDMI 输入 |
+| 传送键鼠 | BliKVM USB 设备端 / OTG 接口 ↔ 扩展坞 USB 数据口 |
+
+1. 按型号手册给 BliKVM 供电。扩展坞需要供电时，将兼容的充电器接到扩展坞供电口。
+2. 在手机上解锁屏幕，并按提示完成显示或配件授权。先在同一局域网打开 BliKVM 控制台，确认能看到手机画面。
+3. 在 [USB 功能](../peripheral-devices/usb.md)中确认已启用键鼠，再试着移动指针、打开应用并在文本框输入文字。BliKVM 账号需要有输入权限。
+4. 有画面但鼠标无反应时，检查 USB 数据线，并用实体鼠标确认手机能通过扩展坞识别输入。iPhone 上检查辅助触控。指针移动异常时，可以试用[相对鼠标模式](../peripheral-devices/keyboard-mouse/mouse.md)。
+
+遇到黑屏时，先把扩展坞的 HDMI 输出接到普通显示器测试，再检查 BliKVM 的[视频输入](../video/video-modes.md)。部署前，用实际要操作的应用测试画面和输入，并确认手机锁屏或重新接线后的表现。
+
+如果你用手机浏览器来操作 BliKVM，可以按[鼠标模式与触屏输入](../peripheral-devices/keyboard-mouse/mouse.md)设置浏览器端的操作方式。
