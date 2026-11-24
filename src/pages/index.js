@@ -12,6 +12,15 @@ import Translate from '@docusaurus/Translate';
 
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 
+function CaseCard({to, image, children}) {
+  return (
+    <Link to={to} className={styles.featuredCase}>
+      <div className={styles.featuredCaseImage}><img {...image} loading="lazy" decoding="async" /></div>
+      <div className={styles.featuredCaseBody}>{children}</div>
+    </Link>
+  );
+}
+
 function LazyVideo({ src, title }) {
   const youtubeId = src.match(/^https:\/\/www\.youtube\.com\/embed\/([\w-]{11})$/)?.[1];
   const poster = youtubeId ? `https://i.ytimg.com/vi/${youtubeId}/hqdefault.jpg` : undefined;
@@ -73,6 +82,8 @@ export default function Home() {
   const familyImage = useBaseUrl('/img/blikvm-family-homepage.png');
   const hpCaseImage = useBaseUrl('/assets/images/cases/hp-bios-kvm-orch.png');
   const hpCaseUrl = useBaseUrl('/cases/hp-bios');
+  const waferCaseImage = useBaseUrl('/assets/images/cases/wafer-test-console.webp');
+  const waferCaseUrl = useBaseUrl('/cases/wafer-test-automation');
 
   useEffect(() => {
     if (typeof window === 'undefined') return;
@@ -341,18 +352,32 @@ export default function Home() {
         </div>
       </section>
 
-      <section id="use-cases" className={styles.useCasesSection}>
-        <span className={styles.useCasesBadge}><Translate id="homepage.UseCase">Use Cases</Translate></span>
-        <Link to={hpCaseUrl} className={styles.featuredCase}>
-          <div className={styles.featuredCaseImage}><img src={hpCaseImage} alt={currentLocale === 'zh-CN' ? 'KVM-Orch HP BIOS 测试控制台' : 'KVM-Orch HP BIOS test console'} loading="lazy" width="1586" height="993" /></div>
-          <div className={styles.featuredCaseBody}>
+      <section id="use-cases" className={styles.useCasesSection} aria-labelledby="use-cases-heading">
+        <h2 id="use-cases-heading" className={styles.useCasesHeading}><Translate id="homepage.UseCase">Use Cases</Translate></h2>
+        <div className={styles.featuredCases}>
+          <CaseCard to={waferCaseUrl} image={{
+            src: waferCaseImage, width: 2100, height: 1036,
+            alt: t('晶圆测试画面和 AI 学习面板', 'Wafer test display and AI learning panel'),
+          }}>
+            <span className={styles.featuredCaseBadge}>{t('半导体测试', 'Semiconductor testing')}</span>
+            <h3>{t('半导体晶圆测试的 AI 分析与自动化', 'AI-assisted wafer testing with BliKVM')}</h3>
+            <p>{t(
+              '从晶圆图和针痕检测画面提取结果、生成结构化报文，再通过 BliKVM 键鼠 API 执行界面操作。',
+              'Analyze wafer maps and probe-mark inspection screens, generate structured messages, and drive UI actions through the BliKVM keyboard and mouse API.',
+            )}</p>
+            <span className={styles.featuredCaseCta}>{t('查看完整案例', 'Explore the case study')}<span aria-hidden="true"> ↗</span></span>
+          </CaseCard>
+          <CaseCard to={hpCaseUrl} image={{
+            src: hpCaseImage, width: 1586, height: 993,
+            alt: t('KVM-Orch HP BIOS 测试控制台', 'KVM-Orch HP BIOS test console'),
+          }}>
             <span className={styles.featuredCaseBadge}><Translate id="homepage.hpCaseBadge">Community case study</Translate></span>
             <h3><Translate id="homepage.hpCaseTitle">HP PC BIOS testing with BliKVM</Translate></h3>
             <p><Translate id="homepage.hpCaseSummary">See how a user-built KVM-Orch console brings remote video, BIOS test cases, execution logs and screenshot evidence into one workflow.</Translate></p>
             <div className={styles.featuredCaseTags}><span>BIOS</span><span>WebRTC</span><span>OCR</span></div>
             <span className={styles.featuredCaseCta}><Translate id="homepage.hpCaseCta">Explore the case study</Translate><span aria-hidden="true"> ↗</span></span>
-          </div>
-        </Link>
+          </CaseCard>
+        </div>
       </section>
 
       <section id="reviews" className={styles.videoSection}>

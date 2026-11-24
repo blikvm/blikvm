@@ -1,0 +1,151 @@
+.page {
+  padding-bottom: clamp(3rem, 7vw, 6rem);
+}
+
+.container {
+  width: min(100% - 3rem, 73rem);
+  margin-inline: auto;
+}
+
+.hero {
+  padding-block: clamp(2.3rem, 6vw, 4.5rem);
+  border-bottom: 1px solid #3d625b;
+  color: #f4fbf9;
+  background: radial-gradient(ellipse at 85% 95%, #265a4f 0%, transparent 72%), #142f36;
+}
+
+.back {
+  display: inline-block;
+  margin-bottom: 1.25rem;
+  color: #adedd7;
+  font-size: .9rem;
+  font-weight: 650;
+}
+
+.back:hover {
+  color: #e4fff5;
+}
+
+.hero h1 {
+  max-width: 18em;
+  margin: 0 0 .95rem;
+  font-size: clamp(2.1rem, 4.4vw, 3.9rem);
+  line-height: 1.13;
+  letter-spacing: -.032em;
+}
+
+.hero p {
+  max-width: 72ch;
+  margin: 0;
+  color: #cde1dc;
+  font-size: clamp(1rem, 1.65vw, 1.16rem);
+  line-height: 1.68;
+}
+
+.section {
+  padding-block: clamp(1.8rem, 4.2vw, 3.3rem);
+  border-bottom: 1px solid var(--ifm-color-emphasis-200);
+}
+
+.section:last-child {
+  border-bottom: 0;
+  padding-bottom: 0;
+}
+
+.section h2 {
+  margin: 0 0 .65rem;
+  font-size: clamp(1.38rem, 2.65vw, 2rem);
+}
+
+.section p {
+  max-width: 78ch;
+  color: var(--ifm-color-emphasis-800);
+  line-height: 1.7;
+}
+
+.screenshot {
+  margin: 1.15rem 0 0;
+}
+
+.screenshot a {
+  display: block;
+  border-radius: .8rem;
+}
+
+.screenshot a:focus-visible,
+.page a:focus-visible {
+  outline: 3px solid var(--ifm-color-primary);
+  outline-offset: 4px;
+}
+
+.screenshot img {
+  display: block;
+  width: 100%;
+  height: auto;
+  border: 1px solid var(--ifm-color-emphasis-200);
+  border-radius: .8rem;
+  box-shadow: 0 .55rem 1.75rem #17363514;
+}
+
+.screenshot figcaption {
+  margin-top: .65rem;
+  color: var(--ifm-color-emphasis-700);
+  font-size: .86rem;
+}
+
+.steps {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: .8rem;
+  margin: 1.05rem 0 0;
+  padding: 0;
+  list-style-position: inside;
+}
+
+.steps li {
+  margin: 0;
+  padding: 1rem;
+  border: 1px solid var(--ifm-color-emphasis-200);
+  border-radius: .65rem;
+  background: var(--ifm-background-surface-color);
+}
+
+.steps li::marker {
+  color: var(--ifm-color-primary);
+  font-weight: 700;
+}
+
+.steps h3 {
+  display: inline;
+  font-size: 1.05rem;
+}
+
+.steps p {
+  margin: .5rem 0 0;
+  font-size: .94rem;
+}
+
+.details {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: clamp(1.8rem, 5vw, 4rem);
+}
+
+.details > div {
+  min-width: 0;
+}
+
+.details a {
+  font-weight: 650;
+}
+
+@media (max-width: 680px) {
+  .container {
+    width: min(100% - 2rem, 73rem);
+  }
+
+  .steps,
+  .details {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
