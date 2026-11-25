@@ -24,6 +24,8 @@ jobs:
         with:
           ref: master
           persist-credentials: false
+      - name: Check upload recovery behavior
+        run: python3 -B scripts/test-mirror-atomgit-release.py
       - name: Sync and verify firmware assets
         env:
           GH_TOKEN: ${{ github.token }}
