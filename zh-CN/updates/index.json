@@ -1,29 +1,25 @@
 {
   "schemaVersion": 1,
-  "generatedAt": "2026-11-25T01:13:32.309Z",
+  "generatedAt": "2026-11-25T08:32:52.601Z",
   "targets": {
     "bcm2711": {
       "stable": {
         "app": {
-          "version": "3.0.5",
-          "releaseUrl": "https://github.com/blikvm/blikvm/releases/tag/v3.0.5",
+          "version": "3.0.6",
+          "releaseUrl": "https://github.com/blikvm/blikvm/releases/tag/v3.0.6",
           "artifact": {
-            "name": "blikvm-v1-v2-v3-app-3.0.5.tar.gz",
-            "size": 32980705,
-            "sha256": "1915a928e10ecef107056450608ef22df9e74419df49f2dd5b4fe9fedbdc3386",
-            "atomgit": true,
-            "minOSVersion": "3.0.5"
+            "name": "blikvm-v1-v2-v3-app-3.0.6.tar.gz",
+            "size": 33631180,
+            "sha256": "76aac6f3948051e618eb81c03aab721fb14c9e7ddcac3535dd9c780021b04e41"
           }
         },
         "system": {
-          "version": "3.0.5",
-          "releaseUrl": "https://github.com/blikvm/blikvm/releases/tag/v3.0.5",
+          "version": "3.0.6",
+          "releaseUrl": "https://github.com/blikvm/blikvm/releases/tag/v3.0.6",
           "artifact": {
-            "name": "blikvm-v1-v2-v3-system-3.0.5.raucb",
-            "size": 135416349,
-            "sha256": "a73a250361dbc0ed1294e15e11655430cfb9076540481a2ea91676b12e8a1df7",
-            "atomgit": true,
-            "bundledAppVersion": "3.0.5"
+            "name": "blikvm-v1-v2-v3-system-3.0.6.raucb",
+            "size": 136067613,
+            "sha256": "fb976d3964a272ab16d94fac0373bb15b1a6e1eb48daa6247c64f1b99d7470c7"
           }
         }
       },
@@ -55,25 +51,21 @@
     "sun50i": {
       "stable": {
         "app": {
-          "version": "3.0.5",
-          "releaseUrl": "https://github.com/blikvm/blikvm/releases/tag/v3.0.5",
+          "version": "3.0.6",
+          "releaseUrl": "https://github.com/blikvm/blikvm/releases/tag/v3.0.6",
           "artifact": {
-            "name": "blikvm-v4-app-3.0.5.tar.gz",
-            "size": 30760321,
-            "sha256": "8d5e36243317372d6eeebb5069e10e829da5f384c4c9f5985d09b4a0b835bb92",
-            "atomgit": true,
-            "minOSVersion": "3.0.5"
+            "name": "blikvm-v4-app-3.0.6.tar.gz",
+            "size": 31414629,
+            "sha256": "ed10468c5aaaab656082069c62226b97e4b277d0499833ba3df148a02ee09f9a"
           }
         },
         "system": {
-          "version": "3.0.5",
-          "releaseUrl": "https://github.com/blikvm/blikvm/releases/tag/v3.0.5",
+          "version": "3.0.6",
+          "releaseUrl": "https://github.com/blikvm/blikvm/releases/tag/v3.0.6",
           "artifact": {
-            "name": "blikvm-v4-system-3.0.5.raucb",
-            "size": 128509877,
-            "sha256": "7bd2b7b73cbef720c4b57c685fc7b37876cb3c99a4e22d72eb5af65ed58cec51",
-            "atomgit": true,
-            "bundledAppVersion": "3.0.5"
+            "name": "blikvm-v4-system-3.0.6.raucb",
+            "size": 129161141,
+            "sha256": "7364838c903e426e943fcbf3697a79361263b3fb93599fab4d0abed7cd017cbf"
           }
         }
       },
@@ -105,14 +97,12 @@
     "rv1126b": {
       "stable": {
         "app": {
-          "version": "3.0.5",
-          "releaseUrl": "https://github.com/blikvm/blikvm/releases/tag/v3.0.5",
+          "version": "3.0.6",
+          "releaseUrl": "https://github.com/blikvm/blikvm/releases/tag/v3.0.6",
           "artifact": {
-            "name": "blikvm-rv1126b-app-3.0.5.tar.gz",
-            "size": 30612716,
-            "sha256": "0d0822b14e090270ade178e7e1cd257f72a4ee1cd156818ebc57020d430bf1d1",
-            "atomgit": true,
-            "minOSVersion": "3.0.5"
+            "name": "blikvm-rv1126b-app-3.0.6.tar.gz",
+            "size": 31265977,
+            "sha256": "9ec3a6b9a96bc187c69fa7ec27d504cd1503a5ebff8788b6d35b10aaccee344a"
           }
         },
         "system": null
@@ -136,14 +126,12 @@
       "stable": {
         "app": null,
         "system": {
-          "version": "3.0.5",
-          "releaseUrl": "https://github.com/blikvm/blikvm/releases/tag/v3.0.5",
+          "version": "3.0.6",
+          "releaseUrl": "https://github.com/blikvm/blikvm/releases/tag/v3.0.6",
           "artifact": {
-            "name": "blikvm-rv1126b-tc358743-system-3.0.5.raucb",
-            "size": 110442421,
-            "sha256": "dbe7527b52098463f47d7b60a0c8a81bd0d18406951b130eee365e97cacf3aca",
-            "atomgit": true,
-            "bundledAppVersion": "3.0.5"
+            "name": "blikvm-rv1126b-tc358743-system-3.0.6.raucb",
+            "size": 109885365,
+            "sha256": "aaa70be89cdb943e9c48f897d2c85f865adefd481ab01a95bd02bad82733665d"
           }
         }
       },
