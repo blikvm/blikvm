@@ -118,15 +118,7 @@ const config = {
             position: 'left',
             label: 'Docs',
           },
-          {
-            type: 'custom-demoDropdown',
-            label: 'Demo',
-            position: 'left',
-            items: [
-              {href: '/demo/?platform=pi', label: 'V1 / V2 / V3 Demo', target: '_blank', rel: 'noopener noreferrer'},
-              {href: '/demo/?platform=v4', label: 'V4 Demo', target: '_blank', rel: 'noopener noreferrer'},
-            ],
-          },
+          {to: '/demos', label: 'Demo', position: 'left'},
           {to: '/discover', label: 'My devices', position: 'left'},
           {to: '/blog', label: 'Blog', position: 'left'},
           {

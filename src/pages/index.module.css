@@ -817,7 +817,7 @@
 .demoScreen {
   position: relative;
   overflow: hidden;
-  aspect-ratio: 1440 / 900;
+  aspect-ratio: 1440 / 942;
   border: 1px solid #aecbbb;
   border-radius: clamp(12px, 2vw, 22px);
   background: #f0f3f2;

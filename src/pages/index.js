@@ -5,7 +5,7 @@ import useDocusaurusContext from '@docusaurus/useDocusaurusContext';
 import Layout from '@theme/Layout';
 import Link from '@docusaurus/Link';
 import useBaseUrl from '@docusaurus/useBaseUrl';
-import demoPreview from '@site/images/blikvm-demo-pi.webp';
+import demoPreview from '@site/images/demo-console-pi.webp';
 
 import styles from './index.module.css';
 import Translate from '@docusaurus/Translate';
@@ -215,6 +215,7 @@ export default function Home() {
               <a href="#demo-preview" className={styles.heroPrimary}>{t('在线体验', 'Try the demo')} <span aria-hidden="true">↓</span></a>
               <a href="#products" className={styles.heroSecondary}>{t('选择型号', 'Choose a model')}</a>
               <Link to={`${base}/docs/`}>{t('查看文档', 'Documentation')}</Link>
+              <Link className={styles.heroSecondary} to={`${base}/api-reference`}>OpenAPI</Link>
             </div>
           </div>
           <img src={familyImage} alt={t('BliKVM v1 CM4、v2 PCIe、v3 HAT 和 v4 Allwinner', 'BliKVM v1 CM4, v2 PCIe, v3 HAT, and v4 Allwinner')} width={1098} height={332} decoding="async" fetchPriority="high" />
@@ -228,12 +229,12 @@ export default function Home() {
           <p className={styles.demoIntro}><Translate id="homepage.demoPreview.description">Explore remote video, keyboard control, and virtual media in the BliKVM console.</Translate></p>
           <figure className={styles.demoFigure}>
             <div className={styles.demoScreen}>
-              <img src={demoPreview} alt={currentLocale === 'zh-CN' ? 'BliKVM V1 / V2 / V3 演示的远程桌面' : 'Remote desktop in the BliKVM V1 / V2 / V3 demo'} width={1440} height={900} loading="lazy" decoding="async" />
+              <img src={demoPreview} alt={currentLocale === 'zh-CN' ? 'BliKVM 模拟电脑控制台' : 'BliKVM console with a simulated PC'} width={1440} height={942} loading="lazy" decoding="async" />
               <div className={styles.demoAction}>
-                <a className={styles.demoLaunch} href="/demo/?platform=pi">
+                <Link className={styles.demoLaunch} to="/demos">
                   <span aria-hidden="true">▶</span>
                   <Translate id="homepage.demoPreview.cta">Try the BliKVM Console</Translate>
-                </a>
+                </Link>
               </div>
             </div>
             <figcaption><Translate id="homepage.demoPreview.caption">Try the BliKVM interface with a simulated desktop. No hardware needed.</Translate></figcaption>
