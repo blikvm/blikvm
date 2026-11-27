@@ -4,19 +4,39 @@
 }
 
 .heading h1 { margin-bottom: .35rem; }
-.heading p, .steps p, .status { color: var(--ifm-color-emphasis-700); }
+.heading p, .setup p, .permissionHint, .permissionHelp p, .status {
+  color: var(--ifm-color-emphasis-700);
+}
 
-.steps, .results {
+.setup, .permission, .results {
   margin: 1rem 0;
   border: 1px solid var(--ifm-color-emphasis-300);
   border-radius: .65rem;
 }
 
-.steps { padding: 0 0 0 2.5rem; }
-.steps li { padding: .75rem .75rem .75rem 0; }
-.steps li::marker { color: var(--ifm-color-primary); }
-.steps li + li { border-top: 1px solid var(--ifm-color-emphasis-200); }
-.steps p { margin: .2rem 0 0; }
+.setup, .permission { padding: 1rem; }
+.setup p { margin: .2rem 0 0; }
+.permissionHeading {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: .45rem .8rem;
+  margin-bottom: .75rem;
+}
+.permissionHeading h2 { margin: 0; font-size: 1.2rem; }
+.permissionState {
+  padding: .14rem .55rem;
+  border-radius: .35rem;
+  background: var(--ifm-color-emphasis-100);
+  font-size: .85rem;
+  font-weight: 600;
+}
+.permissionState[data-state="granted"] { color: var(--ifm-color-success-contrast-foreground); }
+.permissionState[data-state="denied"] { color: var(--ifm-color-danger-contrast-foreground); }
+.permissionHint { margin-bottom: .75rem; }
+.permissionHelp { margin-top: .75rem; }
+.permissionHelp summary { cursor: pointer; width: fit-content; }
+.permissionHelp p { margin: .45rem 0 .25rem; }
 .results h2 { margin: 1rem 1rem .25rem; font-size: 1.2rem; }
 .status { margin: 0 1rem 1rem; }
 .devices { padding: 0; margin: 0; list-style: none; }

@@ -1,4 +1,4 @@
-const endpoint = 'http://blikvm-discover.local/api/v1/discovery';
+export const discoveryEndpoint = 'http://blikvm-discover.local/api/v1/discovery';
 const localName = /^[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.local$/i;
 const ipv4 = /^(?:0|[1-9]\d{0,2})(?:\.(?:0|[1-9]\d{0,2})){3}$/;
 
@@ -45,7 +45,7 @@ export function parseDevices(body) {
 }
 
 export async function discoverDevices(signal) {
-  const response = await fetch(endpoint, {
+  const response = await fetch(discoveryEndpoint, {
     cache: 'no-store',
     credentials: 'omit',
     mode: 'cors',
@@ -58,14 +58,11 @@ export async function discoverDevices(signal) {
   return parseDevices(await response.json());
 }
 
-export async function localNetworkDenied() {
-  for (const name of ['local-network', 'local-network-access']) {
-    try {
-      const permission = await navigator.permissions.query({name});
-      return permission.state === 'denied';
-    } catch {
-      // Browsers differ in which permission names they expose.
-    }
+export async function queryLocalNetworkPermission(permissions = globalThis.navigator?.permissions) {
+  try {
+    return (await permissions?.query({name: 'local-network'})) ?? null;
+  } catch {
+    // Discovery can still try the request when the browser does not expose this permission.
+    return null;
   }
-  return false;
 }
