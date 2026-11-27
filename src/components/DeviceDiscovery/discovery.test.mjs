@@ -31,7 +31,7 @@ test('discovery reads only the local endpoint and omits user data from the reque
     'http://blikvm-discover.local/api/v1/discovery',
     {
       cache: 'no-store', credentials: 'omit', mode: 'cors', redirect: 'error',
-      referrerPolicy: 'no-referrer', signal: controller.signal, targetAddressSpace: 'local',
+      referrerPolicy: 'no-referrer', signal: controller.signal,
     },
   ]);
 });

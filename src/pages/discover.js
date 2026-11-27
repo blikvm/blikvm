@@ -112,7 +112,12 @@ export default function DiscoveryPage() {
   }, []);
 
   const scan = useCallback(async () => {
-    if (request.current) return;
+    if (request.current || permission === 'checking') return;
+    if (permission === 'denied') {
+      setStatus('denied');
+      setDevices([]);
+      return;
+    }
     const controller = new AbortController();
     request.current = controller;
     const timeout = setTimeout(() => controller.abort(), 30000);
@@ -133,7 +138,7 @@ export default function DiscoveryPage() {
       clearTimeout(timeout);
       if (request.current === controller) request.current = null;
     }
-  }, []);
+  }, [permission]);
 
   useEffect(() => {
     if (status === 'denied' && permission === 'granted') scan();
@@ -175,7 +180,8 @@ export default function DiscoveryPage() {
           {permission !== 'granted' && (
             <p className={styles.permissionHint}>{permission === 'denied' ? copy.blockedHelp : copy.allowHelp}</p>
           )}
-          <button type="button" className="button button--primary" onClick={scan} disabled={status === 'scanning'}>
+          <button type="button" className="button button--primary" onClick={scan}
+                  disabled={status === 'scanning' || permission === 'checking'}>
             {status === 'scanning' ? scanningLabel : discoveryLabel}
           </button>
           <details className={styles.permissionHelp}>
