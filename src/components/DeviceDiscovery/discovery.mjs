@@ -45,6 +45,8 @@ export function parseDevices(body) {
 }
 
 export async function discoverDevices(signal) {
+  // Browsers recognize the fixed .local hostname. An explicit address space
+  // rejects connections through proxies that report the destination as unknown.
   const response = await fetch(discoveryEndpoint, {
     cache: 'no-store',
     credentials: 'omit',
@@ -52,7 +54,6 @@ export async function discoverDevices(signal) {
     redirect: 'error',
     referrerPolicy: 'no-referrer',
     signal,
-    targetAddressSpace: 'local',
   });
   if (!response.ok) throw new Error('BliKVM discovery is unavailable');
   return parseDevices(await response.json());
