@@ -1,7 +1,12 @@
-import React, {useEffect, useRef, useState} from 'react';
+import React, {useCallback, useEffect, useRef, useState} from 'react';
 import Layout from '@theme/Layout';
 import useDocusaurusContext from '@docusaurus/useDocusaurusContext';
-import {deviceAddress, discoverDevices, localNetworkDenied} from '../components/DeviceDiscovery/discovery.mjs';
+import {
+  deviceAddress,
+  discoverDevices,
+  discoveryEndpoint,
+  queryLocalNetworkPermission,
+} from '../components/DeviceDiscovery/discovery.mjs';
 import styles from './discover.module.css';
 
 const strings = {
@@ -10,14 +15,27 @@ const strings = {
     intro: 'Find and open BliKVM devices on your local network.',
     enable: 'Turn on Local Network Discovery (mDNS)',
     enableHelp: 'On each BliKVM, go to Settings → Network → General and turn on Local Network Discovery.',
-    allow: 'Allow your browser to access the local network',
-    allowHelp: 'Select Start discovery. If your browser asks for local network access, choose Allow.',
+    allow: 'Local network access',
+    permission: {
+      checking: 'Checking permission…',
+      prompt: 'Permission needed',
+      granted: 'Allowed',
+      denied: 'Blocked',
+      unknown: 'Permission status unavailable',
+    },
+    allowHelp: 'If your browser asks for local network access, choose Allow. Discovery will continue automatically.',
+    blockedHelp: 'Open the site controls next to the address bar. Under Site settings, allow Local network access for this site.',
+    allowAndStart: 'Allow access and discover',
+    retry: 'Retry discovery',
+    waiting: 'Waiting for permission or a device response…',
+    permissionHelp: 'No permission prompt?',
+    settingsHelp: 'In Chrome or Edge, open the site controls next to the address bar and look for Local network access. If your browser has no such setting, you can open the discovery API directly or enter a device address below.',
+    openApi: 'Open local discovery API (JSON)',
     start: 'Start discovery',
     refresh: 'Discover again',
     scanning: 'Looking for devices…',
     nearby: 'Nearby devices',
     count: n => `${n} ${n === 1 ? 'device' : 'devices'} found`,
-    denied: 'Local network access is blocked. Allow it in your browser’s site settings and try again.',
     unavailable: 'Could not reach a discovery-enabled BliKVM. Check local network access, make sure your computer and devices are on the same network, or enter a device address below.',
     empty: 'No devices were found. Make sure Local Network Discovery is enabled on your BliKVM.',
     open: 'Open device',
@@ -32,14 +50,27 @@ const strings = {
     intro: '在同一个页面查找并访问局域网内的 BliKVM。',
     enable: '在设备上开启局域网发现（mDNS）',
     enableHelp: '在每台 BliKVM 的「设置 → 网络 → 常规」中开启「局域网发现」。',
-    allow: '允许浏览器访问局域网',
-    allowHelp: '点击「开始发现」后，如果浏览器弹出局域网访问提示，请选择「允许」。',
+    allow: '局域网访问权限',
+    permission: {
+      checking: '正在检查权限…',
+      prompt: '等待授权',
+      granted: '已允许',
+      denied: '已阻止',
+      unknown: '无法读取权限状态',
+    },
+    allowHelp: '如果浏览器弹出局域网访问提示，请选择「允许」。授权后会自动继续发现。',
+    blockedHelp: '打开地址栏左侧的网站设置，为此网站允许「局域网访问」或「本地网络访问」。',
+    allowAndStart: '允许访问并发现',
+    retry: '重新尝试发现',
+    waiting: '正在等待授权或设备响应…',
+    permissionHelp: '没有看到授权提示？',
+    settingsHelp: '在 Chrome 或 Edge 中，打开地址栏左侧的网站设置，查看局域网访问权限。如果浏览器没有这项设置，可以直接打开本地发现接口，或在下方输入设备地址。',
+    openApi: '打开本地发现接口（JSON）',
     start: '开始发现',
     refresh: '重新发现',
     scanning: '正在查找设备…',
     nearby: '附近设备',
     count: n => `已发现 ${n} 台设备`,
-    denied: '浏览器阻止了局域网访问。请在浏览器的网站设置中允许访问，然后重试。',
     unavailable: '无法连接到已开启发现的 BliKVM。请检查浏览器权限和局域网连接，也可以在下方手动输入设备地址。',
     empty: '未发现设备。请确认 BliKVM 已开启局域网发现。',
     open: '打开设备',
@@ -54,17 +85,33 @@ const strings = {
 export default function DiscoveryPage() {
   const {i18n} = useDocusaurusContext();
   const copy = strings[i18n.currentLocale] ?? strings.en;
+  const [permission, setPermission] = useState('checking');
   const [status, setStatus] = useState('ready');
   const [devices, setDevices] = useState([]);
   const [invalidAddress, setInvalidAddress] = useState(false);
   const request = useRef(null);
 
-  useEffect(() => () => {
-    request.current?.abort();
-    request.current = null;
+  useEffect(() => {
+    let active = true;
+    let permissionStatus;
+    function updatePermission() {
+      setPermission(permissionStatus?.state ?? 'unknown');
+    }
+    queryLocalNetworkPermission().then(result => {
+      if (!active) return;
+      permissionStatus = result;
+      permissionStatus?.addEventListener('change', updatePermission);
+      updatePermission();
+    });
+    return () => {
+      active = false;
+      permissionStatus?.removeEventListener('change', updatePermission);
+      request.current?.abort();
+      request.current = null;
+    };
   }, []);
 
-  async function scan() {
+  const scan = useCallback(async () => {
     if (request.current) return;
     const controller = new AbortController();
     request.current = controller;
@@ -77,13 +124,20 @@ export default function DiscoveryPage() {
       setDevices(found);
       setStatus(found.length ? 'results' : 'empty');
     } catch {
-      const denied = await localNetworkDenied();
-      if (request.current === controller) setStatus(denied ? 'denied' : 'unavailable');
+      const permissionStatus = await queryLocalNetworkPermission();
+      if (request.current !== controller) return;
+      const state = permissionStatus?.state ?? 'unknown';
+      setPermission(state);
+      setStatus(state === 'denied' ? 'denied' : 'unavailable');
     } finally {
       clearTimeout(timeout);
       if (request.current === controller) request.current = null;
     }
-  }
+  }, []);
+
+  useEffect(() => {
+    if (status === 'denied' && permission === 'granted') scan();
+  }, [status, permission, scan]);
 
   function openAddress(event) {
     event.preventDefault();
@@ -94,6 +148,10 @@ export default function DiscoveryPage() {
     else field.focus();
   }
 
+  const scanningLabel = permission === 'prompt' ? copy.waiting : copy.scanning;
+  const discoveryLabel = {prompt: copy.allowAndStart, denied: copy.retry}[permission] ??
+    (status === 'ready' ? copy.start : copy.refresh);
+
   return (
     <Layout title={copy.title} description={copy.intro}>
       <main className={styles.page}>
@@ -102,18 +160,37 @@ export default function DiscoveryPage() {
           <p>{copy.intro}</p>
         </header>
         {status === 'ready' && (
-          <ol className={styles.steps}>
-            <li><strong>{copy.enable}</strong><p>{copy.enableHelp}</p></li>
-            <li><strong>{copy.allow}</strong><p>{copy.allowHelp}</p></li>
-          </ol>
+          <div className={styles.setup}>
+            <strong>{copy.enable}</strong>
+            <p>{copy.enableHelp}</p>
+          </div>
         )}
-        <button type="button" className="button button--primary" onClick={scan} disabled={status === 'scanning'}>
-          {status === 'ready' ? copy.start : status === 'scanning' ? copy.scanning : copy.refresh}
-        </button>
-        {status !== 'ready' && (
+        <section className={styles.permission} aria-labelledby="discovery-permission">
+          <div className={styles.permissionHeading}>
+            <h2 id="discovery-permission">{copy.allow}</h2>
+            <span className={styles.permissionState} data-state={permission} role="status">
+              {copy.permission[permission]}
+            </span>
+          </div>
+          {permission !== 'granted' && (
+            <p className={styles.permissionHint}>{permission === 'denied' ? copy.blockedHelp : copy.allowHelp}</p>
+          )}
+          <button type="button" className="button button--primary" onClick={scan} disabled={status === 'scanning'}>
+            {status === 'scanning' ? scanningLabel : discoveryLabel}
+          </button>
+          <details className={styles.permissionHelp}>
+            <summary>{copy.permissionHelp}</summary>
+            <p>{copy.settingsHelp}</p>
+            <a href={discoveryEndpoint} target="_blank" rel="noopener noreferrer">{copy.openApi}</a>
+          </details>
+        </section>
+        {status !== 'ready' && status !== 'denied' && (
           <section className={styles.results} aria-labelledby="discovery-results">
             <h2 id="discovery-results">{copy.nearby}</h2>
-            <p className={styles.status} role="status">{status === 'results' ? copy.count(devices.length) : copy[status]}</p>
+            <p className={styles.status} role="status">
+              {status === 'results' ? copy.count(devices.length) :
+                status === 'scanning' ? scanningLabel : copy[status]}
+            </p>
             {devices.length > 0 && (
               <ul className={styles.devices}>
                 {devices.map(device => (

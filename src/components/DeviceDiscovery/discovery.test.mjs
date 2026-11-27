@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import {test} from 'node:test';
-import {deviceAddress, discoverDevices, parseDevices} from './discovery.mjs';
+import {deviceAddress, discoverDevices, parseDevices, queryLocalNetworkPermission} from './discovery.mjs';
 
 test('discovered devices cannot supply arbitrary navigation targets', () => {
   const device = {id: 'a13f7c', name: 'Lab KVM', model: 'BliKVM v4', hostname: 'BLiKVM-a13f7c.local', ip: '192.168.8.31'};
@@ -34,4 +34,22 @@ test('discovery reads only the local endpoint and omits user data from the reque
       referrerPolicy: 'no-referrer', signal: controller.signal, targetAddressSpace: 'local',
     },
   ]);
+});
+
+test('local network permission detection tolerates browsers without the granular permission', async () => {
+  const status = new EventTarget();
+  status.state = 'prompt';
+  const permissions = {
+    async query(descriptor) {
+      assert.deepEqual(descriptor, {name: 'local-network'});
+      return status;
+    },
+  };
+  assert.equal(await queryLocalNetworkPermission(permissions), status);
+  status.state = 'granted';
+  assert.equal((await queryLocalNetworkPermission(permissions)).state, 'granted');
+  assert.equal(await queryLocalNetworkPermission(null), null);
+  assert.equal(await queryLocalNetworkPermission({
+    async query() { throw new TypeError('Unknown permission'); },
+  }), null);
 });
